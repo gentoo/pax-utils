@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.5 2003/11/09 17:46:41 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.6 2004/01/10 08:20:07 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanelf.c,v 1.5 2003/11/09 17:46:41 solar Exp $";
+    "$Id: scanelf.c,v 1.6 2004/01/10 08:20:07 solar Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -44,30 +44,42 @@ static struct option const long_options[] = {
    {NULL, no_argument, NULL, 0}
 };
 
+void scanelf_file(char *filename)
+{
+   elfobj *elf = NULL;
+   /* verify this is real ELF */
+   if ((elf = readelf(filename)) != NULL) {
+      if (!check_elf_header(elf->ehdr))
+	 if (IS_ELF(elf))
+	    printf("%s %s %s\n",
+		   pax_short_flags(PAX_FLAGS(elf)),
+		   get_elfetype(elf->ehdr->e_type), filename);
+
+      if (elf != NULL) {
+	 munmap(elf->data, elf->len);
+	 free(elf);
+	 elf = NULL;
+      }
+   }
+}
+
 /* scan a directory for ET_EXEC files and print when we find one */
 void scanelf(const char *path)
 {
-   elfobj *elf = NULL;
    register DIR *dir;
    register struct dirent *dentry;
+   char *p;
+   int len = 0;
 
    if ((chdir(path) == 0) && ((dir = opendir(path)))) {
       while ((dentry = readdir(dir))) {
-	 /* verify this is real ELF */
-	 if ((elf = readelf(dentry->d_name)) != NULL) {
-	    if (!check_elf_header(elf->ehdr))
-	       if (IS_ELF(elf))
-		  printf("%s %s %s/%s\n",
-			 pax_short_flags(PAX_FLAGS(elf)),
-			 get_elfetype(elf->ehdr->e_type), path,
-			 dentry->d_name);
-
-	    if (elf != NULL) {
-	       munmap(elf->data, elf->len);
-	       free(elf);
-	       elf = NULL;
-	    }
-	 }
+	 len = (strlen(path) + 2 + strlen(dentry->d_name));
+	 p = malloc(len);
+	 strncpy(p, path, len);
+	 strncat(p, "/", len);
+	 strncat(p, dentry->d_name, len);
+	 scanelf_file(p);
+	 free(p);
       }
       closedir(dir);
    }
