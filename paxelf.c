@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.13 2005/04/05 00:51:33 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.14 2005/04/05 00:55:22 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -182,6 +182,27 @@ static pairtype elf_dtypes[] = {
 const char *get_elfdtype(int type)
 {
 	return find_pairtype(elf_dtypes, type);
+}
+
+/* translate elf STT_ defines */
+static pairtype elf_stttypes[] = {
+	QUERY(STT_NOTYPE),
+	QUERY(STT_OBJECT),
+	QUERY(STT_FUNC),
+	QUERY(STT_SECTION),
+	QUERY(STT_FILE),
+	QUERY(STT_LOPROC),
+	QUERY(STT_HIPROC),
+	QUERY(STB_LOCAL),
+	QUERY(STB_GLOBAL),
+	QUERY(STB_WEAK),
+	QUERY(STB_LOPROC),
+	QUERY(STB_HIPROC),
+	{ 0, 0 }
+};
+const char *get_elfstttype(int type)
+{
+	return find_pairtype(elf_stttypes, type);
 }
 
 /* Read an ELF into memory */

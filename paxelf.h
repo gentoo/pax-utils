@@ -74,6 +74,7 @@ extern const char *get_elfeitype(elfobj *elf, int ei_type, int type);
 extern const char *get_elfetype(elfobj *elf);
 extern const char *get_elfptype(int type);
 extern const char *get_elfdtype(int type);
+extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 
 /* PaX flags (to be read in elfhdr.e_flags) */
