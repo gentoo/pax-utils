@@ -37,10 +37,8 @@ typedef struct {
 	Elf_Ehdr *ehdr;
 	Elf_Phdr *phdr;
 	Elf_Shdr *shdr;
-	Elf_Dyn *dyn;
 	char *data;
 	int len;
-	int fd;
 } elfobj;
 
 /* prototypes */
