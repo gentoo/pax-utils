@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.22 2005/04/03 18:03:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.23 2005/04/03 18:27:45 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.22 2005/04/03 18:03:22 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.23 2005/04/03 18:27:45 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -93,12 +93,12 @@ static void scanelf_file(const char *filename)
 
 	/* show the header */
 	if (!be_quiet && show_banner) {
-		fputs(" TYPE  ", stdout);
-		if (show_pax) fputs("  PAX  ", stdout);
-		if (show_stack) fputs(" STK/REL ", stdout);
-		if (show_textrel) fputs("TEXTREL ", stdout);
-		if (show_rpath) fputs("RPATH ", stdout);
-		fputs(" FILE\n", stdout);
+		printf(" TYPE  ");
+		if (show_pax) printf("  PAX  ");
+		if (show_stack) printf(" STK/REL ");
+		if (show_textrel) printf("TEXTREL ");
+		if (show_rpath) printf("RPATH ");
+		printf(" FILE\n");
 		show_banner = 0;
 	}
 
@@ -130,8 +130,8 @@ static void scanelf_file(const char *filename)
 
 			printf("%s ", gnu_short_stack_flags(elf->phdr[i].p_flags));
 		}
-		if (!be_quiet && !found_stack) fputs("--- ", stdout);
-		if (!be_quiet && !found_relro) fputs("--- ", stdout);
+		if (!be_quiet && !found_stack) printf("--- ");
+		if (!be_quiet && !found_relro) printf("--- ");
 	}
 
 	/* textrel fun */
@@ -144,18 +144,20 @@ static void scanelf_file(const char *filename)
 				if (dyn->d_tag == DT_TEXTREL) { //dyn->d_tag != DT_FLAGS)
 					found_textrel = 1;
 //					if (dyn->d_un.d_val & DF_TEXTREL)
-					fputs("TEXTREL ", stdout);
+					printf("TEXTREL ");
 				}
 				++dyn;
 			}
 		}
-		if (!be_quiet && !found_textrel) fputs("------- ", stdout);
+		if (!be_quiet && !found_textrel) printf("------- ");
 	}
 
 	/* rpath fun */
 	/* TODO: if be_quiet, only output RPATH's which aren't in /etc/ld.so.conf */
 	if (show_rpath) {
+		char *rpath, *runpath;
 		Elf_Shdr *strtbl = elf_findsecbyname(elf, ".dynstr");
+		rpath = runpath = NULL;
 
 		if (strtbl)
 		for (i = 0; i < elf->ehdr->e_phnum; i++) {
@@ -164,14 +166,26 @@ static void scanelf_file(const char *filename)
 			dyn = (Elf_Dyn *)(elf->data + elf->phdr[i].p_offset);
 			while (dyn->d_tag != DT_NULL) {
 				if (dyn->d_tag == DT_RPATH) { //|| dyn->d_tag != DT_RUNPATH)
-					char *rpath = elf->data + strtbl->sh_offset + dyn->d_un.d_ptr;
+					rpath = elf->data + strtbl->sh_offset + dyn->d_un.d_ptr;
 					found_rpath = 1;
-					printf("%s ", rpath);
+				} else if (dyn->d_tag == DT_RUNPATH) {
+					runpath = elf->data + strtbl->sh_offset + dyn->d_un.d_ptr;
+					found_rpath = 1;
 				}
 				++dyn;
 			}
 		}
-		if (!be_quiet && !found_rpath) fputs("  -   ", stdout);
+		if (rpath && runpath) {
+			if (!strcmp(rpath, runpath))
+				printf("%-5s ", runpath);
+			else {
+				fprintf(stderr, "%s's RPATH [%s] != RUNPATH [%s]\n", filename, rpath, runpath);
+				printf("{%s,%s} ", rpath, runpath);
+			}
+		} else if (rpath || runpath)
+			printf("%-5s ", (runpath ? runpath : rpath));
+		else if (!be_quiet && !found_rpath)
+			printf("  -   ");
 	}
 
 	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
@@ -327,7 +341,7 @@ static void usage(int status)
 	int i;
 	printf("¤ Scan ELF binaries for stuff\n\n"
 	       "Usage: %s [options] <dir1> [dir2 dirN ...]\n\n", argv0);
-	fputs("Options:\n", stdout);
+	printf("Options:\n");
 	for (i = 0; long_opts[i].name; ++i)
 		printf("  -%c, --%-12s× %s\n", long_opts[i].val, 
 		       long_opts[i].name, opts_help[i]);
