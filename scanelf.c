@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.20 2005/04/02 19:06:36 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.21 2005/04/03 16:02:25 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -31,9 +31,10 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <assert.h>
+
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.20 2005/04/02 19:06:36 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.21 2005/04/03 16:02:25 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -190,7 +191,7 @@ static void scanelf_dir(const char *path)
 	register DIR *dir;
 	register struct dirent *dentry;
 	struct stat st_top, st;
-	char buf[PATH_MAX];
+	char buf[_POSIX_PATH_MAX];
 	size_t len = 0;
 
 	/* make sure path exists */
@@ -287,7 +288,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxetraqvBhV"
+#define PARSE_FLAGS "plRmxetro:aqvBhV"
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
@@ -297,6 +298,7 @@ static struct option const long_opts[] = {
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
+	{"file",required_argument, NULL, 'o'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -314,6 +316,7 @@ static char *opts_help[] = {
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
+	"Write output stream to a filename",
 	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -359,6 +362,17 @@ static void parseargs(int argc, char *argv[])
 		case 's': /* reserved for -s, --symbol= */
 		case 'h': usage(EXIT_SUCCESS); break;
 
+		case 'o':
+		{
+			FILE *fp = NULL;
+			fp = freopen(optarg, "w", stdout);
+			if (fp == NULL) {
+				fputs("open ", stderr);
+				perror(optarg);
+			} else 
+				stdout = fp;
+			break;
+		}
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
@@ -402,5 +416,6 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 		usage(EXIT_FAILURE);
 	parseargs(argc, argv);
+	fclose(stdout);
 	return EXIT_SUCCESS;
 }
