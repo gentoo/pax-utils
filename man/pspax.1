@@ -1,0 +1,42 @@
+.TH "scanelf" "1" "0.1" "Ned Ludd" ""
+.SH "NAME"
+.LP 
+scanelf \- 
+user-space utility to scan elf files
+.SH "SYNTAX"
+.LP 
+user@shell$ pspax
+.BR 
+.SH "DESCRIPTION"
+pspax is a user-space utility that scans the proc directory and list ELF types, as well as thier respctive PaX flags and filenames and attributes. Depending on pspax was compiled it additionaly will display the process running set of caabilities.
+.LP 
+.SH "FILES"
+.LP 
+\fI/proc/\fP 
+\fI/proc/%d/exe\fP
+\fI/proc/%d/stat\fP
+\fI/proc/%d/status\fP
+\fI/proc/%d/attr/current\fP
+.SH "ENVIRONMENT VARIABLES"
+.TP 
+\fBPATH\fP
+When the program is compiled with capability support those will be listed as well.
+.SH "EXAMPLES"
+.LP 
+To run this program the standard way type:
+.LP 
+pspax
+.LP 
+Alternativly you can run it like:
+.BR 
+.SH "AUTHORS"
+.LP 
+scanelf was written by <solar@gentoo.org>
+.BR
+.SH "REPORTING BUGS"
+Please include as much information as possible(using any available debugging options) and send bug reports for pax-utils <solar@gentoo.org>
+.LP
+.BR
+.SH "SEE ALSO"
+.LP 
+chpax(1), paxctl(1), pspax(1), gradm(8), scanelf(1), scanexec(1)
