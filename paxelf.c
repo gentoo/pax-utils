@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.10 2005/04/01 19:55:02 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.11 2005/04/03 18:03:22 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -139,7 +139,17 @@ const char *get_elfdtype(int type)
 	(buff[EI_MAG0] == ELFMAG0 && \
 	 buff[EI_MAG1] == ELFMAG1 && \
 	 buff[EI_MAG2] == ELFMAG2 && \
-	 buff[EI_MAG3] == ELFMAG3)	
+	 buff[EI_MAG3] == ELFMAG3)
+#define DO_WE_LIKE_ELF(buff) \
+	(buff[EI_CLASS] == ELF_CLASS || \
+	 buff[EI_DATA] == ELF_DATA || \
+	 buff[EI_VERSION] == EV_CURRENT)
+	/* add these checks when we can handle non-native
+	 buff[EI_DATA] == ELFDATA2LSB || \
+	 buff[EI_DATA] == ELFDATA2MSB || \
+	 buff[EI_CLASS] == ELFCLASS32 || \
+	 buff[EI_CLASS] == ELFCLASS64 || \
+	*/
 #define ABI_OK(buff) \
 	(buff[EI_OSABI] == ELFOSABI_NONE || \
 	 buff[EI_OSABI] == ELFOSABI_LINUX)
@@ -173,6 +183,8 @@ elfobj *readelf(const char *filename)
 	elf->ehdr = (Elf_Ehdr *) elf->data;
 	if (!IS_ELF_BUFFER(elf->ehdr->e_ident)) /* make sure we have an elf */
 		goto unmap_data_and_return;
+	if (!DO_WE_LIKE_ELF(elf->ehdr->e_ident)) /* check class and stuff */
+		goto unmap_data_and_return;
 	if (!ABI_OK(elf->ehdr->e_ident)) /* only work with certain ABI's for now */
 		goto unmap_data_and_return;
 
@@ -199,18 +211,6 @@ void unreadelf(elfobj *elf)
 	close(elf->fd);
 	memset(elf, 0, sizeof(elfobj));
 	free(elf);
-}
-
-/* check the elf header */
-int check_elf_header(Elf_Ehdr const *const ehdr)
-{
-   if (!ehdr || strncmp((void *) ehdr, ELFMAG, SELFMAG) != 0 ||
-       (ehdr->e_ident[EI_CLASS] != ELFCLASS32
-	&& ehdr->e_ident[EI_CLASS] != ELFCLASS64)
-       || ehdr->e_ident[EI_VERSION] != EV_CURRENT) {
-      return 1;
-   }
-   return 0;
 }
 
 /* the display logic is:

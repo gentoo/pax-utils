@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.21 2005/04/03 16:02:25 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.22 2005/04/03 18:03:22 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.21 2005/04/03 16:02:25 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.22 2005/04/03 18:03:22 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -87,10 +87,6 @@ static void scanelf_file(const char *filename)
 	if ((elf = readelf(filename)) == NULL) {
 		if (be_verbose > 1) printf("%s: not an ELF\n", filename);
 		return;
-	}
-	if (check_elf_header(elf->ehdr) || !IS_ELF(elf)) {
-		if (be_verbose > 1) printf("%s: cannot handle ELF :(\n", filename);
-		goto bail;
 	}
 
 	if (be_verbose) printf("%s: scanning file\n", filename);
@@ -181,7 +177,6 @@ static void scanelf_file(const char *filename)
 	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
 		puts(filename);
 
-bail:
 	unreadelf(elf);
 }
 

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scan4sym.c,v 1.3 2005/04/01 21:08:47 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scan4sym.c,v 1.4 2005/04/03 18:03:22 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -42,7 +42,7 @@
 #define DBG(a)			/* nothing */
 #endif
 
-static const char *rcsid = "$Id: scan4sym.c,v 1.3 2005/04/01 21:08:47 solar Exp $";
+static const char *rcsid = "$Id: scan4sym.c,v 1.4 2005/04/03 18:03:22 vapier Exp $";
 
 #define PARSE_FLAGS "hvlps:"
 static struct option const long_options[] = {
@@ -109,8 +109,6 @@ void scanelf_file_symbol(const char *filename, char *symbol_name)
    int fd = 0;
    /* verify this is real ELF */
    if ((elf = readelf((char *)filename)) != NULL) {
-      if (!check_elf_header(elf->ehdr))
-	 if (IS_ELF(elf)) {
 /*
 	Strange behavior.
 	--------------------------------------------------------------------------
@@ -206,7 +204,6 @@ void scanelf_file_symbol(const char *filename, char *symbol_name)
 	       free(elf);
 	       elf = NULL;
 	    }
-	 }
    }
 }
 
