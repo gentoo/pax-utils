@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.13 2005/03/31 18:34:01 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.14 2005/04/01 19:56:34 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.13 2005/03/31 18:34:01 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.14 2005/04/01 19:56:34 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -61,12 +61,14 @@ static void parseargs(int argc, char *argv[]);
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
 static char dir_recurse = 0;
+static char dir_crossmount = 1;
 static char show_pax = 0;
 static char show_stack = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
 static char show_header = 1;
 static char be_quiet = 0;
+static char be_verbose = 0;
 
 
 
@@ -74,26 +76,32 @@ static char be_quiet = 0;
 static void scanelf_file(const char *filename)
 {
 	int i;
-	char found_stack, found_relro, found_textrel, found_rpath;
+	char found_pax, found_stack, found_relro, found_textrel, found_rpath;
 	Elf_Dyn *dyn;
 	elfobj *elf = NULL;
 
-	found_stack = found_relro = found_textrel = found_rpath = 0;
+	found_pax = found_stack = found_relro = found_textrel = found_rpath = 0;
 
 	/* verify this is real ELF */
-	if ((elf = readelf(filename)) == NULL)
+	if ((elf = readelf(filename)) == NULL) {
+		if (be_verbose > 1) printf("File '%s' is not an ELF\n", filename);
 		return;
-	if (check_elf_header(elf->ehdr) || !IS_ELF(elf))
+	}
+	if (check_elf_header(elf->ehdr) || !IS_ELF(elf)) {
+		if (be_verbose > 1) printf("Cannot handle ELF '%s' :(\n", filename);
 		goto bail;
+	}
+
+	if (be_verbose) printf("Scanning file %s\n", filename);
 
 	/* show the header */
 	if (!be_quiet && show_header) {
-		fputs(" TYPE ", stderr);
-		if (show_pax) fputs(" PAX ", stderr);
-		if (show_stack) fputs(" STACK/RELRO ", stderr);
-		if (show_textrel) fputs(" TEXTREL ", stderr);
-		if (show_rpath) fputs(" RPATH ", stderr);
-		fputs(" FILE\n", stderr);
+		fputs(" TYPE  ", stdout);
+		if (show_pax) fputs("  PAX  ", stdout);
+		if (show_stack) fputs(" STK/REL ", stdout);
+		if (show_textrel) fputs("TEXTREL ", stdout);
+		if (show_rpath) fputs("RPATH ", stdout);
+		fputs(" FILE\n", stdout);
 		show_header = 0;
 	}
 
@@ -101,8 +109,13 @@ static void scanelf_file(const char *filename)
 	if (!be_quiet)
 		printf("%-7s ", get_elfetype(elf->ehdr->e_type));
 
-	if (show_pax)
-		printf("%s ", pax_short_hf_flags(PAX_FLAGS(elf)));
+	if (show_pax) {
+		char *paxflags = pax_short_hf_flags(PAX_FLAGS(elf));
+		if (!be_quiet || (be_quiet && strncmp(paxflags, "PeMRxS", 6))) {
+			found_pax = 1;
+			printf("%s ", pax_short_hf_flags(PAX_FLAGS(elf)));
+		}
+	}
 
 	/* stack fun */
 	if (show_stack) {
@@ -161,10 +174,10 @@ static void scanelf_file(const char *filename)
 				++dyn;
 			}
 		}
-		if (!be_quiet && !found_rpath) fputs("- ", stdout);
+		if (!be_quiet && !found_rpath) fputs("  -   ", stdout);
 	}
 
-	if (!be_quiet || show_pax || found_stack || found_textrel || found_rpath)
+	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
 		puts(filename);
 
 bail:
@@ -176,16 +189,16 @@ static void scanelf_dir(const char *path)
 {
 	register DIR *dir;
 	register struct dirent *dentry;
-	struct stat st;
+	struct stat st_top, st;
 	char *p;
 	int len = 0;
 
 	/* make sure path exists */
-	if (lstat(path, &st) == -1)
+	if (lstat(path, &st_top) == -1)
 		return;
 
 	/* ok, if it isn't a directory, assume we can open it */
-	if (!S_ISDIR(st.st_mode)) {
+	if (!S_ISDIR(st_top.st_mode)) {
 		scanelf_file(path);
 		return;
 	}
@@ -195,6 +208,7 @@ static void scanelf_dir(const char *path)
 		warnf("could not opendir %s: %s", path, strerror(errno));
 		return;
 	}
+	if (be_verbose) printf("Scanning dir %s\n", path);
 
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
@@ -210,7 +224,8 @@ static void scanelf_dir(const char *path)
 			if (S_ISREG(st.st_mode))
 				scanelf_file(p);
 			else if (dir_recurse && S_ISDIR(st.st_mode)) {
-				scanelf_dir(p);
+				if (dir_crossmount || (st_top.st_dev == st.st_dev))
+					scanelf_dir(p);
 			}
 		}
 		free(p);
@@ -263,18 +278,20 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRxstraqhV"
+#define PARSE_FLAGS "plRmxstraqvHhV"
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
 	{"recursive", no_argument, NULL, 'R'},
+	{"mount",     no_argument, NULL, 'm'},
 	{"pax",       no_argument, NULL, 'x'},
 	{"stack",     no_argument, NULL, 's'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
-/*	{"vebose",    no_argument, NULL, 'v'},*/
+	{"verbose",   no_argument, NULL, 'v'},
+	{"noheader",  no_argument, NULL, 'H'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
@@ -282,14 +299,16 @@ static struct option const long_opts[] = {
 static char *opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
-	"Scan directories recursively\n",
+	"Scan directories recursively",
+	"Don't recursively cross mount points\n",
 	"Print PaX markings",
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
-	"Print all scanned info",
-	"Only output 'bad' things\n",
-/*	"Be verbose !",*/
+	"Print all scanned info (-x -s -t -r)\n",
+	"Only output 'bad' things",
+	"Be verbose (can be specified more than once)",
+	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
 	NULL
@@ -326,14 +345,17 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
 
+		case 'H': show_header = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
+		case 'm': dir_crossmount = 0; break;
 		case 'x': show_pax = 1; break;
 		case 's': show_stack = 1; break;
 		case 't': show_textrel = 1; break;
 		case 'r': show_rpath = 1; break;
 		case 'q': be_quiet = 1; break;
+		case 'v': be_verbose = (be_verbose % 20) + 1; break;
 		case 'a': show_pax = show_stack = show_textrel = show_rpath = 1; break;
 
 		case ':':
@@ -349,6 +371,9 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 	}
+
+	if (be_quiet && be_verbose)
+		err("You can be quiet or you can be verbose, not both, stupid");
 
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
