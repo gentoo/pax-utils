@@ -28,13 +28,6 @@ If pspax was compiled with CFLAGS+= -DWANT_SYSCAP and LDFLAGS+=-lcap it
 will also list runtime capabilities If extended attribute support is
 enabled it will list those values as well.
 
-== scan4sym ==
-
-This is a debugging tool that will scan a directory to see of a symbol
-is visible via dlopen, dlsym. Note: This tool should be used with
-caution as opening an untrusted library with a constructor will
-automatically be executed.
-
 == INSTALL ==
 make install
 
