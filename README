@@ -1,2 +1,18 @@
-make
+pax-utils is a small set of various PaX related utilities for ELF32,
+ELF64 binaries thats mainly used by the hardened-gcc suite on Gentoo.
 
+== scanexec ==
+scanexec [options] dir1 dir2 dirN...
+  -p, --path	: Scan all directories in PATH environment.
+  -x, --pax	: Display PaX flags when scanning.
+  -h, --help	: Print this help and exit.
+  -v, --version	: Print version and exit.
+
+== isetdyn == 
+Tests if a file is of ELF ET_DYN, has a symbol for main, and contains a
+program interpreter.
+
+isetdyn <filename>
+
+== INSTALL ==
+make install

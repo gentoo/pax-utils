@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.1 2003/10/20 02:45:58 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.2 2003/10/24 09:52:05 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -32,17 +32,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <sys/stat.h>
-#include <dlfcn.h>
 #include <dirent.h>
 #include <getopt.h>
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanexec.c,v 1.1 2003/10/20 02:45:58 solar Exp $";
+static const char *rcsid = "$Id: scanexec.c,v 1.2 2003/10/24 09:52:05 solar Exp $";
 
 int display_pax_flags = 0;
 
@@ -91,7 +88,7 @@ void scanexec(const char *path)
 /* display usage and exit */
 int usage(char **argv)
 {
-   printf("Usage: %s dir1 dir2 dirN...\n",
+   printf("Usage: %s [options] dir1 dir2 dirN...\n",
 	  (*argv != NULL) ? argv[0] : __FILE__ "\b\b");
    exit(EXIT_FAILURE);
 }

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.1 2003/10/20 02:45:58 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.2 2003/10/24 09:52:05 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@
  * Also of interest is the pax site http://pageexec.virtualave.net/
  * but you should know about that already.
  */
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>

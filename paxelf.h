@@ -45,17 +45,14 @@ int check_elf_header(Elf_Ehdr const *const ehdr);
 elfobj *readelf(char *filename);
 
 
-#define IS_ELF_ET_EXEC(elf) ( \
-        (elf->ehdr->e_type == ET_EXEC) && \
+#define IS_ELF_TYPE(elf, type) ( \
+        (elf->ehdr->e_type == type) && \
                 (elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || \
                         elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64) \
         )
 
-#define IS_ELF_ET_DYN(elf) ( \
-        (elf->ehdr->e_type == ET_DYN) && \
-                (elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || \
-                        elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64) \
-        )
+#define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
+#define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)
 
 /* PaX flags (to be read in elfhdr.e_flags) */
 #define HF_PAX_PAGEEXEC         1	/* 0: Paging based non-exec pages */

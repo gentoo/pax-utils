@@ -1,0 +1,3 @@
+paxelf.o: paxelf.c paxelf.h
+isetdyn.o: isetdyn.c paxelf.h
+scanexec.o: scanexec.c paxelf.h
