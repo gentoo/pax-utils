@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.7 2005/03/30 23:42:26 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.8 2005/03/30 23:50:57 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -154,7 +154,6 @@ elfobj *readelf(const char *filename)
 
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return NULL;
-printf("%i\n", fd);
 
 	/* make sure we have enough bytes to scan e_ident */
 	if (st.st_size <= EI_NIDENT)
