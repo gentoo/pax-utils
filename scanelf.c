@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.6 2004/01/10 08:20:07 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.7 2004/10/19 16:54:48 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanelf.c,v 1.6 2004/01/10 08:20:07 solar Exp $";
+    "$Id: scanelf.c,v 1.7 2004/10/19 16:54:48 solar Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -68,6 +68,7 @@ void scanelf(const char *path)
 {
    register DIR *dir;
    register struct dirent *dentry;
+   struct stat st;
    char *p;
    int len = 0;
 
@@ -78,7 +79,9 @@ void scanelf(const char *path)
 	 strncpy(p, path, len);
 	 strncat(p, "/", len);
 	 strncat(p, dentry->d_name, len);
-	 scanelf_file(p);
+	 if (lstat(p, &st) != -1)
+	    if (S_ISREG(st.st_mode))
+	       scanelf_file(p);
 	 free(p);
       }
       closedir(dir);

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.4 2003/10/26 23:42:10 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.5 2004/10/19 16:54:48 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanexec.c,v 1.4 2003/10/26 23:42:10 solar Exp $";
+    "$Id: scanexec.c,v 1.5 2004/10/19 16:54:48 solar Exp $";
 
 int display_pax_flags = 0;
 
