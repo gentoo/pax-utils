@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.26 2005/04/05 00:51:33 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.27 2005/04/05 01:44:08 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.26 2005/04/05 00:51:33 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.27 2005/04/05 01:44:08 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -70,6 +70,7 @@ static char show_rpath = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
+static char *find_sym = NULL;
 
 
 
@@ -77,10 +78,10 @@ static char be_verbose = 0;
 static void scanelf_file(const char *filename)
 {
 	int i;
-	char found_pax, found_stack, found_relro, found_textrel, found_rpath;
+	char found_pax, found_stack, found_relro, found_textrel, found_rpath, found_sym;
 	elfobj *elf;
 
-	found_pax = found_stack = found_relro = found_textrel = found_rpath = 0;
+	found_pax = found_stack = found_relro = found_textrel = found_rpath = found_sym = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -211,7 +212,39 @@ static void scanelf_file(const char *filename)
 	}
 
 	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
-		puts(filename);
+		printf("%s\n", filename);
+
+	if (find_sym) {
+		void *symtab_void, *strtab_void;
+		symtab_void = elf_findsecbyname(elf, ".symtab");
+		strtab_void = elf_findsecbyname(elf, ".strtab");
+
+		if (symtab_void && strtab_void) {
+#define FIND_SYM(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
+		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+		int cnt = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
+		char *symname; \
+		if (be_verbose > 1) \
+			printf("%s: .symtab has %i entries\n", filename, cnt); \
+		for (i = 0; i < cnt; ++i) { \
+			if (sym->st_name) { \
+				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
+				if (*find_sym == '*' || !strcmp(find_sym, symname)) \
+				printf("%s: %5lX %15s %s\n", \
+				       filename, \
+				       (long)sym->st_size, \
+				       (char *)get_elfstttype(sym->st_info & 0xF), \
+				       symname); \
+			} \
+			++sym; \
+		} }
+		FIND_SYM(32)
+		FIND_SYM(64)
+		}
+	}
 
 	unreadelf(elf);
 }
@@ -319,7 +352,8 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxetraqvo:BhV"
+#define PARSE_FLAGS "plRmxetrs:aqvo:BhV"
+#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
@@ -329,10 +363,11 @@ static struct option const long_opts[] = {
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
+	{"symbol",    a_argument,  NULL, 's'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
-	{"file",required_argument, NULL, 'o'},
+	{"file",      a_argument,  NULL, 'o'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
@@ -347,6 +382,7 @@ static char *opts_help[] = {
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
+	"Find a specified symbol",
 	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -361,17 +397,16 @@ static char *opts_help[] = {
 static void usage(int status)
 {
 	int i;
-	printf("¤ Scan ELF binaries for stuff\n\n"
+	printf("¤ Scan ELF binaries for stuff\n"
 	       "Usage: %s [options] <dir1> [dir2 dirN ...]\n\n", argv0);
 	printf("Options:\n");
 	for (i = 0; long_opts[i].name; ++i)
-		printf("  -%c, --%-12s× %s\n", long_opts[i].val, 
-		       long_opts[i].name, opts_help[i]);
-#ifdef MANLYPAGE
-	for (i = 0; long_opts[i].name; ++i)
-		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val, 
-		       long_opts[i].name, opts_help[i]);
-#endif
+		if (long_opts[i].has_arg == no_argument)
+			printf("  -%c, --%-13s× %s\n", long_opts[i].val, 
+			       long_opts[i].name, opts_help[i]);
+		else
+			printf("  -%c, --%-6s <arg> × %s\n", long_opts[i].val,
+			       long_opts[i].name, opts_help[i]);
 	exit(status);
 }
 
@@ -390,7 +425,6 @@ static void parseargs(int argc, char *argv[])
 			       __FILE__, __DATE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
-		case 's': /* reserved for -s, --symbol= */
 		case 'h': usage(EXIT_SUCCESS); break;
 
 		case 'o': {
@@ -401,6 +435,8 @@ static void parseargs(int argc, char *argv[])
 			stdout = fp;
 			break;
 		}
+
+		case 's': find_sym = strdup(optarg); break;
 
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
@@ -438,6 +474,8 @@ static void parseargs(int argc, char *argv[])
 		err("Nothing to scan !?");
 	while (optind < argc)
 		scanelf_dir(argv[optind++]);
+
+	if (find_sym) free(find_sym);
 }
 
 

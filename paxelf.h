@@ -63,6 +63,8 @@ typedef struct {
 #define SHDR64(ptr) ((Elf64_Shdr *)(ptr))
 #define DYN32(ptr) ((Elf32_Dyn *)(ptr))
 #define DYN64(ptr) ((Elf64_Dyn *)(ptr))
+#define SYM32(ptr) ((Elf32_Sym *)(ptr))
+#define SYM64(ptr) ((Elf64_Sym *)(ptr))
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);
