@@ -43,14 +43,10 @@ typedef struct Elf_File elfobj;
 char *pax_short_flags(unsigned long flags);
 int check_elf_header(Elf_Ehdr const *const ehdr);
 elfobj *readelf(char *filename);
+const char *get_elfetype(int type);
 
-
-#define IS_ELF_TYPE(elf, type) ( \
-        (elf->ehdr->e_type == type) && \
-                (elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || \
-                        elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64) \
-        )
-
+#define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
+#define IS_ELF_TYPE(elf, type) ((elf->ehdr->e_type == type) && IS_ELF(elf))
 #define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
 #define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)
 

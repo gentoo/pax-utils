@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.2 2003/10/24 09:52:05 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.3 2003/10/24 22:19:20 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -36,6 +36,24 @@
 #include <string.h>
 
 #include "paxelf.h"
+
+#define QUERY(n) { #n, n }
+
+struct elf_etypes {
+   const char *str;
+   int value;
+} elf_etypes[] = {
+	QUERY(ET_NONE),       
+	QUERY(ET_REL),
+	QUERY(ET_EXEC),       
+	QUERY(ET_DYN),
+	QUERY(ET_CORE),       
+	QUERY(ET_NUM),
+	QUERY(ET_LOOS),
+	QUERY(ET_HIOS),
+	QUERY(ET_LOPROC),
+	QUERY(ET_HIPROC)
+};
 
 /* Read an ELF into memory */
 elfobj *readelf(char *filename)
@@ -106,4 +124,13 @@ char *pax_short_flags(unsigned long flags)
    buffer[6] = 0;
 
    return buffer;
+}
+
+const char *get_elfetype(int type)
+{
+   int i;
+   for (i = 0; i < sizeof(elf_etypes) / sizeof(elf_etypes[0]); i++)
+      if (type == elf_etypes[i].value)
+	 return elf_etypes[i].str;
+   return "UNKNOWN ELF TYPE";
 }

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.3 2003/10/24 22:19:20 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.1 2003/10/24 22:19:20 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -39,22 +39,21 @@
 
 #include "paxelf.h"
 
-static const char *rcsid =
-    "$Id: scanexec.c,v 1.3 2003/10/24 22:19:20 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.1 2003/10/24 22:19:20 solar Exp $";
 
-int display_pax_flags = 0;
+int display_pax_flags = 1;
 
-#define PARSE_FLAGS "hvxp"
+#define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
    {"help", no_argument, 0, 'h'},
    {"version", no_argument, 0, 'v'},
-   {"pax", no_argument, 0, 'x'},
    {"path", no_argument, 0, 'p'},
+   {"ldpath", no_argument, 0, 'l'},
    {NULL, no_argument, NULL, 0}
 };
 
 /* scan a directory for ET_EXEC files and print when we find one */
-void scanexec(const char *path)
+void scanelf(const char *path)
 {
    elfobj *elf = NULL;
    register DIR *dir;
@@ -63,16 +62,14 @@ void scanexec(const char *path)
    if (chdir(path) == 0) {
       if ((dir = opendir(path))) {
 	 while ((dentry = readdir(dir))) {
-	    /* verify this is real ELF ET_EXEC. */
+	    /* verify this is real ELF */
 	    if ((elf = readelf(dentry->d_name)) != NULL) {
 	       if (!check_elf_header(elf->ehdr))
-		  if (IS_ELF_ET_EXEC(elf))
-		     printf("%s%s%s/%s\n",
-			    ((display_pax_flags) ?
-			     pax_short_flags(PAX_FLAGS(elf)) : ""),
-			    ((display_pax_flags) ? " " : "")
-			    , path, dentry->d_name);
-
+		  if (IS_ELF(elf))
+		     printf("%s %s %s/%s\n",
+			    pax_short_flags(PAX_FLAGS(elf)),
+			    get_elfetype(elf->ehdr->e_type), path,
+			    dentry->d_name);
 	       if (elf != NULL) {
 		  munmap(elf->data, elf->len);
 		  free(elf);
@@ -89,8 +86,9 @@ void scanexec(const char *path)
 /* display usage and exit */
 int usage(char **argv)
 {
-   printf("Usage: %s [options] dir1 dir2 dirN...\n",
-	  (*argv != NULL) ? argv[0] : __FILE__ "\b\b");
+   printf
+       ("Usage: %s [options] dir1 dir2 dirN...\n",
+	(*argv != NULL) ? argv[0] : __FILE__ "\b\b");
    exit(EXIT_FAILURE);
 }
 
@@ -108,14 +106,16 @@ void parseargs(int argc, char **argv)
 {
    int flag;
    char *p, *path;
-   opterr = 0;
+   FILE *fp;
 
-   while ((flag = (int) getopt_long(argc, argv, PARSE_FLAGS,
-				    long_options, NULL)) != EOF) {
+   opterr = 0;
+   while ((flag =
+	   (int) getopt_long(argc, argv,
+			     PARSE_FLAGS, long_options, NULL)) != EOF) {
       switch (flag) {
 	 case 'h':
 	    showopt('p', "Scan all directories in PATH environment.");
-	    showopt('x', "Display PaX flags when scanning.");
+	    showopt('l', "Scan all directories in /etc/ld.so.conf");
 	    showopt('h', "Print this help and exit.");
 	    showopt('v', "Print version and exit.");
 	    exit(EXIT_SUCCESS);
@@ -125,8 +125,21 @@ void parseargs(int argc, char **argv)
 		("%s written for Gentoo Linux <solar@gentoo.org>\n\t%s\n",
 		 (*argv != NULL) ? argv[0] : __FILE__ "\b\b", rcsid);
 	    exit(EXIT_SUCCESS);
-	 case 'x':
-	    display_pax_flags = 1;
+	 case 'l':
+	    /* scan ld.so.conf for ldpath */
+	    if ((fp = fopen("/etc/ld.so.conf", "r")) != NULL) {
+	       path = malloc(_POSIX_PATH_MAX);
+	       while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
+		  if (*path == '/') {
+		     if ((p = strrchr(path, '\r')) != NULL)
+			*p = 0;
+		     if ((p = strrchr(path, '\n')) != NULL)
+			*p = 0;
+		     puts(path);
+		  }
+	       }
+	       free(path);
+	    }
 	    break;
 	 case 'p':
 	    if ((path = strdup(getenv("PATH"))) == NULL) {
@@ -135,7 +148,7 @@ void parseargs(int argc, char **argv)
 	    }
 	    /* split string into dirs */
 	    while ((p = strrchr(path, ':')) != NULL) {
-	       scanexec(p + 1);
+	       scanelf(p + 1);
 	       *p = 0;
 	    }
 	    if (path != NULL)
@@ -147,15 +160,13 @@ void parseargs(int argc, char **argv)
       }
    }
    while (optind < argc)
-      scanexec(argv[optind++]);
+      scanelf(argv[optind++]);
 }
 
 int main(int argc, char **argv)
 {
    if (argc < 2)
       usage(argv);
-
    parseargs(argc, argv);
-
    return 0;
 }
