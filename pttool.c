@@ -16,28 +16,6 @@
 
 #include "paxelf.h"
 
-int has_textrel(elfobj *elf)
-{
-	Elf_Dyn *dyn;
-
-	return 0;
-
-   for (dyn = elf->dyn; dyn->d_tag != DT_NULL; dyn++) {
-      switch (dyn->d_tag) {
-	 case DT_TEXTREL:
-	 case DT_FLAGS:
-	    if (dyn->d_un.d_val & DF_TEXTREL) {
-	       printf("TEXTREL 0x%X\n", 0);
-	       return 1;
-	    }
-	    break;
-	 default:
-	    break;
-      }
-   }
-   return 0;
-}
-
 void scan_program_header(const char *filename)
 {
 	int i;
@@ -59,7 +37,7 @@ void scan_program_header(const char *filename)
 			// printf("LOAD it's only one 0x%X\n", elf->phdr[i].p_flags);
 			break;
 		case PT_DYNAMIC:
-			has_textrel(elf);
+			//has_textrel(elf);
 			break;
 		case PT_PAX_FLAGS:
 			printf("--- %s %s %s\n", "PT_PAX_FLAGS",
