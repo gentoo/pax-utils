@@ -1,15 +1,16 @@
-.TH "scanelf" "1" "0.1" "Ned Ludd" ""
+.TH "scanexec" "1" "0.1" "Ned Ludd" ""
 .SH "NAME"
 .LP 
-scanelf \- 
+scanexec \- 
 user-space utility to scan elf files
 .SH "SYNTAX"
 .LP 
-scanelf [\fIoptions\fP] dir1 dir2 dirN...
+scanexec [\fIoptions\fP] dir1 dir2 dirN...
 .br 
 .SH "DESCRIPTION"
-scanelf is a user-space utility to scan and list ELF types, as well as thier respctive PaX flags and filenames.
-
+scanexec is a user-space utility to scan and list ELF ET_EXEC files, and optionaly list PaX flags.
+.TP
+The main use of the scanexec util is to quickly identify which files potentially should to be rebuilt as etdyn.
 .LP 
 
 .SH "OPTIONS"
@@ -25,8 +26,8 @@ Output help information and exit.
 \fB\-v, \-\-version\fR
 Output version information and exit.
 .TP 
-\fB \-l, \-\-ldpath\fR
-Scans paths listed in /etc/ld.so.conf
+\fB \-x, \-\-pax\fR
+Lists PaX flags for each ELF ET_EXEC file.
 .TP 
 \fB\-p, \-\-path\fR
 Scans paths in order they are listed in the environment $PATH
@@ -34,32 +35,28 @@ Scans paths in order they are listed in the environment $PATH
 .BR
 .SH "FILES"
 .LP 
-\fI/etc/ld.so.conf\fP 
+\fInone\fP 
 .SH "ENVIRONMENT VARIABLES"
 .LP 
 .TP 
 \fBPATH\fP
-When the -p option is used the environment variable PATH will be used.
+When the -p option is used the environment variable PATH will be search and used.
 
 .SH "EXAMPLES"
 .LP 
 To run this program the standard way type:
 .LP 
-scanelf -p
-scanelf -l
+scanexec -p
+scanexec -x
 .LP 
 Alternativly you can run it like:
 .LP 
-scanelf /bin /usr/bin /lib
+scanexec -x -p /bin /usr/bin /lib
 .br 
-
-.SH "REPORTING BUGS"
-Please include as much information as possible(using any available debugging options) and send bug reports for pax-utils <solar@gentoo.org>
-.LP
 
 .SH "AUTHORS"
 .LP 
-scanelf was written by <solar@gentoo.org>
+scanexec was written by <solar@gentoo.org>
 .BR
 .SH "SEE ALSO"
 .LP 
