@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.6 2005/03/25 21:50:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanexec.c,v 1.7 2005/03/29 23:37:03 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanexec.c,v 1.6 2005/03/25 21:50:20 vapier Exp $";
+    "$Id: scanexec.c,v 1.7 2005/03/29 23:37:03 vapier Exp $";
 
 int display_pax_flags = 0;
 
@@ -62,7 +62,7 @@ void scanexec(const char *path)
 		  if (IS_ELF_ET_EXEC(elf))
 		     printf("%s%s%s/%s\n",
 			    ((display_pax_flags) ?
-			     pax_short_flags(PAX_FLAGS(elf)) : ""),
+			     pax_short_hf_flags(PAX_FLAGS(elf)) : ""),
 			    ((display_pax_flags) ? " " : "")
 			    , path, dentry->d_name);
 

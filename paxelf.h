@@ -39,18 +39,24 @@ typedef struct {
 	Elf_Shdr *shdr;
 	Elf_Dyn *dyn;
 	char *data;
-	int textrel;
 	int len;
 	int fd;
 } elfobj;
 
 /* prototypes */
-extern char *pax_short_flags(unsigned long flags);
+extern char *pax_short_hf_flags(unsigned long flags);
+extern char *pax_short_pf_flags(unsigned long flags);
 extern int check_elf_header(Elf_Ehdr const *const ehdr);
 extern elfobj *readelf(char *filename);
+extern void unreadelf(elfobj *elf);
 extern const char *get_elfetype(int type);
+extern const char *get_elfptype(int type);
+extern const char *get_elfdtype(int type);
+extern const char *elf_getsecname(elfobj *elf, Elf_Shdr *shdr);
+extern Elf_Shdr *elf_findsecbyname(elfobj *elf, const char *name);
 
-#define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
+//#define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
+#define IS_ELF(elf) (elf->ehdr->e_ident[EI_CLASS] == ELF_CLASS)
 #define IS_ELF_TYPE(elf, type) ((elf->ehdr->e_type == type) && IS_ELF(elf))
 #define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
 #define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.8 2005/03/25 21:50:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.9 2005/03/29 23:37:03 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanelf.c,v 1.8 2005/03/25 21:50:20 vapier Exp $";
+    "$Id: scanelf.c,v 1.9 2005/03/29 23:37:03 vapier Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -52,7 +52,7 @@ void scanelf_file(char *filename)
       if (!check_elf_header(elf->ehdr))
 	 if (IS_ELF(elf))
 	    printf("%s %s %s\n",
-		   pax_short_flags(PAX_FLAGS(elf)),
+		   pax_short_hf_flags(PAX_FLAGS(elf)),
 		   get_elfetype(elf->ehdr->e_type), filename);
 
       if (elf != NULL) {

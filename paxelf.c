@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.5 2005/03/25 21:50:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.6 2005/03/29 23:33:05 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -37,11 +37,25 @@
 
 #include "paxelf.h"
 
+/* Setup a bunch of helper functions to translate
+ * binary defines into readable strings.
+ */
 #define QUERY(n) { #n, n }
-static struct elf_etypes {
+typedef struct {
 	const char *str;
 	int value;
-} elf_etypes[] = {
+} pairtype;
+static inline const char *find_pairtype(pairtype *pt, int type)
+{
+	int i;
+	for (i = 0; pt[i].str; ++i)
+		if (type == pt[i].value)
+			return pt[i].str;
+	return "UNKNOWN TYPE";
+}
+
+/* translate elf ET_ defines */
+static pairtype elf_etypes[] = {
 	QUERY(ET_NONE),
 	QUERY(ET_REL),
 	QUERY(ET_EXEC),
@@ -51,51 +65,123 @@ static struct elf_etypes {
 	QUERY(ET_LOOS),
 	QUERY(ET_HIOS),
 	QUERY(ET_LOPROC),
-	QUERY(ET_HIPROC)
+	QUERY(ET_HIPROC),
+	{ 0, 0 }
 };
+const char *get_elfetype(int type)
+{
+	return find_pairtype(elf_etypes, type);
+}
+
+/* translate elf PT_ defines */
+static pairtype elf_ptypes[] = {
+	QUERY(PT_DYNAMIC),
+	QUERY(PT_GNU_HEAP),
+	QUERY(PT_GNU_RELRO),
+	QUERY(PT_GNU_STACK),
+	QUERY(PT_INTERP),
+	QUERY(PT_LOAD),
+	QUERY(PT_NOTE),
+	QUERY(PT_PAX_FLAGS),
+	{ 0, 0 }
+};
+const char *get_elfptype(int type)
+{
+	return find_pairtype(elf_ptypes, type);
+}
+
+/* translate elf PT_ defines */
+static pairtype elf_dtypes[] = {
+	QUERY(DT_NULL),
+	QUERY(DT_NEEDED),
+	QUERY(DT_PLTRELSZ),
+	QUERY(DT_PLTGOT),
+	QUERY(DT_HASH),
+	QUERY(DT_STRTAB),
+	QUERY(DT_SYMTAB),
+	QUERY(DT_RELA),
+	QUERY(DT_RELASZ),
+	QUERY(DT_RELAENT),
+	QUERY(DT_STRSZ),
+	QUERY(DT_SYMENT),
+	QUERY(DT_INIT),
+	QUERY(DT_FINI),
+	QUERY(DT_SONAME),
+	QUERY(DT_RPATH),
+	QUERY(DT_SYMBOLIC),
+	QUERY(DT_REL),
+	QUERY(DT_RELSZ),
+	QUERY(DT_RELENT),
+	QUERY(DT_PLTREL),
+	QUERY(DT_DEBUG),
+	QUERY(DT_TEXTREL),
+	QUERY(DT_JMPREL),
+	QUERY(DT_BIND_NOW),
+	QUERY(DT_INIT_ARRAY),
+	QUERY(DT_FINI_ARRAY),
+	QUERY(DT_INIT_ARRAYSZ),
+	QUERY(DT_FINI_ARRAYSZ),
+	QUERY(DT_RUNPATH),
+	QUERY(DT_FLAGS),
+	QUERY(DT_ENCODING),
+	QUERY(DT_PREINIT_ARRAY),
+	QUERY(DT_PREINIT_ARRAYSZ),
+	QUERY(DT_NUM),
+	{ 0, 0 }
+};
+const char *get_elfdtype(int type)
+{
+	return find_pairtype(elf_dtypes, type);
+}
 
 /* Read an ELF into memory */
 elfobj *readelf(char *filename)
 {
-   struct stat st;
-   elfobj *elf;
-   int fd;
+	struct stat st;
+	int fd;
+	elfobj *elf;
 
-   if (stat(filename, &st) == -1)
-      return NULL;
+	if (stat(filename, &st) == -1)
+		return NULL;
 
-   if ((fd = open(filename, O_RDONLY)) == -1)
-      return NULL;
+	if ((fd = open(filename, O_RDONLY)) == -1)
+		return NULL;
 
-   if (st.st_size <= 0)
-      goto close_fd_and_return;
+	if (st.st_size <= 0)
+		goto close_fd_and_return;
 
-   elf = NULL;
+	elf = (elfobj*)malloc(sizeof(elfobj));
+	if (elf == NULL)
+		goto close_fd_and_return;
 
-   (elf = (void *) malloc(sizeof(elfobj)));
-   if (elf == NULL)
-      goto close_fd_and_return;
+	elf->len = st.st_size;
+	elf->data = (char *) mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
 
-   elf->len = st.st_size;
-   elf->data = (char *) mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (elf->data == (char *) MAP_FAILED) {
+		free(elf);
+		goto close_fd_and_return;
+	}
 
-   if (elf->data == (char *) MAP_FAILED) {
-      free(elf);
-      goto close_fd_and_return;
-   }
+	elf->ehdr = (Elf_Ehdr *) elf->data;
+	elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
+	elf->shdr = (Elf_Shdr *) (elf->data + elf->ehdr->e_shoff);
 
-   elf->ehdr = (void *) elf->data;
-   elf->phdr = (void *) (elf->data + elf->ehdr->e_phoff);
-   elf->shdr = (void *) (elf->data + elf->ehdr->e_shoff);
+	/* elf->fd = fd; */
+	/* do we want to keep the fd open? */
+	close(fd);
+	return elf;
 
-   /* elf->fd = fd; */
-   /* do we want to keep the fd open? */
-   close(fd);
-   return elf;
+close_fd_and_return:
+	close(fd);
+	return NULL;
+}
 
- close_fd_and_return:
-   close(fd);
-   return NULL;
+/* undo the readelf() stuff */
+void unreadelf(elfobj *elf)
+{
+	munmap(elf->data, elf->len);
+	memset(elf, 0, sizeof(elfobj));
+	free(elf);
 }
 
 /* check the elf header */
@@ -110,26 +196,76 @@ int check_elf_header(Elf_Ehdr const *const ehdr)
    return 0;
 }
 
-char *pax_short_flags(unsigned long flags)
+/* the display logic is:
+ * lower case: explicitly disabled
+ * upper case: explicitly enabled
+ * - : default */
+char *pax_short_hf_flags(unsigned long flags)
 {
-   static char buffer[7];
+	static char buffer[7];
 
-   buffer[0] = (flags & HF_PAX_PAGEEXEC ? 'p' : 'P');
-   buffer[1] = (flags & HF_PAX_EMUTRAMP ? 'E' : 'e');
-   buffer[2] = (flags & HF_PAX_MPROTECT ? 'm' : 'M');
-   buffer[3] = (flags & HF_PAX_RANDMMAP ? 'r' : 'R');
-   buffer[4] = (flags & HF_PAX_RANDEXEC ? 'X' : 'x');
-   buffer[5] = (flags & HF_PAX_SEGMEXEC ? 's' : 'S');
-   buffer[6] = 0;
+	buffer[0] = (flags & HF_PAX_PAGEEXEC ? 'p' : 'P');
+	buffer[1] = (flags & HF_PAX_EMUTRAMP ? 'E' : 'e');
+	buffer[2] = (flags & HF_PAX_MPROTECT ? 'm' : 'M');
+	buffer[3] = (flags & HF_PAX_RANDMMAP ? 'r' : 'R');
+	buffer[4] = (flags & HF_PAX_RANDEXEC ? 'X' : 'x');
+	buffer[5] = (flags & HF_PAX_SEGMEXEC ? 's' : 'S');
+	buffer[6] = 0;
 
-   return buffer;
+	return buffer;
+}
+char *pax_short_pf_flags(unsigned long flags)
+{
+	static char buffer[13];
+
+	buffer[0] = (flags & PF_PAGEEXEC ? 'P' : '-');
+	buffer[1] = (flags & PF_NOPAGEEXEC ? 'p' : '-');
+	buffer[2] = (flags & PF_SEGMEXEC ? 'S' : '-');
+	buffer[3] = (flags & PF_NOSEGMEXEC ? 's' : '-');
+	buffer[4] = (flags & PF_MPROTECT ? 'M' : '-');
+	buffer[5] = (flags & PF_NOMPROTECT ? 'm' : '-');
+	buffer[6] = (flags & PF_RANDEXEC ? 'X' : '-');
+	buffer[7] = (flags & PF_NORANDEXEC ? 'x' : '-');
+	buffer[8] = (flags & PF_EMUTRAMP ? 'E' : '-');
+	buffer[9] = (flags & PF_NOEMUTRAMP ? 'e' : '-');
+	buffer[10] = (flags & PF_RANDMMAP ? 'R' : '-');
+	buffer[11] = (flags & PF_NORANDMMAP ? 'r' : '-');
+	buffer[12] = 0;
+
+	return buffer;
 }
 
-const char *get_elfetype(int type)
+const char *elf_getsecname(elfobj *elf, Elf_Shdr *shdr)
 {
-   int i;
-   for (i = 0; i < sizeof(elf_etypes) / sizeof(elf_etypes[0]); i++)
-      if (type == elf_etypes[i].value)
-	 return elf_etypes[i].str;
-   return "UNKNOWN ELF TYPE";
+	Elf_Shdr *strtbl = &elf->shdr[elf->ehdr->e_shstrndx];
+	return (char *) (elf->data + strtbl->sh_offset + shdr->sh_name);
 }
+
+Elf_Shdr *elf_findsecbyname(elfobj *elf, const char *name)
+{
+	Elf_Shdr *strtbl = &elf->shdr[elf->ehdr->e_shstrndx];
+	int i;
+	char *shdr_name;
+	for (i = 0; i < elf->ehdr->e_shnum; ++i) {
+		shdr_name = (char *) (elf->data + strtbl->sh_offset + elf->shdr[i].sh_name);
+		if (!strcmp(shdr_name, name))
+			return &elf->shdr[i];
+	}
+	return NULL;
+}
+
+#if 0
+/* Helper func to locate a program header */
+static Elf_Phdr *loc_phdr(elfobj *elf, int type)
+{
+	Elf_Phdr *ret;
+
+	//for (i = 0; i < elf->ehdr->e_phnum; ++i) {
+	//	ret = elf->phdr[i];
+	for (ret = elf->phdr; ret->p_type != PT_NULL; ++ret)
+		if (ret->p_type == type)
+			return elf->data + ret->p_offset;
+
+	return NULL;
+}
+#endif
