@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.29 2005/04/05 04:25:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.30 2005/04/05 16:15:31 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.29 2005/04/05 04:25:54 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.30 2005/04/05 16:15:31 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -321,7 +321,10 @@ static void scanelf_ldpath()
 
 	scan_l = scan_ul = scan_ull = 0;
 
-	path = malloc(_POSIX_PATH_MAX);
+	if ((path = malloc(_POSIX_PATH_MAX)) == NULL) {
+		warn("Can not malloc() memory for ldpath scanning");
+		return;
+	}
 	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL)
 		if (*path == '/') {
 			if ((p = strrchr(path, '\r')) != NULL)
