@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.2 2003/10/24 22:29:06 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.3 2003/10/26 23:42:10 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -19,13 +19,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
- ********************************************************************
- *
- * This program was written for the hcc suite by (solar|pappy)@g.o.
- * visit http://www.gentoo.org/proj/en/hardened/etdyn-ssp.xml for more
- * information on the Gentoo Hardened gcc suite
- * Also of interest is the pax site http://pageexec.virtualave.net/
- * but you should know about that already.
  */
 
 #include <stdio.h>
@@ -39,9 +32,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.2 2003/10/24 22:29:06 solar Exp $";
-
-int display_pax_flags = 1;
+static const char *rcsid = "$Id: scanelf.c,v 1.3 2003/10/26 23:42:10 solar Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -86,8 +77,8 @@ void scanelf(const char *path)
 /* display usage and exit */
 int usage(char **argv)
 {
-   printf
-       ("Usage: %s [options] dir1 dir2 dirN...\n",
+   fprintf(stderr,
+       "Usage: %s [options] dir1 dir2 dirN...\n",
 	(*argv != NULL) ? argv[0] : __FILE__ "\b\b");
    exit(EXIT_FAILURE);
 }
@@ -98,7 +89,7 @@ void showopt(int c, char *data)
    int i;
    for (i = 0; long_options[i].name; i++)
       if (long_options[i].val == c)
-	 printf("  -%c, --%s\t: %s\n", c, long_options[i].name, data);
+	 fprintf(stderr, "  -%c, --%s\t: %s\n", c, long_options[i].name, data);
 }
 
 /* parse command line arguments and preform needed actions */
@@ -120,9 +111,9 @@ void parseargs(int argc, char **argv)
 	    showopt('v', "Print version and exit.");
 	    exit(EXIT_SUCCESS);
 	 case 'v':
-	    printf("%s compiled %s\n", __FILE__, __DATE__);
-	    printf
-		("%s written for Gentoo Linux <solar@gentoo.org>\n\t%s\n",
+	    fprintf(stderr, "%s compiled %s\n", __FILE__, __DATE__);
+	    fprintf(stderr,
+		"%s written for Gentoo Linux <solar@gentoo.org>\n\t%s\n",
 		 (*argv != NULL) ? argv[0] : __FILE__ "\b\b", rcsid);
 	    exit(EXIT_SUCCESS);
 	 case 'l':

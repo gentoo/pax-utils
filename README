@@ -2,7 +2,7 @@ pax-utils is a small set of various PaX related utilities for ELF32,
 ELF64 binaries thats mainly used by the hardened-gcc suite on Gentoo.
 
 == scanexec ==
-scanexec [options] dir1 dir2 dirN...
+Usage: scanexec [options] dir1 dir2 dirN...
   -p, --path	: Scan all directories in PATH environment.
   -x, --pax	: Display PaX flags when scanning.
   -h, --help	: Print this help and exit.
@@ -14,5 +14,17 @@ program interpreter.
 
 isetdyn <filename>
 
+== scanelf ==
+Usage: scanelf [options] dir1 dir2 dirN...
+  -p, --path	: Scan all directories in PATH environment.
+  -l, --ldpath	: Scan all directories in /etc/ld.so.conf
+  -h, --help	: Print this help and exit.
+  -v, --version	: Print version and exit.
+
+
 == INSTALL ==
 make install
+
+
+PaX Homepage:
+http://pageexec.virtualave.net/
