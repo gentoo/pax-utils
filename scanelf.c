@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.27 2005/04/05 01:44:08 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.28 2005/04/05 03:41:27 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#define __USE_GNU
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -34,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.27 2005/04/05 01:44:08 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.28 2005/04/05 03:41:27 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -211,11 +212,12 @@ static void scanelf_file(const char *filename)
 			printf("  -   ");
 	}
 
-	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
-		printf("%s\n", filename);
-
 	if (find_sym) {
 		void *symtab_void, *strtab_void;
+		char found_sym = 0;
+		char *versioned_symname = malloc(strlen(find_sym)+1);
+
+		sprintf(versioned_symname, "%s@", find_sym);
 		symtab_void = elf_findsecbyname(elf, ".symtab");
 		strtab_void = elf_findsecbyname(elf, ".strtab");
 
@@ -227,24 +229,32 @@ static void scanelf_file(const char *filename)
 		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
 		int cnt = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 		char *symname; \
-		if (be_verbose > 1) \
-			printf("%s: .symtab has %i entries\n", filename, cnt); \
 		for (i = 0; i < cnt; ++i) { \
 			if (sym->st_name) { \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
-				if (*find_sym == '*' || !strcmp(find_sym, symname)) \
-				printf("%s: %5lX %15s %s\n", \
-				       filename, \
-				       (long)sym->st_size, \
-				       (char *)get_elfstttype(sym->st_info & 0xF), \
-				       symname); \
+				if (*find_sym == '*') { \
+					printf("%s(%s) %5lX %15s %s\n", ((found_sym == 0) ? "\n\t" : "\t"), \
+						(char *) basename(filename), \
+						(long)sym->st_size, (char *) get_elfstttype(sym->st_info & 0xF), \
+                                      		symname); \
+						found_sym = 1; \
+				} \
+				if ((strcmp(find_sym, symname) == 0) || \
+					(strncmp(symname, versioned_symname, strlen(versioned_symname)) == 0)) \
+					found_sym++; \
 			} \
 			++sym; \
 		} }
 		FIND_SYM(32)
 		FIND_SYM(64)
 		}
+		free(versioned_symname);
+		if (*find_sym != '*')
+			printf(" %s ", (found_sym == 0) ? "-" : find_sym);
 	}
+
+	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
+		printf("%s\n", filename);
 
 	unreadelf(elf);
 }
