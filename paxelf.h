@@ -35,6 +35,7 @@ struct Elf_File {
    Elf_Dyn *dyn;
    char *data;
    int len;
+   int fd;
 };
 
 typedef struct Elf_File elfobj;
@@ -61,5 +62,18 @@ const char *get_elfetype(int type);
 #define EI_PAX			14	/* Index in e_ident[] where to read flags */
 
 #define PAX_FLAGS(elf) ((elf->ehdr->e_ident[EI_PAX + 1] << 8) + (elf->ehdr->e_ident[EI_PAX]))
+
+/* in case we are not defined by proper system headers 
+ * we check for the PT_GNU_STACK|HEAP 
+ */
+
+#ifndef PT_GNU_STACK
+#define PT_GNU_STACK	0x6474e551
+#endif
+
+/* not added to the toolchain yet (glibc-2.3.3_pre20031222) */
+#ifndef PT_GNU_HEAP
+#define PT_GNU_HEAP	0x6474e552
+#endif
 
 #endif				/* _PAX_ELF_H */

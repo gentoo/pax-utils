@@ -1,7 +1,7 @@
 /*
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/isetdyn.c,v 1.5 2003/11/01 08:58:23 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/isetdyn.c,v 1.6 2004/01/10 08:44:57 solar Exp $
  *
  * On Gentoo Linux we need a simple way to detect if an ELF ehdr is of
  * type ET_DYN, we have a PT_INTERP phdr and also contains a symbol for main()
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
    elfobj *elf = NULL;
    void *handle = NULL;
    int exit_val = 1;
-
+   void *sym;
    if (argc < 2) {
       fprintf(stderr, "Usage: %s <filename>\n",
 	      (*argv == NULL) ? "isetdyn" : *argv);
@@ -66,16 +66,22 @@ int main(int argc, char **argv)
    if ((elf = readelf(argv[1])) == NULL)
       return exit_val;
 
-   if (!check_elf_header(elf->ehdr))
-      if (IS_ELF_ET_DYN(elf))
-	 for (i = 0; i < elf->ehdr->e_phnum; i++)
-	    if (elf->phdr[i].p_type == PT_INTERP)
-	       if ((handle = dlopen(argv[1], RTLD_NOW)) != NULL)
-		  if ((dlsym(handle, "main")) != 0x0) {
+   if (!check_elf_header(elf->ehdr)) {
+      if (IS_ELF_ET_DYN(elf)) {
+	 for (i = 0; i < elf->ehdr->e_phnum; i++) {
+	    if (elf->phdr[i].p_type == PT_INTERP) {
+	       if ((handle = dlopen(argv[1], RTLD_NOW|RTLD_GLOBAL)) != NULL) {
+		  if ((sym = (void *) dlsym(handle, "main")) != 0x0) {
 		     puts(argv[1]);
 		     exit_val = 0;
+		  } else {
+		     printf("no main :%p\n", sym);
 		  }
-
+	       }
+	    }
+	 }
+      }
+   }
    if (handle != NULL)
       dlclose(handle);
 
