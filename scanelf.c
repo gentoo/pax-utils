@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.10 2005/03/30 23:43:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.11 2005/03/31 00:03:25 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.10 2005/03/30 23:43:30 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.11 2005/03/31 00:03:25 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -176,6 +176,7 @@ static void scanelf_dir(const char *path)
 	/* make sure path exists */
 	if (lstat(path, &st) == -1)
 		return;
+
 	/* ok, if it isn't a directory, assume we can open it */
 	if (!S_ISDIR(st.st_mode)) {
 		scanelf_file(path);
@@ -187,6 +188,7 @@ static void scanelf_dir(const char *path)
 		warnf("could not opendir %s: %s", path, strerror(errno));
 		return;
 	}
+
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
 			continue;
@@ -310,7 +312,7 @@ static void parseargs(int argc, char *argv[])
 
 		case 'V':                        /* version info */
 			printf("%s compiled %s\n"
-			       "%s written for Gentoo Linux by <solar@gentoo.org>\n"
+			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n"
 			       "%s\n",
 			       __FILE__, __DATE__, argv0, rcsid);
 			exit(EXIT_SUCCESS);
