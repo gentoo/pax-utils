@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.17 2005/04/02 00:11:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.18 2005/04/02 03:25:38 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,11 +33,11 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.17 2005/04/02 00:11:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.18 2005/04/02 03:25:38 vapier Exp $";
 
 
 /* helper functions for showing errors */
-#define argv0 "scanelf\0" /*((*argv != NULL) ? argv[0] : __FILE__ "\b\b")*/
+#define argv0 "scanelf" /*((*argv != NULL) ? argv[0] : __FILE__ "\b\b")*/
 #define warn(fmt, args...) \
 	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
 #define warnf(fmt, args...) warn("%s(): " fmt, __FUNCTION__, ## args)
