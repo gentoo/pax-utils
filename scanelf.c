@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.14 2005/04/01 19:56:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.15 2005/04/01 20:08:44 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.14 2005/04/01 19:56:34 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.15 2005/04/01 20:08:44 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -84,15 +84,15 @@ static void scanelf_file(const char *filename)
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
-		if (be_verbose > 1) printf("File '%s' is not an ELF\n", filename);
+		if (be_verbose > 1) printf("%s: not an ELF\n", filename);
 		return;
 	}
 	if (check_elf_header(elf->ehdr) || !IS_ELF(elf)) {
-		if (be_verbose > 1) printf("Cannot handle ELF '%s' :(\n", filename);
+		if (be_verbose > 1) printf("%s: cannot handle ELF :(\n", filename);
 		goto bail;
 	}
 
-	if (be_verbose) printf("Scanning file %s\n", filename);
+	if (be_verbose) printf("%s: scanning file\n", filename);
 
 	/* show the header */
 	if (!be_quiet && show_header) {
@@ -208,7 +208,7 @@ static void scanelf_dir(const char *path)
 		warnf("could not opendir %s: %s", path, strerror(errno));
 		return;
 	}
-	if (be_verbose) printf("Scanning dir %s\n", path);
+	if (be_verbose) printf("%s: scanning dir\n", path);
 
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
