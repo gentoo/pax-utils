@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.8 2005/03/30 23:50:57 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.9 2005/04/01 17:00:24 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -171,11 +171,14 @@ elfobj *readelf(const char *filename)
 		goto free_elf_and_return;
 
 	elf->ehdr = (Elf_Ehdr *) elf->data;
-	if (!IS_ELF_BUFFER(elf->ehdr->e_ident)) /* make sure we have an elf */
+	if (!IS_ELF_BUFFER(elf->ehdr->e_ident)) { /* make sure we have an elf */
+		munmap(elf->data, elf->len);
 		goto free_elf_and_return;
-	if (!ABI_OK(elf->ehdr->e_ident)) /* only work with certain ABI's for now */
+	}
+	if (!ABI_OK(elf->ehdr->e_ident)) { /* only work with certain ABI's for now */
+		munmap(elf->data, elf->len);
 		goto free_elf_and_return;
-
+	}
 	if (elf->ehdr->e_phoff)
 		elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
 	if (elf->ehdr->e_shoff)
