@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.9 2005/04/05 00:51:33 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.10 2005/04/06 13:41:40 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -72,6 +72,8 @@ static char *get_proc_name(pid_t pid)
 	if ((fp = fopen(buf, "r")) == NULL)
 		return NULL;
 
+	memset(&buf, 0, sizeof(buf));
+
 	fscanf(fp, "%*d %s.16", buf);
 	if (*buf) {
 		buf[strlen(buf) - 1] = '\0';
@@ -97,7 +99,7 @@ static struct passwd *get_proc_uid(pid_t pid)
 static char *get_proc_status(pid_t pid, char *name)
 {
 	FILE *fp;
-	int len;
+	size_t len;
 	static char s[PATH_MAX];
 
 	snprintf(s, sizeof(s), PROC_DIR "/%d/status", (int) pid);
@@ -124,7 +126,9 @@ static char *get_pid_attr(int pid)
 	char *p;
 	char s[32];
 	static char buf[BUFSIZ];
+
 	memset(buf, 0, sizeof(buf));
+
 	snprintf(s, sizeof(s), PROC_DIR "/%d/attr/current", pid);
 	if ((fp = fopen(s, "r")) == NULL)
 		return NULL;
