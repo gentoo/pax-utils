@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.11 2005/04/03 18:03:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.12 2005/04/03 18:18:03 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -141,14 +141,12 @@ const char *get_elfdtype(int type)
 	 buff[EI_MAG2] == ELFMAG2 && \
 	 buff[EI_MAG3] == ELFMAG3)
 #define DO_WE_LIKE_ELF(buff) \
-	(buff[EI_CLASS] == ELF_CLASS || \
-	 buff[EI_DATA] == ELF_DATA || \
+	(buff[EI_CLASS] == ELF_CLASS && \
+	 buff[EI_DATA] == ELF_DATA && \
 	 buff[EI_VERSION] == EV_CURRENT)
 	/* add these checks when we can handle non-native
-	 buff[EI_DATA] == ELFDATA2LSB || \
-	 buff[EI_DATA] == ELFDATA2MSB || \
-	 buff[EI_CLASS] == ELFCLASS32 || \
-	 buff[EI_CLASS] == ELFCLASS64 || \
+	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
+	 (buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	*/
 #define ABI_OK(buff) \
 	(buff[EI_OSABI] == ELFOSABI_NONE || \
@@ -180,14 +178,15 @@ elfobj *readelf(const char *filename)
 	if (elf->data == (char *) MAP_FAILED)
 		goto free_elf_and_return;
 
-	elf->ehdr = (Elf_Ehdr *) elf->data;
-	if (!IS_ELF_BUFFER(elf->ehdr->e_ident)) /* make sure we have an elf */
+	/* use elf->data since we're not sure what kind of bit/endian this is */
+	if (!IS_ELF_BUFFER(elf->data)) /* make sure we have an elf */
 		goto unmap_data_and_return;
-	if (!DO_WE_LIKE_ELF(elf->ehdr->e_ident)) /* check class and stuff */
+	if (!DO_WE_LIKE_ELF(elf->data)) /* check class and stuff */
 		goto unmap_data_and_return;
-	if (!ABI_OK(elf->ehdr->e_ident)) /* only work with certain ABI's for now */
+	if (!ABI_OK(elf->data)) /* only work with certain ABI's for now */
 		goto unmap_data_and_return;
 
+	elf->ehdr = (Elf_Ehdr *) elf->data;
 	if (elf->ehdr->e_phoff)
 		elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
 	if (elf->ehdr->e_shoff)
