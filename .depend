@@ -1,6 +1,4 @@
-scanexec.o: scanexec.c paxelf.h
 scanelf.o: scanelf.c paxelf.h
-scanrpath.o: scanrpath.c paxelf.h
 scan4sym.o: scan4sym.c paxelf.h
 pspax.o: pspax.c paxelf.h
 paxelf.o: paxelf.c paxelf.h

@@ -1,19 +1,23 @@
-pax-utils is a small set of various PaX related utilities for ELF32,
+pax-utils is a small set of various PaX related utilities for ELF32, 
 ELF64 binaries.
 
-== scanexec ==
-Usage: scanexec [options] dir1 dir2 dirN...
-  -p, --path	: Scan all directories in PATH environment.
-  -x, --pax	: Display PaX flags when scanning.
-  -h, --help	: Print this help and exit.
-  -v, --version	: Print version and exit.
-
 == scanelf ==
-Usage: scanelf [options] dir1 dir2 dirN...
-  -p, --path	: Scan all directories in PATH environment.
-  -l, --ldpath	: Scan all directories in /etc/ld.so.conf
-  -h, --help	: Print this help and exit.
-  -v, --version	: Print version and exit.
+Usage: scanelf [options] <dir1> [dir2 dirN ...]
+
+Options:
+  -p, --path        × Scan all directories in PATH environment
+  -l, --ldpath      × Scan all directories in /etc/ld.so.conf
+  -R, --recursive   × Scan directories recursively
+
+  -x, --pax         × Print PaX markings
+  -s, --stack       × Print GNU_STACK/RELRO markings
+  -t, --textrel     × Print TEXTREL information
+  -r, --rpath       × Print RPATH information
+  -a, --all         × Print all scanned info
+  -q, --quiet       × Only output 'bad' things
+
+  -h, --help        × Print this help and exit
+  -V, --version     × Print version and exit
 
 == pspax ==
 Usage: pspax
