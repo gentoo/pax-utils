@@ -16,71 +16,6 @@
 
 #include "paxelf.h"
 
-/* Read an ELF into memory */
-elfobj *readelf(char *filename)
-{
-   int fd;
-   struct stat st;
-   elfobj *elf;
-
-   if (stat(filename, &st) == -1)
-      return NULL;
-
-   if ((fd = open(filename, O_RDONLY)) == -1)
-      return NULL;
-
-   if (st.st_size <= 0)
-      goto close_fd_and_return;
-
-   elf = NULL;
-
-   (elf = (void *) malloc(sizeof(elfobj)));
-   if (elf == NULL)
-      goto close_fd_and_return;
-
-   elf->len = st.st_size;
-#ifdef PTTOOL_MMAP_READONLY
-   elf->data = (char *) mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
-#else
-   elf->data =
-       (char *) mmap(0, elf->len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd,
-		     0);
-#endif
-   if (elf->data == (char *) MAP_FAILED) {
-      perror("mmap: ");
-      free(elf);
-      goto close_fd_and_return;
-   }
-
-   elf->ehdr = (void *) elf->data;
-   elf->phdr = (void *) (elf->data + elf->ehdr->e_phoff);
-   elf->shdr = (void *) (elf->data + elf->ehdr->e_shoff);
-
-   /* argh!@#$% code not using bfd is a PITA to find on google. */
-   /* where are you Dyn */
-//   elf->dyn = (void *) (elf->data + elf->ehdr->et_dyn);
-
-   /* keep the fd open */
-   elf->fd = fd;
-   return elf;
-
- close_fd_and_return:
-   close(fd);
-   return NULL;
-}
-
-/* check the elf header */
-int check_elf_header(Elf_Ehdr const *const ehdr)
-{
-   if (!ehdr || strncmp((void *) ehdr, ELFMAG, SELFMAG) != 0 ||
-       (ehdr->e_ident[EI_CLASS] != ELFCLASS32
-	&& ehdr->e_ident[EI_CLASS] != ELFCLASS64)
-       || ehdr->e_ident[EI_VERSION] != EV_CURRENT) {
-      return 1;
-   }
-   return 0;
-}
-
 char *pax_short_pt_flags(unsigned long flags)
 {
    static char buffer[13];
@@ -201,12 +136,19 @@ void scan_program_header(const char *filename)
 
 }
 
-int main(int argc, char **argv)
+void usage(int status)
 {
-   int i;
-   if (argc > 1) {
-      for (i = 1; i != argc; i++)
-	 scan_program_header(argv[i]);
-   }
-   return 0;
+	printf("Usage: pttool <file1> [file2 file3 ...]\n");
+	exit(status);
+}
+
+int main(int argc, char *argv[])
+{
+	int i;
+	if (argc <= 1)
+		usage(EXIT_FAILURE);
+
+	for (i=1; argv[i]; ++i)
+		scan_program_header(argv[i]);
+	return 0;
 }

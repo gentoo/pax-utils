@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.12 2005/03/25 21:50:20 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.13 2005/03/29 06:15:24 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,8 +17,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 # MA 02111-1307, USA.
 ####################################################################
-
-VERSION	= 0.0.5
 
 ####################################################
 CFLAGS	:= -Wall -O2
@@ -52,9 +50,6 @@ scan4sym: paxelf.o scan4sym.o
 
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
-
-pttool: pttool.o
-	$(CC) -o $@ $(CFLAGS) $@.o $(LDFLAGS)
 
 clean:
 	-rm -f $(OBJS) $(TARGETS)
