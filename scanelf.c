@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.16 2005/04/01 20:44:11 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.17 2005/04/02 00:11:01 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.16 2005/04/01 20:44:11 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.17 2005/04/02 00:11:01 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -236,11 +236,14 @@ static void scanelf_dir(const char *path)
 /* scan /etc/ld.so.conf for paths */
 static void scanelf_ldpath()
 {
+	char scan_l, scan_ul, scan_ull;
 	char *path, *p;
 	FILE *fp;
 
 	if ((fp = fopen("/etc/ld.so.conf", "r")) == NULL)
 		err("Unable to open ld.so.conf: %s", strerror(errno));
+
+	scan_l = scan_ul = scan_ull = 0;
 
 	path = malloc(_POSIX_PATH_MAX);
 	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL)
@@ -249,9 +252,16 @@ static void scanelf_ldpath()
 				*p = 0;
 			if ((p = strrchr(path, '\n')) != NULL)
 				*p = 0;
+			if (!scan_l   && !strcmp(path, "/lib")) scan_l = 1;
+			if (!scan_ul  && !strcmp(path, "/usr/lib")) scan_ul = 1;
+			if (!scan_ull && !strcmp(path, "/usr/local/lib")) scan_ull = 1;
 			scanelf_dir(path);
 		}
 	free(path);
+
+	if (!scan_l)   scanelf_dir("/lib");
+	if (!scan_ul)  scanelf_dir("/usr/lib");
+	if (!scan_ull) scanelf_dir("/usr/local/lib");
 
 	fclose(fp);
 }
@@ -272,6 +282,7 @@ static void scanelf_envpath()
 		scanelf_dir(p + 1);
 		*p = 0;
 	}
+
 	free(path);
 }
 
