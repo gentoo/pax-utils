@@ -30,7 +30,6 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-// #include <dlfcn.h>
 
 #ifdef __linux__
 #include <elf.h>
@@ -104,8 +103,8 @@ extern char *basename();
 char *get_proc_name(pid_t pid)
 {
    FILE *fp;
-   static char buf[PATH_MAX];
-
+   char buf[PATH_MAX];
+   static char *p = "-----";
    memset(&buf, 0, sizeof(buf));
 
    snprintf(buf, sizeof(buf), "/proc/%d/stat", (int) pid);
@@ -113,17 +112,18 @@ char *get_proc_name(pid_t pid)
    fp = fopen(buf, "r");
 
    if (fp == NULL)
-      return "-----";
+      return p;
 
    fscanf(fp, "%*d %s.16", buf);
 
    if (*buf) {
       buf[strlen(buf) - 1] = '\0';
       buf[16] = 0;
-      strcpy(buf, &buf[1]);
+      p = buf;
+      *p++;
    }
    fclose(fp);
-   return buf;
+   return p;
 }
 
 struct passwd *get_proc_uid(pid_t pid)
