@@ -14,103 +14,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <sys/mman.h>
-#ifdef __linux__
-#include <elf.h>
-#include <asm/elf.h>
-#else
-#include <sys/elf_common.h>
-#endif
-
-
-#ifndef ELF_CLASS
-#error "UNABLE TO DETECT ELF_CLASS"
-#endif
-
-#if (ELF_CLASS == ELFCLASS32)
-#define Elf_Ehdr        Elf32_Ehdr
-#define Elf_Phdr        Elf32_Phdr
-#define Elf_Shdr        Elf32_Shdr
-#define Elf_Dyn         Elf32_Dyn
-#endif
-
-#if (ELF_CLASS == ELFCLASS64)
-#define Elf_Ehdr        Elf64_Ehdr
-#define Elf_Phdr        Elf64_Phdr
-#define Elf_Shdr        Elf64_Shdr
-#define Elf_Dyn         Elf64_Dyn
-#endif
-
-/* I need a way to deal with 32/64 bit files at the same time using the same struct */
-
-struct Elf_File {
-   Elf_Ehdr *ehdr;
-   Elf_Phdr *phdr;
-   Elf_Shdr *shdr;
-   Elf_Dyn *dyn;
-   char *data;
-   int textrel;
-   int len;
-   int fd;
-};
-
-typedef struct Elf_File elfobj;
-
-#define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
-#define IS_ELF_TYPE(elf, type) ((elf->ehdr->e_type == type) && IS_ELF(elf))
-#define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
-#define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)
-
-/* PaX flags (to be read in elfhdr.e_flags) */
-#define HF_PAX_PAGEEXEC		1	/* 0: Paging based non-exec pages */
-#define HF_PAX_EMUTRAMP		2	/* 0: Emulate trampolines */
-#define HF_PAX_MPROTECT		4	/* 0: Restrict mprotect() */
-#define HF_PAX_RANDMMAP		8	/* 0: Randomize mmap() base */
-#define HF_PAX_RANDEXEC		16	/* 1: Randomize ET_EXEC base */
-#define HF_PAX_SEGMEXEC		32	/* 0: Segmentation based non-exec pages */
-
-#define EI_PAX			14	/* Index in e_ident[] where to read flags */
-
-#define PAX_EI_FLAGS(elf) ((elf->ehdr->e_ident[EI_PAX + 1] << 8) + (elf->ehdr->e_ident[EI_PAX]))
-
-/* in case we are not defined by proper system headers 
- * we check for the PT_GNU_STACK
- */
-#ifndef PT_GNU_STACK
-#define PT_GNU_STACK	0x6474e551
-#endif
-
-/* not added to the toolchain yet 2.14.90.0.8 (should come in by way of .9) */
-#ifndef PT_GNU_RELRO
-#define PT_GNU_RELRO	0x6474e552
-#endif
-
-/* 
- * propably will never be official added to the toolchain.
- * But none the less we should try to get 0x65041580 reserved 
- */
-
-#ifndef PT_PAX_FLAGS
-
-#define PT_PAX_FLAGS	0x65041580
-
-#define PF_PAGEEXEC     (1 << 4)	/* Enable  PAGEEXEC */
-#define PF_NOPAGEEXEC   (1 << 5)	/* Disable PAGEEXEC */
-#define PF_SEGMEXEC     (1 << 6)	/* Enable  SEGMEXEC */
-#define PF_NOSEGMEXEC   (1 << 7)	/* Disable SEGMEXEC */
-#define PF_MPROTECT     (1 << 8)	/* Enable  MPROTECT */
-#define PF_NOMPROTECT   (1 << 9)	/* Disable MPROTECT */
-#define PF_RANDEXEC     (1 << 10)	/* Enable  RANDEXEC */
-#define PF_NORANDEXEC   (1 << 11)	/* Disable RANDEXEC */
-#define PF_EMUTRAMP     (1 << 12)	/* Enable  EMUTRAMP */
-#define PF_NOEMUTRAMP	(1 << 13)	/* Disable EMUTRAMP */
-
-#endif				/* PT_PAX_ */
-
-#define PF_RANDMMAP     (1 << 14)	/* Enable  RANDMMAP */
-#define PF_NORANDMMAP   (1 << 15)	/* Disable RANDMMAP */
-
-#define QUERY(n) { #n, n }
+#include "paxelf.h"
 
 /* Read an ELF into memory */
 elfobj *readelf(char *filename)
@@ -272,7 +176,7 @@ void scan_program_header(const char *filename)
 			       (elf->phdr[i].p_flags & PF_X ? 'X' : '-'),
 			       (elf->phdr[i].p_type ==
 				PT_GNU_STACK ? "GNU_STACK" : "GNU_RELRO"),
-			       pax_short_ei_flags(PAX_EI_FLAGS(elf)),
+			       pax_short_ei_flags(PAX_FLAGS(elf)),
 			       filename);
 			if (elf->phdr[i].p_flags == (PF_W | PF_X))
 			   fprintf(stderr,

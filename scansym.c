@@ -1,8 +1,8 @@
 /*
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
- * Copyright 1999-2003 Gentoo Technologies, Inc.
+ * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scansym.c,v 1.1 2004/02/10 07:40:45 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scansym.c,v 1.2 2005/03/25 21:50:20 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scansym.c,v 1.1 2004/02/10 07:40:45 solar Exp $";
+static const char *rcsid = "$Id: scansym.c,v 1.2 2005/03/25 21:50:20 vapier Exp $";
 
 #define PARSE_FLAGS "hvlps:"
 static struct option const long_options[] = {

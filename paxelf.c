@@ -1,8 +1,8 @@
 /*
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
- * Copyright 1999-2003 Gentoo Technologies, Inc.
+ * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.5 2005/03/25 21:50:20 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@
  * This program was written for the hcc suite by (solar|pappy)@g.o.
  * visit http://www.gentoo.org/proj/en/hardened/etdyn-ssp.xml for more
  * information on the Gentoo Hardened gcc suite
- * Also of interest is the pax site http://pageexec.virtualave.net/
+ * Also of interest is the pax site http://pax.grsecurity.net/
  * but you should know about that already.
  */
 
@@ -38,21 +38,20 @@
 #include "paxelf.h"
 
 #define QUERY(n) { #n, n }
-
-struct elf_etypes {
-   const char *str;
-   int value;
+static struct elf_etypes {
+	const char *str;
+	int value;
 } elf_etypes[] = {
-   QUERY(ET_NONE),       
-   QUERY(ET_REL),
-   QUERY(ET_EXEC),       
-   QUERY(ET_DYN),
-   QUERY(ET_CORE),       
-   QUERY(ET_NUM),
-   QUERY(ET_LOOS),
-   QUERY(ET_HIOS),
-   QUERY(ET_LOPROC),
-   QUERY(ET_HIPROC)
+	QUERY(ET_NONE),
+	QUERY(ET_REL),
+	QUERY(ET_EXEC),
+	QUERY(ET_DYN),
+	QUERY(ET_CORE),
+	QUERY(ET_NUM),
+	QUERY(ET_LOOS),
+	QUERY(ET_HIOS),
+	QUERY(ET_LOPROC),
+	QUERY(ET_HIPROC)
 };
 
 /* Read an ELF into memory */
