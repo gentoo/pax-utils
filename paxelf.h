@@ -46,19 +46,19 @@ elfobj *readelf(char *filename);
 const char *get_elfetype(int type);
 
 #define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
-#define IS_ELF_TYPE(elf, type) ((elf->ehdr->e_type == type) && IS_ELF(elf))
+#define IS_ELF_TYPE(elf, type) (IS_ELF(elf) && (elf->ehdr->e_type == type))
 #define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
 #define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)
 
 /* PaX flags (to be read in elfhdr.e_flags) */
-#define HF_PAX_PAGEEXEC         1	/* 0: Paging based non-exec pages */
-#define HF_PAX_EMUTRAMP         2	/* 0: Emulate trampolines */
-#define HF_PAX_MPROTECT         4	/* 0: Restrict mprotect() */
-#define HF_PAX_RANDMMAP         8	/* 0: Randomize mmap() base */
-#define HF_PAX_RANDEXEC         16	/* 1: Randomize ET_EXEC base */
-#define HF_PAX_SEGMEXEC         32	/* 0: Segmentation based non-exec pages */
+#define HF_PAX_PAGEEXEC		1	/* 0: Paging based non-exec pages */
+#define HF_PAX_EMUTRAMP		2	/* 0: Emulate trampolines */
+#define HF_PAX_MPROTECT		4	/* 0: Restrict mprotect() */
+#define HF_PAX_RANDMMAP		8	/* 0: Randomize mmap() base */
+#define HF_PAX_RANDEXEC		16	/* 1: Randomize ET_EXEC base */
+#define HF_PAX_SEGMEXEC		32	/* 0: Segmentation based non-exec pages */
 
-#define EI_PAX                  14	/* Index in e_ident[] where to read flags */
+#define EI_PAX			14	/* Index in e_ident[] where to read flags */
 
 #define PAX_FLAGS(elf) ((elf->ehdr->e_ident[EI_PAX + 1] << 8) + (elf->ehdr->e_ident[EI_PAX]))
 

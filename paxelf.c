@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.3 2003/10/24 22:19:20 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -43,16 +43,16 @@ struct elf_etypes {
    const char *str;
    int value;
 } elf_etypes[] = {
-	QUERY(ET_NONE),       
-	QUERY(ET_REL),
-	QUERY(ET_EXEC),       
-	QUERY(ET_DYN),
-	QUERY(ET_CORE),       
-	QUERY(ET_NUM),
-	QUERY(ET_LOOS),
-	QUERY(ET_HIOS),
-	QUERY(ET_LOPROC),
-	QUERY(ET_HIPROC)
+   QUERY(ET_NONE),       
+   QUERY(ET_REL),
+   QUERY(ET_EXEC),       
+   QUERY(ET_DYN),
+   QUERY(ET_CORE),       
+   QUERY(ET_NUM),
+   QUERY(ET_LOOS),
+   QUERY(ET_HIOS),
+   QUERY(ET_LOPROC),
+   QUERY(ET_HIPROC)
 };
 
 /* Read an ELF into memory */

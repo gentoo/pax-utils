@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.3 2003/10/26 23:42:10 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -32,7 +32,8 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.3 2003/10/26 23:42:10 solar Exp $";
+static const char *rcsid =
+    "$Id: scanelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -50,26 +51,24 @@ void scanelf(const char *path)
    register DIR *dir;
    register struct dirent *dentry;
 
-   if (chdir(path) == 0) {
-      if ((dir = opendir(path))) {
-	 while ((dentry = readdir(dir))) {
-	    /* verify this is real ELF */
-	    if ((elf = readelf(dentry->d_name)) != NULL) {
-	       if (!check_elf_header(elf->ehdr))
-		  if (IS_ELF(elf))
-		     printf("%s %s %s/%s\n",
-			    pax_short_flags(PAX_FLAGS(elf)),
-			    get_elfetype(elf->ehdr->e_type), path,
-			    dentry->d_name);
-	       if (elf != NULL) {
-		  munmap(elf->data, elf->len);
-		  free(elf);
-		  elf = NULL;
-	       }
+   if ((chdir(path) == 0) && ((dir = opendir(path)))) {
+      while ((dentry = readdir(dir))) {
+	 /* verify this is real ELF */
+	 if ((elf = readelf(dentry->d_name)) != NULL) {
+	    if (!check_elf_header(elf->ehdr))
+	       if (IS_ELF(elf))
+		  printf("%s %s %s/%s\n",
+			 pax_short_flags(PAX_FLAGS(elf)),
+			 get_elfetype(elf->ehdr->e_type), path,
+			 dentry->d_name);
+	    if (elf != NULL) {
+	       munmap(elf->data, elf->len);
+	       free(elf);
+	       elf = NULL;
 	    }
 	 }
-	 closedir(dir);
       }
+      closedir(dir);
    }
 }
 
@@ -78,8 +77,8 @@ void scanelf(const char *path)
 int usage(char **argv)
 {
    fprintf(stderr,
-       "Usage: %s [options] dir1 dir2 dirN...\n",
-	(*argv != NULL) ? argv[0] : __FILE__ "\b\b");
+	   "Usage: %s [options] dir1 dir2 dirN...\n",
+	   (*argv != NULL) ? argv[0] : __FILE__ "\b\b");
    exit(EXIT_FAILURE);
 }
 
@@ -89,7 +88,8 @@ void showopt(int c, char *data)
    int i;
    for (i = 0; long_options[i].name; i++)
       if (long_options[i].val == c)
-	 fprintf(stderr, "  -%c, --%s\t: %s\n", c, long_options[i].name, data);
+	 fprintf(stderr, "  -%c, --%s\t: %s\n", c, long_options[i].name,
+		 data);
 }
 
 /* parse command line arguments and preform needed actions */
@@ -113,8 +113,8 @@ void parseargs(int argc, char **argv)
 	 case 'v':
 	    fprintf(stderr, "%s compiled %s\n", __FILE__, __DATE__);
 	    fprintf(stderr,
-		"%s written for Gentoo Linux <solar@gentoo.org>\n\t%s\n",
-		 (*argv != NULL) ? argv[0] : __FILE__ "\b\b", rcsid);
+		    "%s written for Gentoo Linux <solar@gentoo.org>\n\t%s\n",
+		    (*argv != NULL) ? argv[0] : __FILE__ "\b\b", rcsid);
 	    exit(EXIT_SUCCESS);
 	 case 'l':
 	    /* scan ld.so.conf for ldpath */

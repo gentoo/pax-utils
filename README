@@ -1,5 +1,5 @@
 pax-utils is a small set of various PaX related utilities for ELF32,
-ELF64 binaries thats mainly used by the hardened-gcc suite on Gentoo.
+ELF64 binaries.
 
 == scanexec ==
 Usage: scanexec [options] dir1 dir2 dirN...
