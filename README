@@ -1,5 +1,4 @@
-pax-utils is a small set of various PaX related utilities for ELF32, 
-ELF64 binaries.
+pax-utils is a small set of various PaX related utilities for ELF binaries.
 
 == scanelf ==
 Usage: scanelf [options] <dir1> [dir2 dirN ...]
