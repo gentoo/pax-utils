@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.28 2005/04/05 03:41:27 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.29 2005/04/05 04:25:54 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.28 2005/04/05 03:41:27 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.29 2005/04/05 04:25:54 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -214,8 +214,7 @@ static void scanelf_file(const char *filename)
 
 	if (find_sym) {
 		void *symtab_void, *strtab_void;
-		char found_sym = 0;
-		char *versioned_symname = malloc(strlen(find_sym)+1);
+		char *versioned_symname = malloc(strlen(find_sym)+2);
 
 		sprintf(versioned_symname, "%s@", find_sym);
 		symtab_void = elf_findsecbyname(elf, ".symtab");
@@ -249,11 +248,15 @@ static void scanelf_file(const char *filename)
 		FIND_SYM(64)
 		}
 		free(versioned_symname);
-		if (*find_sym != '*')
-			printf(" %s ", (found_sym == 0) ? "-" : find_sym);
+		if (*find_sym != '*') {
+			if (found_sym)
+				printf(" %s ", find_sym);
+			else if (!be_quiet)
+				printf(" - ");
+		}
 	}
 
-	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath)
+	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath || found_sym)
 		printf("%s\n", filename);
 
 	unreadelf(elf);
