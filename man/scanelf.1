@@ -1,4 +1,4 @@
-.TH "scanelf" "1" "0.1" "Ned Ludd" ""
+.TH "scanelf" "1" "0.1" "Ned Ludd, Mike Frysinger" ""
 .SH "NAME"
 .LP 
 scanelf \- 
@@ -28,6 +28,27 @@ Scans paths listed in /etc/ld.so.conf
 \fB\-p, \-\-path\fR
 Scans paths in order they are listed in the environment $PATH
 .TP 
+\fB\-R, \-\-recursive\fR
+Scan directories recursively (useful with -l -p or a dirname
+.TP 
+\fB\-x, \-\-pax\fR
+Print PaX markings
+.TP 
+\fB\-s, \-\-stack\fR
+Print GNU_STACK/RELRO markings
+.TP 
+\fB\-t, \-\-textrel\fR
+Print TEXTREL information
+.TP 
+\fB\-r, \-\-rpath\fR
+Print RPATH information
+.TP 
+\fB\-a, \-\-all\fR
+Print all scanned info
+.TP 
+\fB\-q, \-\-quiet\fR
+Only output 'bad' things
+.TP 
 .BR
 .SH "FILES"
 .LP 
@@ -42,20 +63,22 @@ When the -p option is used the environment variable PATH will be used.
 To run this program the standard way type:
 .LP 
 scanelf -p
-scanelf -l
+.TP
+scanelf -l -p -a -R
 .LP 
 Alternativly you can run it like:
 .LP 
 scanelf /bin /usr/bin /lib
 .SH "REPORTING BUGS"
 Please include as much information as possible (using any available debugging 
-options) and send bug reports to pax-utils <solar@gentoo.org>.
+options) and send bug reports to pax-utils <solar@gentoo.org> or 
+<vapier@gentoo.org>
 .SH "SEE ALSO"
 .BR chpax (1),
 .BR paxctl (1),
 .BR pspax (1),
 .BR gradm (8),
 .BR scanelf (1),
-.BR scanexec(1)
+.BR readelf (1),
 .SH "AUTHORS"
-scanelf was written by <solar@gentoo.org>
+scanelf was written by <solar@gentoo.org> and <vapier@gentoo.org>
