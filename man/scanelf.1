@@ -6,7 +6,7 @@ user-space utility to scan elf files
 .SH "SYNTAX"
 .LP 
 scanelf [\fIoptions\fP] dir1 dir2 dirN...
-.br 
+.BR 
 .SH "DESCRIPTION"
 scanelf is a user-space utility to scan and list ELF types, as well as thier respctive PaX flags and filenames.
 .LP 
@@ -28,7 +28,7 @@ Scans paths listed in /etc/ld.so.conf
 \fB\-p, \-\-path\fR
 Scans paths in order they are listed in the environment $PATH
 .TP 
-.br
+.BR
 .SH "FILES"
 .LP 
 \fI/etc/ld.so.conf\fP 
@@ -47,15 +47,15 @@ scanelf -l
 Alternativly you can run it like:
 .LP 
 scanelf /bin /usr/bin /lib
-.br 
+.BR 
 .SH "AUTHORS"
 .LP 
 scanelf was written by <solar@gentoo.org>
-.br
+.BR
 .SH "REPORTING BUGS"
 Please include as much information as possible(using any available debugging options) and send bug reports for pax-utils <solar@gentoo.org>
 .LP
-.br
+.BR
 .SH "SEE ALSO"
 .LP 
-chpax(1), gradm(8), isetdyn(1), scanelf(1), scanexec(1)
+chpax(1), paxctl(1), pspax(1), gradm(8), scanelf(1), scanexec(1)
