@@ -1,7 +1,7 @@
 /*
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/isetdyn.c,v 1.3 2003/10/26 23:42:10 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/isetdyn.c,v 1.4 2003/10/28 20:57:27 solar Exp $
  *
  * On Gentoo Linux we need a simple way to detect if an ELF ehdr is of
  * type ET_DYN, we have a PT_INTERP phdr and also contains a symbol for main()
@@ -23,11 +23,6 @@
  * MA 02111-1307, USA.
  ********************************************************************
  *
- * Date:
- *	20030908
- *	20031007
- * Compile:
- *	gcc -o isetdyn isetdyn.c -ldl
  * Note:
  *
  * This program has visible standard output only when the file is a

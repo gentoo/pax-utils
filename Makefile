@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.5 2003/10/25 03:13:24 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.6 2003/10/28 20:57:27 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -18,18 +18,16 @@
 # MA 02111-1307, USA.
 ####################################################################
 
-## User Defined
+VERSION	= 0.0.2
+
 ####################################################
 CFLAGS	= -Wall -O2
 DESTDIR	=
 PREFIX	= $(DESTDIR)/usr
-
 STRIP	= strip
 MKDIR	= mkdir -p
 CP	= cp
 #####################################################
-
-VERSION	= 0.0.2
 
 TARGETS	= isetdyn scanexec scanelf
 OBJS	= ${TARGETS:%=%.o} paxelf.o
@@ -42,27 +40,27 @@ all: $(OBJS) $(TARGETS)
 	$(CC) $(CFLAGS) -c $<
 
 %: %.o
-	$(CC) $(CFLAGS) -o $@ paxelf.o $<
+	$(CC) -o $@ $(CFLAGS) -o $@ paxelf.o $<
 
 isetdyn:
-	$(CC) $(CFLAGS) -o isetdyn paxelf.o isetdyn.o -ldl
+	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl
 
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
 
 clean:
-	rm -f $(OBJS)
-	rm -f $(TARGETS)
+	-rm -f $(OBJS) $(TARGETS)
 
 distclean: clean
-	rm -f *~ core
-
-include .depend
+	-rm -f *~ core
 	
 install : all
-	$(STRIP) $(TARGETS)
-	$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
-	$(CP) $(TARGETS) $(PREFIX)/bin/
+	-$(STRIP) $(TARGETS)
+	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
+	-$(CP) $(TARGETS) $(PREFIX)/bin/
 	for mpage in $(MPAGES) ; do \
 		cp $$mpage $(PREFIX)/share/man/man1/ ;\
 	done
+
+include .depend
+
