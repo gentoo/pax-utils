@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.7 2004/01/10 08:44:57 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.8 2004/02/10 07:38:42 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -18,26 +18,27 @@
 # MA 02111-1307, USA.
 ####################################################################
 
-VERSION	= 0.0.2
+VERSION	= 0.0.3
 
 ####################################################
 CFLAGS	:= -Wall -O2
 #CFLAGS= -DEBUG
 #CFLAGS	:= -Wall -O2 $(CFLAGS)
+LDFLAGS=-pie
 DESTDIR	=
 PREFIX	:= $(DESTDIR)/usr
 STRIP	:= strip
 MKDIR	:= mkdir -p
 CP	:= cp
 #####################################################
-
-TARGETS	= isetdyn scanexec scanelf scan4sym
+TARGETS	= isetdyn scanexec scanelf scan4sym pttool
 OBJS	= ${TARGETS:%=%.o} paxelf.o
 MPAGES	= ${TARGETS:%=man/%.1}
 SOURCES	= ${OBJS:%.o=%.c}
+#LD_BIND_NOW=1
 
 all: $(OBJS) $(TARGETS)
-	chpax -zperms $(TARGETS)
+	@#chpax -zperms $(TARGETS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
@@ -45,6 +46,10 @@ all: $(OBJS) $(TARGETS)
 %: %.o
 	$(CC) -o $@ $(CFLAGS) -o $@ paxelf.o $<
 
+%.so: %.c
+	gcc -shared -fPIC -o $@ $<
+
+# will find an executable built with a crt1S vs Scrt1
 isetdyn:
 	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl -fnopie
 
@@ -53,6 +58,9 @@ scan4sym:
 
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
+
+pttool:
+	$(CC) -o $@ $(CFLAGS) $@.o -pie
 
 clean:
 	-rm -f $(OBJS) $(TARGETS)
@@ -68,8 +76,4 @@ install : all
 		cp $$mpage $(PREFIX)/share/man/man1/ ;\
 	done
 
-%.so: %.c
-	gcc -shared -fPIC -o $@ $<
-
 include .depend
-
