@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.6 2005/03/29 23:33:05 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.7 2005/03/30 23:42:26 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -135,7 +135,15 @@ const char *get_elfdtype(int type)
 }
 
 /* Read an ELF into memory */
-elfobj *readelf(char *filename)
+#define IS_ELF_BUFFER(buff) \
+	(buff[EI_MAG0] == ELFMAG0 && \
+	 buff[EI_MAG1] == ELFMAG1 && \
+	 buff[EI_MAG2] == ELFMAG2 && \
+	 buff[EI_MAG3] == ELFMAG3)	
+#define ABI_OK(buff) \
+	(buff[EI_OSABI] == ELFOSABI_NONE || \
+	 buff[EI_OSABI] == ELFOSABI_LINUX)
+elfobj *readelf(const char *filename)
 {
 	struct stat st;
 	int fd;
@@ -146,31 +154,38 @@ elfobj *readelf(char *filename)
 
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return NULL;
+printf("%i\n", fd);
 
-	if (st.st_size <= 0)
+	/* make sure we have enough bytes to scan e_ident */
+	if (st.st_size <= EI_NIDENT)
 		goto close_fd_and_return;
 
 	elf = (elfobj*)malloc(sizeof(elfobj));
 	if (elf == NULL)
 		goto close_fd_and_return;
+	memset(elf, 0x00, sizeof(elfobj));
 
+	elf->fd = fd;
 	elf->len = st.st_size;
 	elf->data = (char *) mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
-
-	if (elf->data == (char *) MAP_FAILED) {
-		free(elf);
-		goto close_fd_and_return;
-	}
+	if (elf->data == (char *) MAP_FAILED)
+		goto free_elf_and_return;
 
 	elf->ehdr = (Elf_Ehdr *) elf->data;
-	elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
-	elf->shdr = (Elf_Shdr *) (elf->data + elf->ehdr->e_shoff);
+	if (!IS_ELF_BUFFER(elf->ehdr->e_ident)) /* make sure we have an elf */
+		goto free_elf_and_return;
+	if (!ABI_OK(elf->ehdr->e_ident)) /* only work with certain ABI's for now */
+		goto free_elf_and_return;
 
-	/* elf->fd = fd; */
-	/* do we want to keep the fd open? */
-	close(fd);
+	if (elf->ehdr->e_phoff)
+		elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
+	if (elf->ehdr->e_shoff)
+		elf->shdr = (Elf_Shdr *) (elf->data + elf->ehdr->e_shoff);
+
 	return elf;
 
+free_elf_and_return:
+	free(elf);
 close_fd_and_return:
 	close(fd);
 	return NULL;
@@ -180,6 +195,7 @@ close_fd_and_return:
 void unreadelf(elfobj *elf)
 {
 	munmap(elf->data, elf->len);
+	close(elf->fd);
 	memset(elf, 0, sizeof(elfobj));
 	free(elf);
 }
@@ -231,6 +247,18 @@ char *pax_short_pf_flags(unsigned long flags)
 	buffer[10] = (flags & PF_RANDMMAP ? 'R' : '-');
 	buffer[11] = (flags & PF_NORANDMMAP ? 'r' : '-');
 	buffer[12] = 0;
+
+	return buffer;
+}
+
+char *gnu_short_stack_flags(unsigned long flags)
+{
+	static char buffer[4];
+
+	buffer[0] = (flags & PF_R ? 'R' : '-');
+	buffer[1] = (flags & PF_W ? 'W' : '-');
+	buffer[2] = (flags & PF_X ? 'X' : '-');
+	buffer[3] = 0;
 
 	return buffer;
 }

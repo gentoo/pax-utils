@@ -39,13 +39,15 @@ typedef struct {
 	Elf_Shdr *shdr;
 	char *data;
 	int len;
+	int fd;
 } elfobj;
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);
 extern char *pax_short_pf_flags(unsigned long flags);
+extern char *gnu_short_stack_flags(unsigned long flags);
 extern int check_elf_header(Elf_Ehdr const *const ehdr);
-extern elfobj *readelf(char *filename);
+extern elfobj *readelf(const char *filename);
 extern void unreadelf(elfobj *elf);
 extern const char *get_elfetype(int type);
 extern const char *get_elfptype(int type);
