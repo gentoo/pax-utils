@@ -244,13 +244,13 @@ void scan_program_header(const char *filename)
    if ((elf = readelf((char *) filename)) != NULL) {
       if (!check_elf_header(elf->ehdr)) {
 	 if (IS_ELF(elf) && (IS_ELF_ET_DYN(elf) || IS_ELF_ET_EXEC(elf))) {
-	    printf("Entry point 0x%08X '%c' %s\n",
-		   elf->ehdr->e_entry,
-		   IS_ELF_ET_DYN(elf) ? '*' : '&', filename);
+	    // printf("Entry point 0x%08X '%c' %s\n",
+		//   elf->ehdr->e_entry,
+		//   IS_ELF_ET_DYN(elf) ? '*' : '&', filename);
 	    for (i = 0; i < elf->ehdr->e_phnum; i++) {
 	       switch (elf->phdr[i].p_type) {
 		  case PT_LOAD:
-			printf("LOAD it's only one 0x%X\n", elf->phdr[i].p_flags);
+			// printf("LOAD it's only one 0x%X\n", elf->phdr[i].p_flags);
 			break;
 		  case PT_DYNAMIC:
 		     has_textrel(elf);
@@ -266,14 +266,14 @@ void scan_program_header(const char *filename)
 		     if (elf->phdr[i].p_flags & PF_R
 			 || elf->phdr[i].p_flags & PF_W
 			 || elf->phdr[i].p_flags & PF_X) {
-			printf("%c%c%c %s %-12s %s p_offset=0x%-9X\n",
+			printf("%c%c%c %s %-12s %s\n",
 			       (elf->phdr[i].p_flags & PF_R ? 'R' : '-'),
 			       (elf->phdr[i].p_flags & PF_W ? 'W' : '-'),
 			       (elf->phdr[i].p_flags & PF_X ? 'X' : '-'),
 			       (elf->phdr[i].p_type ==
 				PT_GNU_STACK ? "GNU_STACK" : "GNU_RELRO"),
 			       pax_short_ei_flags(PAX_EI_FLAGS(elf)),
-			       filename, elf->phdr[i].p_offset);
+			       filename);
 			if (elf->phdr[i].p_flags == (PF_W | PF_X))
 			   fprintf(stderr,
 				   "WARN: %s has %s writable and executable memory segment\n",
