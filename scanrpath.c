@@ -29,8 +29,10 @@ void scan_program_header(const char *filename)
 		goto bail;
 
 	strtbl = elf_findsecbyname(elf, ".dynstr");
-	if (!strtbl)
-		printf("%s: no .dynstr section !?\n", filename);
+	if (!strtbl) {
+		/* only static binaries should be lacking .dynstr ... */
+		goto bail;
+	}
 	for (i = 0; i < elf->ehdr->e_phnum; i++)
 		if (elf->phdr[i].p_type == PT_DYNAMIC) {
 			Elf_Dyn *dyn = (Elf_Dyn *)(elf->data + elf->phdr[i].p_offset);
