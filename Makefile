@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.9 2004/06/14 15:38:05 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.10 2004/07/14 16:52:09 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@ all: $(OBJS) $(TARGETS)
 	$(CC) -o $@ $(CFLAGS) -o $@ paxelf.o $<
 
 %.so: %.c
-	gcc -shared -fPIC -o $@ $<
+	${CC) -shared -fPIC -o $@ $<
 
 scan4sym:
 	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl
@@ -69,7 +69,8 @@ install : all
 	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
 	-$(CP) $(TARGETS) $(PREFIX)/bin/
 	for mpage in $(MPAGES) ; do \
-		cp $$mpage $(PREFIX)/share/man/man1/ ;\
+		[ -e $$mpage ] \
+			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
 	done
 
 include .depend
