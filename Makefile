@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.17 2005/04/02 19:06:36 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.18 2005/04/05 00:51:33 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@ STRIP	:= strip
 MKDIR	:= mkdir -p
 CP	:= cp
 #####################################################
-TARGETS	= scanelf scan4sym pspax
+TARGETS	= scanelf pspax
 OBJS	= ${TARGETS:%=%.o} paxelf.o
 MPAGES	= ${TARGETS:%=man/%.1}
 SOURCES	= ${OBJS:%.o=%.c}

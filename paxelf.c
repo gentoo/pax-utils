@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.12 2005/04/03 18:18:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.13 2005/04/05 00:51:33 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -37,7 +37,10 @@
 
 #include "paxelf.h"
 
-/* Setup a bunch of helper functions to translate
+char do_reverse_endian;
+
+/*
+ * Setup a bunch of helper functions to translate
  * binary defines into readable strings.
  */
 #define QUERY(n) { #n, n }
@@ -54,6 +57,48 @@ static inline const char *find_pairtype(pairtype *pt, int type)
 	return "UNKNOWN TYPE";
 }
 
+/* translate misc elf EI_ defines */
+static pairtype elf_ei_class[] = {
+	QUERY(ELFCLASSNONE),
+	QUERY(ELFCLASS32),
+	QUERY(ELFCLASS64),
+	QUERY(ELFCLASSNUM),
+	{ 0, 0 }
+};
+static pairtype elf_ei_data[] = {
+	QUERY(ELFDATANONE),
+	QUERY(ELFDATA2LSB),
+	QUERY(ELFDATA2MSB),
+	QUERY(ELFDATANUM),
+	{ 0, 0 }
+};
+static pairtype elf_ei_osabi[] = {
+	QUERY(ELFOSABI_NONE),
+	QUERY(ELFOSABI_SYSV),
+	QUERY(ELFOSABI_HPUX),
+	QUERY(ELFOSABI_NETBSD),
+	QUERY(ELFOSABI_LINUX),
+	QUERY(ELFOSABI_SOLARIS),
+	QUERY(ELFOSABI_AIX),
+	QUERY(ELFOSABI_IRIX),
+	QUERY(ELFOSABI_FREEBSD),
+	QUERY(ELFOSABI_TRU64),
+	QUERY(ELFOSABI_MODESTO),
+	QUERY(ELFOSABI_OPENBSD),
+	QUERY(ELFOSABI_ARM),
+	QUERY(ELFOSABI_STANDALONE),
+	{ 0, 0 }
+};
+const char *get_elfeitype(elfobj *elf, int ei_type, int type)
+{
+	switch (ei_type) {
+		case EI_CLASS: return find_pairtype(elf_ei_class, type);
+		case EI_DATA:  return find_pairtype(elf_ei_data, type);
+		case EI_OSABI: return find_pairtype(elf_ei_osabi, type);
+	}
+	return "UNKNOWN EI TYPE";
+}
+
 /* translate elf ET_ defines */
 static pairtype elf_etypes[] = {
 	QUERY(ET_NONE),
@@ -68,8 +113,13 @@ static pairtype elf_etypes[] = {
 	QUERY(ET_HIPROC),
 	{ 0, 0 }
 };
-const char *get_elfetype(int type)
+const char *get_elfetype(elfobj *elf)
 {
+	int type;
+	if (elf->elf_class == ELFCLASS32)
+		type = EGET(EHDR32(elf->ehdr)->e_type);
+	else
+		type = EGET(EHDR64(elf->ehdr)->e_type);
 	return find_pairtype(elf_etypes, type);
 }
 
@@ -141,16 +191,10 @@ const char *get_elfdtype(int type)
 	 buff[EI_MAG2] == ELFMAG2 && \
 	 buff[EI_MAG3] == ELFMAG3)
 #define DO_WE_LIKE_ELF(buff) \
-	(buff[EI_CLASS] == ELF_CLASS && \
-	 buff[EI_DATA] == ELF_DATA && \
-	 buff[EI_VERSION] == EV_CURRENT)
-	/* add these checks when we can handle non-native
+	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
-	 (buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
-	*/
-#define ABI_OK(buff) \
-	(buff[EI_OSABI] == ELFOSABI_NONE || \
-	 buff[EI_OSABI] == ELFOSABI_LINUX)
+	 (buff[EI_VERSION] == EV_CURRENT) && \
+	 (buff[EI_OSABI] == ELFOSABI_NONE || buff[EI_OSABI] == ELFOSABI_LINUX))
 elfobj *readelf(const char *filename)
 {
 	struct stat st;
@@ -178,19 +222,23 @@ elfobj *readelf(const char *filename)
 	if (elf->data == (char *) MAP_FAILED)
 		goto free_elf_and_return;
 
-	/* use elf->data since we're not sure what kind of bit/endian this is */
 	if (!IS_ELF_BUFFER(elf->data)) /* make sure we have an elf */
 		goto unmap_data_and_return;
 	if (!DO_WE_LIKE_ELF(elf->data)) /* check class and stuff */
 		goto unmap_data_and_return;
-	if (!ABI_OK(elf->data)) /* only work with certain ABI's for now */
-		goto unmap_data_and_return;
 
-	elf->ehdr = (Elf_Ehdr *) elf->data;
-	if (elf->ehdr->e_phoff)
-		elf->phdr = (Elf_Phdr *) (elf->data + elf->ehdr->e_phoff);
-	if (elf->ehdr->e_shoff)
-		elf->shdr = (Elf_Shdr *) (elf->data + elf->ehdr->e_shoff);
+	elf->elf_class = elf->data[EI_CLASS];
+	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
+	elf->ehdr = (void *)elf->data;
+	if (elf->elf_class == ELFCLASS32) {
+		Elf32_Ehdr *ehdr = EHDR32(elf->ehdr);
+		elf->phdr = ehdr->e_phoff ? elf->data + EGET(ehdr->e_phoff) : 0;
+		elf->shdr = ehdr->e_shoff ? elf->data + EGET(ehdr->e_shoff) : 0;
+	} else {
+		Elf64_Ehdr *ehdr = EHDR64(elf->ehdr);
+		elf->phdr = ehdr->e_phoff ? elf->data + EGET(ehdr->e_phoff) : 0;
+		elf->shdr = ehdr->e_shoff ? elf->data + EGET(ehdr->e_shoff) : 0;
+	}
 
 	return elf;
 
@@ -263,37 +311,21 @@ char *gnu_short_stack_flags(unsigned long flags)
 	return buffer;
 }
 
-const char *elf_getsecname(elfobj *elf, Elf_Shdr *shdr)
+void *elf_findsecbyname(elfobj *elf, const char *name)
 {
-	Elf_Shdr *strtbl = &elf->shdr[elf->ehdr->e_shstrndx];
-	return (char *) (elf->data + strtbl->sh_offset + shdr->sh_name);
-}
-
-Elf_Shdr *elf_findsecbyname(elfobj *elf, const char *name)
-{
-	Elf_Shdr *strtbl = &elf->shdr[elf->ehdr->e_shstrndx];
 	int i;
 	char *shdr_name;
-	for (i = 0; i < elf->ehdr->e_shnum; ++i) {
-		shdr_name = (char *) (elf->data + strtbl->sh_offset + elf->shdr[i].sh_name);
-		if (!strcmp(shdr_name, name))
-			return &elf->shdr[i];
-	}
+#define FINDSEC(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+	Elf ## B ## _Shdr *strtbl = &(shdr[EGET(ehdr->e_shstrndx)]); \
+	for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
+		shdr_name = (char *) (elf->data + EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name)); \
+		if (!strcmp(shdr_name, name)) \
+			return &(shdr[i]); \
+	} }
+	FINDSEC(32)
+	FINDSEC(64)
 	return NULL;
 }
-
-#if 0
-/* Helper func to locate a program header */
-static Elf_Phdr *loc_phdr(elfobj *elf, int type)
-{
-	Elf_Phdr *ret;
-
-	//for (i = 0; i < elf->ehdr->e_phnum; ++i) {
-	//	ret = elf->phdr[i];
-	for (ret = elf->phdr; ret->p_type != PT_NULL; ++ret)
-		if (ret->p_type == type)
-			return elf->data + ret->p_offset;
-
-	return NULL;
-}
-#endif

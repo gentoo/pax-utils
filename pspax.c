@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.8 2005/04/03 18:03:22 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.9 2005/04/05 00:51:33 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -144,7 +144,7 @@ static const char *get_pid_type(int pid)
 	snprintf(fname, sizeof(fname), PROC_DIR "/%d/exe", pid);
 	if ((elf = readelf(fname)) == NULL)
 		return ret;
-	ret = (char *)get_elfetype(elf->ehdr->e_type);
+	ret = (char *)get_elfetype(elf);
 	unreadelf(elf);
 	return ret;
 }

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.25 2005/04/03 18:56:08 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.26 2005/04/05 00:51:33 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.25 2005/04/03 18:56:08 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.26 2005/04/05 00:51:33 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -78,18 +78,22 @@ static void scanelf_file(const char *filename)
 {
 	int i;
 	char found_pax, found_stack, found_relro, found_textrel, found_rpath;
-	Elf_Dyn *dyn;
-	elfobj *elf = NULL;
+	elfobj *elf;
 
 	found_pax = found_stack = found_relro = found_textrel = found_rpath = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
-		if (be_verbose > 1) printf("%s: not an ELF\n", filename);
+		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
 		return;
 	}
 
-	if (be_verbose) printf("%s: scanning file\n", filename);
+	if (be_verbose > 1)
+		printf("%s: {%s,%s} scanning file\n", filename,
+		       get_elfeitype(elf, EI_CLASS, elf->elf_class),
+		       get_elfeitype(elf, EI_DATA, elf->data[EI_DATA]));
+	else if (be_verbose)
+		printf("%s: scanning file\n", filename);
 
 	/* show the header */
 	if (!be_quiet && show_banner) {
@@ -104,7 +108,7 @@ static void scanelf_file(const char *filename)
 
 	/* dump all the good stuff */
 	if (!be_quiet)
-		printf("%-7s ", get_elfetype(elf->ehdr->e_type));
+		printf("%-7s ", get_elfetype(elf));
 
 	if (show_pax) {
 		char *paxflags = pax_short_hf_flags(PAX_FLAGS(elf));
@@ -116,39 +120,49 @@ static void scanelf_file(const char *filename)
 
 	/* stack fun */
 	if (show_stack) {
-		for (i = 0; i < elf->ehdr->e_phnum; i++) {
-			if (elf->phdr[i].p_type != PT_GNU_STACK && \
-			    elf->phdr[i].p_type != PT_GNU_RELRO) continue;
-
-			if (be_quiet && !(elf->phdr[i].p_flags & PF_X))
-				continue;
-
-			if (elf->phdr[i].p_type == PT_GNU_STACK)
-				found_stack = 1;
-			if (elf->phdr[i].p_type == PT_GNU_RELRO)
-				found_relro = 1;
-
-			printf("%s ", gnu_short_stack_flags(elf->phdr[i].p_flags));
+#define SHOW_STACK(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (EGET(phdr[i].p_type) != PT_GNU_STACK && \
+			    EGET(phdr[i].p_type) != PT_GNU_RELRO) continue; \
+			if (be_quiet && !(EGET(phdr[i].p_flags) & PF_X)) \
+				continue; \
+			if (EGET(phdr[i].p_type) == PT_GNU_STACK) \
+				found_stack = 1; \
+			if (EGET(phdr[i].p_type) == PT_GNU_RELRO) \
+				found_relro = 1; \
+			printf("%s ", gnu_short_stack_flags(EGET(phdr[i].p_flags))); \
+		} \
 		}
+		SHOW_STACK(32)
+		SHOW_STACK(64)
 		if (!be_quiet && !found_stack) printf("--- ");
 		if (!be_quiet && !found_relro) printf("--- ");
 	}
 
 	/* textrel fun */
 	if (show_textrel) {
-		for (i = 0; i < elf->ehdr->e_phnum; i++) {
-			if (elf->phdr[i].p_type != PT_DYNAMIC) continue;
-
-			dyn = (Elf_Dyn *)(elf->data + elf->phdr[i].p_offset);
-			while (dyn->d_tag != DT_NULL) {
-				if (dyn->d_tag == DT_TEXTREL) { //dyn->d_tag != DT_FLAGS)
-					found_textrel = 1;
-//					if (dyn->d_un.d_val & DF_TEXTREL)
-					printf("TEXTREL ");
-				}
-				++dyn;
-			}
-		}
+#define SHOW_TEXTREL(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Dyn *dyn; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (phdr[i].p_type != PT_DYNAMIC) continue; \
+			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+			while (EGET(dyn->d_tag) != DT_NULL) { \
+				if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
+					found_textrel = 1; \
+					/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
+					printf("TEXTREL "); \
+				} \
+				++dyn; \
+			} \
+		} }
+		SHOW_TEXTREL(32)
+		SHOW_TEXTREL(64)
 		if (!be_quiet && !found_textrel) printf("------- ");
 	}
 
@@ -156,24 +170,32 @@ static void scanelf_file(const char *filename)
 	/* TODO: if be_quiet, only output RPATH's which aren't in /etc/ld.so.conf */
 	if (show_rpath) {
 		char *rpath, *runpath;
-		Elf_Shdr *strtbl = elf_findsecbyname(elf, ".dynstr");
+		void *strtbl_void = elf_findsecbyname(elf, ".dynstr");
 		rpath = runpath = NULL;
 
-		if (strtbl)
-		for (i = 0; i < elf->ehdr->e_phnum; i++) {
-			if (elf->phdr[i].p_type != PT_DYNAMIC) continue;
-
-			dyn = (Elf_Dyn *)(elf->data + elf->phdr[i].p_offset);
-			while (dyn->d_tag != DT_NULL) {
-				if (dyn->d_tag == DT_RPATH) { //|| dyn->d_tag != DT_RUNPATH)
-					rpath = elf->data + strtbl->sh_offset + dyn->d_un.d_ptr;
-					found_rpath = 1;
-				} else if (dyn->d_tag == DT_RUNPATH) {
-					runpath = elf->data + strtbl->sh_offset + dyn->d_un.d_ptr;
-					found_rpath = 1;
-				}
-				++dyn;
-			}
+		if (strtbl_void) {
+#define SHOW_RPATH(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Dyn *dyn; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+			while (EGET(dyn->d_tag) != DT_NULL) { \
+				if (EGET(dyn->d_tag) == DT_RPATH) { \
+					rpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					found_rpath = 1; \
+				} else if (EGET(dyn->d_tag) == DT_RUNPATH) { \
+					runpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					found_rpath = 1; \
+				} \
+				++dyn; \
+			} \
+		} }
+		SHOW_RPATH(32)
+		SHOW_RPATH(64)
 		}
 		if (rpath && runpath) {
 			if (!strcmp(rpath, runpath))
