@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <getopt.h>
 
 #include "paxelf.h"
 
@@ -40,30 +41,44 @@
 
 #define PROC_DIR "/proc"
 
+static const char *rcsid = "$Id: pspax.c,v 1.6 2005/04/02 03:25:04 vapier Exp $";
+
+
+/* helper functions for showing errors */
+#define argv0 "pspax" /*((*argv != NULL) ? argv[0] : __FILE__ "\b\b")*/
+#define warn(fmt, args...) \
+	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
+#define err(fmt, args...) \
+	do { \
+	warn(fmt, ## args); \
+	exit(EXIT_FAILURE); \
+	} while (0)
+
+
+
+/* variables to control behavior */
+static char show_all = 0;
+static char show_banner = 1;
+
+
+
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
-	char buf[PATH_MAX];
-	static char *p = "-----";
+	static char buf[PATH_MAX];
 	memset(&buf, 0, sizeof(buf));
 
 	snprintf(buf, sizeof(buf), PROC_DIR "/%d/stat", (int) pid);
-
-	fp = fopen(buf, "r");
-
-	if (fp == NULL)
-		return p;
+	if ((fp = fopen(buf, "r")) == NULL)
+		return NULL;
 
 	fscanf(fp, "%*d %s.16", buf);
-
 	if (*buf) {
 		buf[strlen(buf) - 1] = '\0';
 		buf[16] = 0;
-		p = buf;
-		*p++;
 	}
 	fclose(fp);
-	return p;
+	return (buf+1);
 }
 
 static struct passwd *get_proc_uid(pid_t pid)
@@ -112,7 +127,7 @@ static char *get_pid_attr(int pid)
 	memset(buf, 0, sizeof(buf));
 	snprintf(s, sizeof(s), PROC_DIR "/%d/attr/current", pid);
 	if ((fp = fopen(s, "r")) == NULL)
-		return "-";
+		return NULL;
 	if (fgets(buf, sizeof(buf), fp) != NULL)
 		if ((p = strchr(buf, '\n')) != NULL)
 			*p = 0;
@@ -140,13 +155,15 @@ static void pspax()
 	register DIR *dir;
 	register struct dirent *de;
 	pid_t pid;
-	struct passwd *pwd;
+	struct passwd *uid;
 	struct stat st;
-	char *p, *result, *pid_type;
+	const char *pax, *type, *name, *caps, *attr;
 #ifdef WANT_SYSCAP
 	ssize_t length;
 	cap_t cap_d;
 	cap_d = cap_init();
+#else
+	caps = NULL;
 #endif
 
 	chdir(PROC_DIR);
@@ -154,8 +171,9 @@ static void pspax()
 		perror(PROC_DIR);
 		exit(EXIT_FAILURE);
 	}
-	printf("%8s %-6s %-6s %-10s %-16s %s\n",
-	       "USER", "PID", "PAX", "ELF_TYPE", "NAME", "CAPS");
+	if (show_banner)
+		printf("%-8s %-6s %-6s %-10s %-16s %-4s %-4s\n",
+		       "USER", "PID", "PAX", "ELF_TYPE", "NAME", "CAPS", "ATTR");
 
 	while ((de = readdir(dir))) {
 		errno = 0;
@@ -168,32 +186,111 @@ static void pspax()
 #ifdef WANT_SYSCAP
 			/* this is a non-POSIX function */
 			capgetp(pid, cap_d);
-			result = cap_to_text(cap_d, &length);
-#else
-			result = "=";
+			caps = cap_to_text(cap_d, &length);
 #endif
-			pwd = get_proc_uid(pid);
-			pid_type = (char *)get_pid_type(pid);
-			if (pid_type) /* hide kernel processses */
-				printf("%-8s %-6d %-6s %-10s %-16s %s %s\n",
-				       (pwd != NULL) ? pwd->pw_name : "----",
+
+			uid = get_proc_uid(pid);
+			pax = get_proc_status(pid, "PAX");
+			type = get_pid_type(pid);
+			name = get_proc_name(pid);
+			attr = get_pid_attr(pid);
+
+			if (show_all || type)
+				printf("%-8s %-6d %-6s %-10s %-16s %-4s %s\n",
+				       uid  ? uid->pw_name : "--------",
 				       pid,
-				       (p = get_proc_status(pid, "PAX")) ? p : "------",
-				       pid_type,
-				       get_proc_name(pid),
-				       result,
-				       get_pid_attr(pid));
+				       pax  ? pax  : "---",
+				       type ? type : "-------",
+				       name ? name : "-----",
+				       caps ? caps : " = ",
+				       attr ? attr : "-");
 #ifdef WANT_SYSCAP
-			if (result)
-				cap_free(result);
+			if (caps)
+				cap_free(caps);
 #endif
 		}
 	}
 	closedir(dir);
 }
 
+
+
+/* usage / invocation handling functions */
+#define PARSE_FLAGS "aBhv"
+static struct option const long_opts[] = {
+	{"all",       no_argument, NULL, 'a'},
+	{"nobanner",  no_argument, NULL, 'B'},
+	{"help",      no_argument, NULL, 'h'},
+	{"version",   no_argument, NULL, 'V'},
+	{NULL,        no_argument, NULL, 0x0}
+};
+static char *opts_help[] = {
+	"Show all processes\n",
+	"Don't display the header",
+	"Print this help and exit",
+	"Print version and exit",
+	NULL
+};
+
+/* display usage and exit */
+static void usage(int status)
+{
+	int i;
+	printf("¤ List ELF/PaX information about running processes\n\n"
+	       "Usage: %s [options]\n\n", argv0);
+	fputs("Options:\n", stdout);
+	for (i = 0; long_opts[i].name; ++i)
+		printf("  -%c, --%-12s× %s\n", long_opts[i].val, 
+		       long_opts[i].name, opts_help[i]);
+#ifdef MANLYPAGE
+	for (i = 0; long_opts[i].name; ++i)
+		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val, 
+		       long_opts[i].name, opts_help[i]);
+#endif
+	exit(status);
+}
+
+/* parse command line arguments and preform needed actions */
+static void parseargs(int argc, char *argv[])
+{
+	int flag;
+
+	opterr = 0;
+	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
+		switch (flag) {
+
+		case 'V':                        /* version info */
+			printf("%s compiled %s\n"
+			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n"
+			       "%s\n",
+			       __FILE__, __DATE__, argv0, rcsid);
+			exit(EXIT_SUCCESS);
+			break;
+		case 'h': usage(EXIT_SUCCESS); break;
+
+		case 'B': show_banner = 0; break;
+		case 'a': show_all = 1; break;
+
+		case ':':
+			warn("Option missing parameter");
+			usage(EXIT_FAILURE);
+			break;
+		case '?':
+			warn("Unknown option");
+			usage(EXIT_FAILURE);
+			break;
+		default:
+			err("Unhandled option '%c'", flag);
+			break;
+		}
+	}
+}
+
+
+
 int main(int argc, char *argv[])
 {
+	parseargs(argc, argv);
 	pspax();
 	return EXIT_SUCCESS;
 }
