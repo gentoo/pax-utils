@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2003 Gentoo Technologies, Inc.
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.5 2003/11/09 17:46:41 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 #include "paxelf.h"
 
 static const char *rcsid =
-    "$Id: scanelf.c,v 1.4 2003/11/01 08:58:23 solar Exp $";
+    "$Id: scanelf.c,v 1.5 2003/11/09 17:46:41 solar Exp $";
 
 #define PARSE_FLAGS "hvlp"
 static struct option const long_options[] = {
@@ -61,6 +61,7 @@ void scanelf(const char *path)
 			 pax_short_flags(PAX_FLAGS(elf)),
 			 get_elfetype(elf->ehdr->e_type), path,
 			 dentry->d_name);
+
 	    if (elf != NULL) {
 	       munmap(elf->data, elf->len);
 	       free(elf);
@@ -74,12 +75,11 @@ void scanelf(const char *path)
 
 
 /* display usage and exit */
-int usage(char **argv)
+void usage(char **argv)
 {
    fprintf(stderr,
 	   "Usage: %s [options] dir1 dir2 dirN...\n",
 	   (*argv != NULL) ? argv[0] : __FILE__ "\b\b");
-   exit(EXIT_FAILURE);
 }
 
 
@@ -105,6 +105,7 @@ void parseargs(int argc, char **argv)
 			     PARSE_FLAGS, long_options, NULL)) != EOF) {
       switch (flag) {
 	 case 'h':
+	    usage(argv);
 	    showopt('p', "Scan all directories in PATH environment.");
 	    showopt('l', "Scan all directories in /etc/ld.so.conf");
 	    showopt('h', "Print this help and exit.");
@@ -156,8 +157,10 @@ void parseargs(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-   if (argc < 2)
+   if (argc < 2) {
       usage(argv);
+      exit(EXIT_FAILURE);
+   }
    parseargs(argc, argv);
    return 0;
 }
