@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.16 2005/04/01 19:09:15 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.17 2005/04/02 19:06:36 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -34,8 +34,12 @@ MPAGES	= ${TARGETS:%=man/%.1}
 SOURCES	= ${OBJS:%.o=%.c}
 
 all: $(OBJS) $(TARGETS)
-	@#chpax -zperms $(TARGETS)
+	@:
 
+debug: all
+	@-/sbin/chpax  -permsx $(TARGETS)
+	@-/sbin/paxctl -permsx $(TARGETS)
+	
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
