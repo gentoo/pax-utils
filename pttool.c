@@ -249,6 +249,9 @@ void scan_program_header(const char *filename)
 		   IS_ELF_ET_DYN(elf) ? '*' : '&', filename);
 	    for (i = 0; i < elf->ehdr->e_phnum; i++) {
 	       switch (elf->phdr[i].p_type) {
+		  case PT_LOAD:
+			printf("LOAD it's only one 0x%X\n", elf->phdr[i].p_flags);
+			break;
 		  case PT_DYNAMIC:
 		     has_textrel(elf);
 		     break;

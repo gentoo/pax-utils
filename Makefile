@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.8 2004/02/10 07:38:42 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.9 2004/06/14 15:38:05 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -22,20 +22,18 @@ VERSION	= 0.0.3
 
 ####################################################
 CFLAGS	:= -Wall -O2
-#CFLAGS= -DEBUG
-#CFLAGS	:= -Wall -O2 $(CFLAGS)
-LDFLAGS=-pie
+#CFLAGS += -DEBUG -g
+LDFLAGS :=-pie
 DESTDIR	=
 PREFIX	:= $(DESTDIR)/usr
 STRIP	:= strip
 MKDIR	:= mkdir -p
 CP	:= cp
 #####################################################
-TARGETS	= isetdyn scanexec scanelf scan4sym pttool
+TARGETS	= scanexec scanelf scan4sym pttool pspax
 OBJS	= ${TARGETS:%=%.o} paxelf.o
 MPAGES	= ${TARGETS:%=man/%.1}
 SOURCES	= ${OBJS:%.o=%.c}
-#LD_BIND_NOW=1
 
 all: $(OBJS) $(TARGETS)
 	@#chpax -zperms $(TARGETS)
@@ -49,18 +47,16 @@ all: $(OBJS) $(TARGETS)
 %.so: %.c
 	gcc -shared -fPIC -o $@ $<
 
-# will find an executable built with a crt1S vs Scrt1
-isetdyn:
-	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl -fnopie
-
 scan4sym:
-	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl -fnopie
-
+	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
 
 pttool:
-	$(CC) -o $@ $(CFLAGS) $@.o -pie
+	$(CC) -o $@ $(CFLAGS) $@.o
+
+pspax:
+	$(CC) -o $@ $(CFLAGS) $@.o
 
 clean:
 	-rm -f $(OBJS) $(TARGETS)
