@@ -236,7 +236,7 @@ elfobj *readelf(char *filename)
 
 const char *get_elfetype(int type)
 {
-   int i;
+   unsigned int i;
    for (i = 0; i < sizeof(elf_etypes) / sizeof(elf_etypes[0]); i++)
       if (type == elf_etypes[i].value)
 	 return elf_etypes[i].str;
