@@ -12,42 +12,57 @@ scanelf is a user-space utility to scan and list ELF types, as well as thier res
 .LP 
 .SH "OPTIONS"
 .LP 
-.TP 
-\fBNote\fR
-long options are not supported on all platforms.
-.TP 
-\fB\-h, \-\-help\fR
-Output help information and exit.
-.TP 
-\fB\-v, \-\-version\fR
-Output version information and exit.
-.TP 
-\fB \-l, \-\-ldpath\fR
-Scans paths listed in /etc/ld.so.conf
-.TP 
+.TP
 \fB\-p, \-\-path\fR
-Scans paths in order they are listed in the environment $PATH
-.TP 
+Scan all directories in PATH environment
+.TP
+\fB\-l, \-\-ldpath\fR
+Scan all directories in /etc/ld.so.conf
+.TP
 \fB\-R, \-\-recursive\fR
-Scan directories recursively (useful with -l -p or a dirname
-.TP 
+Scan directories recursively
+.TP
+\fB\-m, \-\-mount\fR
+Don't recursively cross mount points
+
+.TP
 \fB\-x, \-\-pax\fR
 Print PaX markings
-.TP 
-\fB\-s, \-\-stack\fR
-Print GNU_STACK/RELRO markings
-.TP 
+.TP
+\fB\-e, \-\-header\fR
+Print GNU_STACK markings
+.TP
 \fB\-t, \-\-textrel\fR
 Print TEXTREL information
-.TP 
+.TP
 \fB\-r, \-\-rpath\fR
 Print RPATH information
-.TP 
+.TP
 \fB\-a, \-\-all\fR
-Print all scanned info
-.TP 
+Print all scanned info (-x -e -t -r)
+
+.TP
 \fB\-q, \-\-quiet\fR
 Only output 'bad' things
+.TP
+\fB\-v, \-\-verbose\fR
+Be verbose (can be specified more than once)
+.TP
+\fB\-B, \-\-nobanner\fR
+Don't display the header
+.TP
+\fB\-h, \-\-help\fR
+Print this help and exit
+.TP
+\fB\-V, \-\-version\fR
+Print version and exit
+
+.TP
+\fB\-h, \-\-help\fR
+Print this help and exit
+.TP
+\fB\-V, \-\-version\fR
+Print version and exit
 .TP 
 .BR
 .SH "FILES"

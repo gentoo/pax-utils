@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.15 2005/04/01 20:08:44 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.16 2005/04/01 20:44:11 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.15 2005/04/01 20:08:44 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.16 2005/04/01 20:44:11 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -66,7 +66,7 @@ static char show_pax = 0;
 static char show_stack = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
-static char show_header = 1;
+static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
 
@@ -95,14 +95,14 @@ static void scanelf_file(const char *filename)
 	if (be_verbose) printf("%s: scanning file\n", filename);
 
 	/* show the header */
-	if (!be_quiet && show_header) {
+	if (!be_quiet && show_banner) {
 		fputs(" TYPE  ", stdout);
 		if (show_pax) fputs("  PAX  ", stdout);
 		if (show_stack) fputs(" STK/REL ", stdout);
 		if (show_textrel) fputs("TEXTREL ", stdout);
 		if (show_rpath) fputs("RPATH ", stdout);
 		fputs(" FILE\n", stdout);
-		show_header = 0;
+		show_banner = 0;
 	}
 
 	/* dump all the good stuff */
@@ -278,20 +278,20 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxstraqvHhV"
+#define PARSE_FLAGS "plRmxetraqvBhV"
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
 	{"pax",       no_argument, NULL, 'x'},
-	{"stack",     no_argument, NULL, 's'},
+	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
-	{"noheader",  no_argument, NULL, 'H'},
+	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
@@ -305,7 +305,7 @@ static char *opts_help[] = {
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
-	"Print all scanned info (-x -s -t -r)\n",
+	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Don't display the header",
@@ -324,6 +324,11 @@ static void usage(int status)
 	for (i = 0; long_opts[i].name; ++i)
 		printf("  -%c, --%-12s× %s\n", long_opts[i].val, 
 		       long_opts[i].name, opts_help[i]);
+#ifdef MANLYPAGE
+	for (i = 0; long_opts[i].name; ++i)
+		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val, 
+		       long_opts[i].name, opts_help[i]);
+#endif
 	exit(status);
 }
 
@@ -343,15 +348,16 @@ static void parseargs(int argc, char *argv[])
 			       __FILE__, __DATE__, argv0, rcsid);
 			exit(EXIT_SUCCESS);
 			break;
+		case 's': /* reserved for -s, --symbol= */
 		case 'h': usage(EXIT_SUCCESS); break;
 
-		case 'H': show_header = 0; break;
+		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
 		case 'm': dir_crossmount = 0; break;
 		case 'x': show_pax = 1; break;
-		case 's': show_stack = 1; break;
+		case 'e': show_stack = 1; break;
 		case 't': show_textrel = 1; break;
 		case 'r': show_rpath = 1; break;
 		case 'q': be_quiet = 1; break;
