@@ -17,7 +17,7 @@
 # error "UNABLE TO DETECT ELF_CLASS"
 #endif
 
-/* I need a way to deal with 32/64 bit files at the same time using the same struct */
+/* we need to hide bitsize (32/64) and endian (little/big) */
 
 #if (ELF_CLASS == ELFCLASS32)
 # define Elf_Ehdr Elf32_Ehdr
@@ -56,7 +56,7 @@ extern const char *elf_getsecname(elfobj *elf, Elf_Shdr *shdr);
 extern Elf_Shdr *elf_findsecbyname(elfobj *elf, const char *name);
 
 //#define IS_ELF(elf) ((elf->ehdr->e_ident[EI_CLASS] == ELFCLASS32 || elf->ehdr->e_ident[EI_CLASS] == ELFCLASS64))
-#define IS_ELF(elf) (elf->ehdr->e_ident[EI_CLASS] == ELF_CLASS)
+#define IS_ELF(elf) (elf->ehdr->e_ident[EI_CLASS] == ELF_CLASS && elf->ehdr->e_ident[EI_DATA] == ELF_DATA)
 #define IS_ELF_TYPE(elf, type) ((elf->ehdr->e_type == type) && IS_ELF(elf))
 #define IS_ELF_ET_EXEC(elf) IS_ELF_TYPE(elf, ET_EXEC)
 #define IS_ELF_ET_DYN(elf)  IS_ELF_TYPE(elf, ET_DYN)
