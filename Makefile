@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.10 2004/07/14 16:52:09 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.11 2004/08/15 06:10:04 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@ VERSION	= 0.0.3
 ####################################################
 CFLAGS	:= -Wall -O2
 #CFLAGS += -DEBUG -g
-LDFLAGS :=-pie
+#LDFLAGS :=-pie
 DESTDIR	=
 PREFIX	:= $(DESTDIR)/usr
 STRIP	:= strip
@@ -42,21 +42,22 @@ all: $(OBJS) $(TARGETS)
 	$(CC) $(CFLAGS) -c $<
 
 %: %.o
-	$(CC) -o $@ $(CFLAGS) -o $@ paxelf.o $<
+	$(CC) -o $@ $(CFLAGS) -o $@ paxelf.o $< $(LDFLAGS)
 
 %.so: %.c
-	${CC) -shared -fPIC -o $@ $<
+	$(CC) -shared -fPIC -o $@ $<
 
 scan4sym:
-	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl
+	$(CC) -o $@ $(CFLAGS) paxelf.o $@.o -ldl $(LDFLAGS)
+
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
 
 pttool:
-	$(CC) -o $@ $(CFLAGS) $@.o
+	$(CC) -o $@ $(CFLAGS) $@.o $(LDFLAGS)
 
 pspax:
-	$(CC) -o $@ $(CFLAGS) $@.o
+	$(CC) -o $@ $(CFLAGS) $@.o $(LDFLAGS)
 
 clean:
 	-rm -f $(OBJS) $(TARGETS)
