@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.23 2005/04/03 18:27:45 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.24 2005/04/03 18:42:27 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.23 2005/04/03 18:27:45 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.24 2005/04/03 18:42:27 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -297,7 +297,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxetro:aqvBhV"
+#define PARSE_FLAGS "plRmxetraqvo:BhV"
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
@@ -307,10 +307,10 @@ static struct option const long_opts[] = {
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
-	{"file",required_argument, NULL, 'o'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
+	{"file",required_argument, NULL, 'o'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
@@ -325,10 +325,10 @@ static char *opts_help[] = {
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
-	"Write output stream to a filename",
 	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
+	"Write output stream to a filename",
 	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
@@ -371,17 +371,15 @@ static void parseargs(int argc, char *argv[])
 		case 's': /* reserved for -s, --symbol= */
 		case 'h': usage(EXIT_SUCCESS); break;
 
-		case 'o':
-		{
+		case 'o': {
 			FILE *fp = NULL;
 			fp = freopen(optarg, "w", stdout);
-			if (fp == NULL) {
-				fputs("open ", stderr);
-				perror(optarg);
-			} else 
-				stdout = fp;
+			if (fp == NULL)
+				err("Could not open output stream '%s': %s", optarg, strerror(errno));
+			stdout = fp;
 			break;
 		}
+
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
