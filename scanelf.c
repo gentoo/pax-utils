@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.30 2005/04/05 16:15:31 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.31 2005/04/06 02:01:52 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.30 2005/04/05 16:15:31 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.31 2005/04/06 02:01:52 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -292,11 +292,9 @@ static void scanelf_dir(const char *path)
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
 			continue;
 		len = (strlen(path) + 2 + strlen(dentry->d_name));
+		if (len >= sizeof(buf)) warn("len > sizeof(buf); %d %d = %s\n", len, sizeof(buf), path);
 		assert(len < sizeof(buf));
-		strncpy(buf, path, len);
-		strncat(buf, "/", len);
-		strncat(buf, dentry->d_name, len);
-		buf[sizeof(buf)] = 0;
+		sprintf(buf, "%s/%s", path, dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
 				scanelf_file(buf);
