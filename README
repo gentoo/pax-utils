@@ -7,14 +7,17 @@ Options:
   -p, --path        × Scan all directories in PATH environment
   -l, --ldpath      × Scan all directories in /etc/ld.so.conf
   -R, --recursive   × Scan directories recursively
+  -m, --mount       × Don't recursively cross mount points
 
   -x, --pax         × Print PaX markings
-  -s, --stack       × Print GNU_STACK/RELRO markings
+  -e, --header      × Print GNU_STACK markings
   -t, --textrel     × Print TEXTREL information
   -r, --rpath       × Print RPATH information
-  -a, --all         × Print all scanned info
-  -q, --quiet       × Only output 'bad' things
+  -a, --all         × Print all scanned info (-x -e -t -r)
 
+  -q, --quiet       × Only output 'bad' things
+  -v, --verbose     × Be verbose (can be specified more than once)
+  -B, --nobanner    × Don't display the header
   -h, --help        × Print this help and exit
   -V, --version     × Print version and exit
 
