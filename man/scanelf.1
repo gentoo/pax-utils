@@ -1,0 +1,62 @@
+.TH "scanelf" "1" "0.5" "Ned Ludd" ""
+.SH "NAME"
+.LP 
+scanelf \- 
+user-space utility to scan elf files
+.SH "SYNTAX"
+.LP 
+scanelf [\fIoptions\fP] dir1 dir2 dirN...
+.br 
+.SH "DESCRIPTION"
+scanelf is a user-space utility to scan and list ELF types, as well as thier respctive PaX flags and filenames.
+
+.LP 
+
+.SH "OPTIONS"
+.LP 
+
+.TP 
+\fBNote\fR
+long options are not supported on all platforms.
+.TP 
+\fB\-h, \-\-help\fR
+Output help information and exit.
+.TP 
+\fB\-v, \-\-version\fR
+Output version information and exit.
+.TP 
+\fB \-l, \-\-ldpath\fR
+Scans paths listed in /etc/ld.so.conf
+.TP 
+\fB\-p, \-\-path\fR
+Scans paths in order they are listed in the enviroment $PATH
+.TP 
+.BR
+.SH "FILES"
+.LP 
+\fI/etc/ld.so.conf\fP 
+.SH "ENVIRONMENT VARIABLES"
+.LP 
+.TP 
+\fBPATH\fP
+When the -p option is used the enviroment variable PATH will be used.
+
+.SH "EXAMPLES"
+.LP 
+To run this program the standard way type:
+.LP 
+scanelf -p
+scanelf -l
+.LP 
+Alternativly you can run it like:
+.LP 
+scanelf /bin /usr/bin /lib
+.br 
+
+.SH "AUTHORS"
+.LP 
+scanelf was written by <solar@gentoo.org>
+.BR
+.SH "SEE ALSO"
+.LP 
+chpax(1), gradm(1), isetdyn(1), scanexec(1)
