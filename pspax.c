@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.6 2005/04/02 03:25:04 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.7 2005/04/02 05:56:03 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -216,7 +216,7 @@ static void pspax()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aBhv"
+#define PARSE_FLAGS "aBhV"
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
 	{"nobanner",  no_argument, NULL, 'B'},
@@ -260,10 +260,9 @@ static void parseargs(int argc, char *argv[])
 		switch (flag) {
 
 		case 'V':                        /* version info */
-			printf("%s compiled %s\n"
-			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n"
-			       "%s\n",
-			       __FILE__, __DATE__, argv0, rcsid);
+			printf("%s compiled %s\n%s\n"
+			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n",
+			       __FILE__, __DATE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
