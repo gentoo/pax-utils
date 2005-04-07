@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.14 2005/04/05 00:55:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.15 2005/04/07 00:01:41 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -72,6 +72,12 @@ static pairtype elf_ei_data[] = {
 	QUERY(ELFDATANUM),
 	{ 0, 0 }
 };
+static pairtype elf_ei_version[] = {
+	QUERY(EV_NONE),
+	QUERY(EV_CURRENT),
+	QUERY(EV_NUM),
+	{ 0, 0 }
+};
 static pairtype elf_ei_osabi[] = {
 	QUERY(ELFOSABI_NONE),
 	QUERY(ELFOSABI_SYSV),
@@ -92,9 +98,10 @@ static pairtype elf_ei_osabi[] = {
 const char *get_elfeitype(elfobj *elf, int ei_type, int type)
 {
 	switch (ei_type) {
-		case EI_CLASS: return find_pairtype(elf_ei_class, type);
-		case EI_DATA:  return find_pairtype(elf_ei_data, type);
-		case EI_OSABI: return find_pairtype(elf_ei_osabi, type);
+		case EI_CLASS:   return find_pairtype(elf_ei_class, type);
+		case EI_DATA:    return find_pairtype(elf_ei_data, type);
+		case EI_VERSION: return find_pairtype(elf_ei_version, type);
+		case EI_OSABI:   return find_pairtype(elf_ei_osabi, type);
 	}
 	return "UNKNOWN EI TYPE";
 }
@@ -123,15 +130,104 @@ const char *get_elfetype(elfobj *elf)
 	return find_pairtype(elf_etypes, type);
 }
 
+/* translate elf EM_ defines */
+static pairtype elf_emtypes[] = {
+	QUERY(EM_NONE),
+	QUERY(EM_M32),
+	QUERY(EM_SPARC),
+	QUERY(EM_386),
+	QUERY(EM_68K),
+	QUERY(EM_88K),
+	QUERY(EM_860),
+	QUERY(EM_MIPS),
+	QUERY(EM_S370),
+	QUERY(EM_MIPS_RS3_LE),
+	QUERY(EM_PARISC),
+	QUERY(EM_VPP500),
+	QUERY(EM_SPARC32PLUS),
+	QUERY(EM_960),
+	QUERY(EM_PPC),
+	QUERY(EM_PPC64),
+	QUERY(EM_S390),
+	QUERY(EM_V800),
+	QUERY(EM_FR20),
+	QUERY(EM_RH32),
+	QUERY(EM_RCE),
+	QUERY(EM_ARM),
+	QUERY(EM_FAKE_ALPHA),
+	QUERY(EM_SH),
+	QUERY(EM_SPARCV9),
+	QUERY(EM_TRICORE),
+	QUERY(EM_ARC),
+	QUERY(EM_H8_300),
+	QUERY(EM_H8_300H),
+	QUERY(EM_H8S),
+	QUERY(EM_H8_500),
+	QUERY(EM_IA_64),
+	QUERY(EM_MIPS_X),
+	QUERY(EM_COLDFIRE),
+	QUERY(EM_68HC12),
+	QUERY(EM_MMA),
+	QUERY(EM_PCP),
+	QUERY(EM_NCPU),
+	QUERY(EM_NDR1),
+	QUERY(EM_STARCORE),
+	QUERY(EM_ME16),
+	QUERY(EM_ST100),
+	QUERY(EM_TINYJ),
+	QUERY(EM_X86_64),
+	QUERY(EM_PDSP),
+	QUERY(EM_FX66),
+	QUERY(EM_ST9PLUS),
+	QUERY(EM_ST7),
+	QUERY(EM_68HC16),
+	QUERY(EM_68HC11),
+	QUERY(EM_68HC08),
+	QUERY(EM_68HC05),
+	QUERY(EM_SVX),
+	QUERY(EM_ST19),
+	QUERY(EM_VAX),
+	QUERY(EM_CRIS),
+	QUERY(EM_JAVELIN),
+	QUERY(EM_FIREPATH),
+	QUERY(EM_ZSP),
+	QUERY(EM_MMIX),
+	QUERY(EM_HUANY),
+	QUERY(EM_PRISM),
+	QUERY(EM_AVR),
+	QUERY(EM_FR30),
+	QUERY(EM_D10V),
+	QUERY(EM_D30V),
+	QUERY(EM_V850),
+	QUERY(EM_M32R),
+	QUERY(EM_MN10300),
+	QUERY(EM_MN10200),
+	QUERY(EM_PJ),
+	QUERY(EM_OPENRISC),
+	QUERY(EM_ARC_A5),
+	QUERY(EM_XTENSA),
+	QUERY(EM_NUM),
+	QUERY(EM_ALPHA),
+	{ 0, 0 }
+};
+const char *get_elfemtype(int type)
+{
+	return find_pairtype(elf_emtypes, type);
+}
+
 /* translate elf PT_ defines */
 static pairtype elf_ptypes[] = {
-	QUERY(PT_DYNAMIC),
-	QUERY(PT_GNU_HEAP),
-	QUERY(PT_GNU_RELRO),
-	QUERY(PT_GNU_STACK),
-	QUERY(PT_INTERP),
+	QUERY(PT_NULL),
 	QUERY(PT_LOAD),
+	QUERY(PT_DYNAMIC),
+	QUERY(PT_INTERP),
 	QUERY(PT_NOTE),
+	QUERY(PT_SHLIB),
+	QUERY(PT_PHDR),
+	QUERY(PT_TLS),
+	QUERY(PT_GNU_EH_FRAME),
+	QUERY(PT_GNU_STACK),
+	QUERY(PT_GNU_RELRO),
 	QUERY(PT_PAX_FLAGS),
 	{ 0, 0 }
 };
@@ -202,7 +298,7 @@ static pairtype elf_stttypes[] = {
 };
 const char *get_elfstttype(int type)
 {
-	return find_pairtype(elf_stttypes, type);
+	return find_pairtype(elf_stttypes, type & 0xF);
 }
 
 /* Read an ELF into memory */

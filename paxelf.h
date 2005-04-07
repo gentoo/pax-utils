@@ -74,6 +74,7 @@ extern elfobj *readelf(const char *filename);
 extern void unreadelf(elfobj *elf);
 extern const char *get_elfeitype(elfobj *elf, int ei_type, int type);
 extern const char *get_elfetype(elfobj *elf);
+extern const char *get_elfemtype(int type);
 extern const char *get_elfptype(int type);
 extern const char *get_elfdtype(int type);
 extern const char *get_elfstttype(int type);
@@ -112,11 +113,6 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 /* not in <=binutils-2.14.90.0.8 (should come in by way of .9) */
 #ifndef PT_GNU_RELRO
 # define PT_GNU_RELRO	0x6474e552
-#endif
-
-/* not in <glibc-2.3.3_pre20031222 */
-#ifndef PT_GNU_HEAP
-# define PT_GNU_HEAP	0x6474e552
 #endif
 
 /* 

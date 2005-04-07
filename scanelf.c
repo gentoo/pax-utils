@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.31 2005/04/06 02:01:52 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.32 2005/04/07 00:01:40 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.31 2005/04/06 02:01:52 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.32 2005/04/07 00:01:40 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -68,6 +68,7 @@ static char show_pax = 0;
 static char show_stack = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
+static char show_needed = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
@@ -79,10 +80,12 @@ static char *find_sym = NULL;
 static void scanelf_file(const char *filename)
 {
 	int i;
-	char found_pax, found_stack, found_relro, found_textrel, found_rpath, found_sym;
+	char found_pax, found_stack, found_relro, found_textrel, 
+	     found_rpath, found_needed, found_sym;
 	elfobj *elf;
 
-	found_pax = found_stack = found_relro = found_textrel = found_rpath = found_sym = 0;
+	found_pax = found_stack = found_relro = found_textrel = \
+	found_rpath = found_needed = found_sym = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -99,11 +102,12 @@ static void scanelf_file(const char *filename)
 
 	/* show the header */
 	if (!be_quiet && show_banner) {
-		printf(" TYPE  ");
-		if (show_pax) printf("  PAX  ");
-		if (show_stack) printf(" STK/REL ");
+		printf(" TYPE   ");
+		if (show_pax) printf(" PAX   ");
+		if (show_stack) printf("STK/REL ");
 		if (show_textrel) printf("TEXTREL ");
 		if (show_rpath) printf("RPATH ");
+		if (show_needed) printf("NEEDED ");
 		printf(" FILE\n");
 		show_banner = 0;
 	}
@@ -212,11 +216,59 @@ static void scanelf_file(const char *filename)
 			printf("  -   ");
 	}
 
+	/* print out all the NEEDED entries */
+	if (show_needed) {
+		char *needed;
+		void *strtbl_void = elf_findsecbyname(elf, ".dynstr");
+
+		if (strtbl_void) {
+#define SHOW_NEEDED(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Dyn *dyn; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (be_verbose && EGET(phdr[i].p_type) == PT_INTERP) { \
+				dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+				printf("%s\n", elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr)); \
+				exit(0); \
+			} \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+			while (EGET(dyn->d_tag) != DT_NULL) { \
+				if (EGET(dyn->d_tag) == DT_NEEDED) { \
+					needed = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					if (found_needed) printf(","); \
+					printf("%s", needed); \
+					found_needed = 1; \
+				} \
+				++dyn; \
+			} \
+		} }
+		SHOW_NEEDED(32)
+		SHOW_NEEDED(64)
+		}
+		if (!be_quiet && !found_needed)
+			printf("  -    ");
+		else if (found_needed)
+			printf(" ");
+	}
+
+	/* search the symbol table for a specified symbol */
 	if (find_sym) {
 		void *symtab_void, *strtab_void;
-		char *versioned_symname = malloc(strlen(find_sym)+2);
+		char *versioned_symname;
+		size_t len;
 
+		len = strlen(find_sym) + 1;
+		versioned_symname = (char *)malloc(sizeof(char) * (len+1));
+		if (!versioned_symname) {
+			warnf("Could not malloc() mem for sym scan");
+			return;
+		}
 		sprintf(versioned_symname, "%s@", find_sym);
+
 		symtab_void = elf_findsecbyname(elf, ".symtab");
 		strtab_void = elf_findsecbyname(elf, ".strtab");
 
@@ -232,14 +284,15 @@ static void scanelf_file(const char *filename)
 			if (sym->st_name) { \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 				if (*find_sym == '*') { \
-					printf("%s(%s) %5lX %15s %s\n", ((found_sym == 0) ? "\n\t" : "\t"), \
-						(char *) basename(filename), \
-						(long)sym->st_size, (char *) get_elfstttype(sym->st_info & 0xF), \
-                                      		symname); \
-						found_sym = 1; \
-				} \
-				if ((strcmp(find_sym, symname) == 0) || \
-					(strncmp(symname, versioned_symname, strlen(versioned_symname)) == 0)) \
+					printf("%s(%s) %5lX %15s %s\n", \
+					       ((found_sym == 0) ? "\n\t" : "\t"), \
+					       (char *)basename(filename), \
+					       (long)sym->st_size, \
+					       (char *)get_elfstttype(sym->st_info), \
+					       symname); \
+					found_sym = 1; \
+				} else if ((strcmp(find_sym, symname) == 0) || \
+				           (strncmp(symname, versioned_symname, len) == 0)) \
 					found_sym++; \
 			} \
 			++sym; \
@@ -256,7 +309,8 @@ static void scanelf_file(const char *filename)
 		}
 	}
 
-	if (!be_quiet || found_pax || found_stack || found_textrel || found_rpath || found_sym)
+	if (!be_quiet || found_pax || found_stack || found_textrel || \
+	    found_rpath || found_needed || found_sym)
 		printf("%s\n", filename);
 
 	unreadelf(elf);
@@ -269,7 +323,7 @@ static void scanelf_dir(const char *path)
 	register struct dirent *dentry;
 	struct stat st_top, st;
 	char buf[_POSIX_PATH_MAX];
-	size_t len = 0;
+	size_t pathlen = 0, len = 0;
 
 	/* make sure path exists */
 	if (lstat(path, &st_top) == -1)
@@ -288,12 +342,15 @@ static void scanelf_dir(const char *path)
 	}
 	if (be_verbose) printf("%s: scanning dir\n", path);
 
+	pathlen = strlen(path);
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
 			continue;
-		len = (strlen(path) + 2 + strlen(dentry->d_name));
-		if (len >= sizeof(buf)) warn("len > sizeof(buf); %d %d = %s\n", len, sizeof(buf), path);
-		assert(len < sizeof(buf));
+		len = (pathlen + 1 + strlen(dentry->d_name) + 1);
+		if (len >= sizeof(buf)) {
+			warnf("Skipping '%s': len > sizeof(buf); %d > %d\n", path, (int)len, (int)sizeof(buf));
+			continue;
+		}
 		sprintf(buf, "%s/%s", path, dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
@@ -335,12 +392,11 @@ static void scanelf_ldpath()
 			scanelf_dir(path);
 		}
 	free(path);
+	fclose(fp);
 
 	if (!scan_l)   scanelf_dir("/lib");
 	if (!scan_ul)  scanelf_dir("/usr/lib");
 	if (!scan_ull) scanelf_dir("/usr/local/lib");
-
-	fclose(fp);
 }
 
 /* scan env PATH for paths */
@@ -353,7 +409,7 @@ static void scanelf_envpath()
 		err("PATH is not set in your env !");
 
 	if ((path = strdup(path)) == NULL)
-		err("stdup failed: %s", strerror(errno));
+		err("strdup failed: %s", strerror(errno));
 
 	while ((p = strrchr(path, ':')) != NULL) {
 		scanelf_dir(p + 1);
@@ -366,7 +422,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxetrs:aqvo:BhV"
+#define PARSE_FLAGS "plRmxetrns:aqvo:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -377,6 +433,7 @@ static struct option const long_opts[] = {
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
+	{"needed",    no_argument, NULL, 'n'},
 	{"symbol",    a_argument,  NULL, 's'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
@@ -396,6 +453,7 @@ static char *opts_help[] = {
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
+	"Print NEEDED information",
 	"Find a specified symbol",
 	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
@@ -461,9 +519,10 @@ static void parseargs(int argc, char *argv[])
 		case 'e': show_stack = 1; break;
 		case 't': show_textrel = 1; break;
 		case 'r': show_rpath = 1; break;
+		case 'n': show_needed = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_stack = show_textrel = show_rpath = 1; break;
+		case 'a': show_pax = show_stack = show_textrel = show_needed = show_rpath = 1; break;
 
 		case ':':
 			warn("Option missing parameter");
