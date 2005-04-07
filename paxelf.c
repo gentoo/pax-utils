@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.15 2005/04/07 00:01:41 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.16 2005/04/07 00:22:42 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -328,10 +328,10 @@ elfobj *readelf(const char *filename)
 	if (st.st_size <= EI_NIDENT)
 		goto close_fd_and_return;
 
-	elf = (elfobj*)malloc(sizeof(elfobj));
+	elf = (elfobj*)malloc(sizeof(*elf));
 	if (elf == NULL)
 		goto close_fd_and_return;
-	memset(elf, 0x00, sizeof(elfobj));
+	memset(elf, 0x00, sizeof(*elf));
 
 	elf->fd = fd;
 	elf->len = st.st_size;
@@ -373,7 +373,6 @@ void unreadelf(elfobj *elf)
 {
 	munmap(elf->data, elf->len);
 	close(elf->fd);
-	memset(elf, 0, sizeof(elfobj));
 	free(elf);
 }
 
