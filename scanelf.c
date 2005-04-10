@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.32 2005/04/07 00:01:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.33 2005/04/10 15:15:40 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.32 2005/04/07 00:01:40 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.33 2005/04/10 15:15:40 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -83,7 +83,13 @@ static void scanelf_file(const char *filename)
 	char found_pax, found_stack, found_relro, found_textrel, 
 	     found_rpath, found_needed, found_sym;
 	elfobj *elf;
+	struct stat st;
 
+	/* make sure path exists */
+	if (lstat(filename, &st) == -1)
+		return;
+	if (!S_ISREG(st.st_mode))
+		return;
 	found_pax = found_stack = found_relro = found_textrel = \
 	found_rpath = found_needed = found_sym = 0;
 
@@ -162,14 +168,14 @@ static void scanelf_file(const char *filename)
 				if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 					found_textrel = 1; \
 					/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
-					printf("TEXTREL "); \
+					fputs("TEXTREL ", stdout); \
 				} \
 				++dyn; \
 			} \
 		} }
 		SHOW_TEXTREL(32)
 		SHOW_TEXTREL(64)
-		if (!be_quiet && !found_textrel) printf("------- ");
+		if (!be_quiet && !found_textrel) fputs("------- ", stdout);
 	}
 
 	/* rpath fun */
@@ -305,13 +311,13 @@ static void scanelf_file(const char *filename)
 			if (found_sym)
 				printf(" %s ", find_sym);
 			else if (!be_quiet)
-				printf(" - ");
+				fputs(" - ", stdout);
 		}
 	}
 
 	if (!be_quiet || found_pax || found_stack || found_textrel || \
 	    found_rpath || found_needed || found_sym)
-		printf("%s\n", filename);
+		puts(filename);
 
 	unreadelf(elf);
 }
@@ -402,13 +408,13 @@ static void scanelf_ldpath()
 /* scan env PATH for paths */
 static void scanelf_envpath()
 {
-	char *path, *p;
+	char *orig_path, *path, *p;
 
 	path = getenv("PATH");
 	if (!path)
 		err("PATH is not set in your env !");
 
-	if ((path = strdup(path)) == NULL)
+	if ((orig_path = path = strdup(path)) == NULL)
 		err("strdup failed: %s", strerror(errno));
 
 	while ((p = strrchr(path, ':')) != NULL) {
@@ -416,7 +422,7 @@ static void scanelf_envpath()
 		*p = 0;
 	}
 
-	free(path);
+	free(orig_path);
 }
 
 
