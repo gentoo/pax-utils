@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.33 2005/04/10 15:15:40 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.34 2005/04/12 19:11:32 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.33 2005/04/10 15:15:40 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.34 2005/04/12 19:11:32 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -408,13 +408,13 @@ static void scanelf_ldpath()
 /* scan env PATH for paths */
 static void scanelf_envpath()
 {
-	char *orig_path, *path, *p;
+	char *path, *p;
 
 	path = getenv("PATH");
 	if (!path)
 		err("PATH is not set in your env !");
 
-	if ((orig_path = path = strdup(path)) == NULL)
+	if ((path = strdup(path)) == NULL)
 		err("strdup failed: %s", strerror(errno));
 
 	while ((p = strrchr(path, ':')) != NULL) {
@@ -422,7 +422,7 @@ static void scanelf_envpath()
 		*p = 0;
 	}
 
-	free(orig_path);
+	free(path);
 }
 
 
