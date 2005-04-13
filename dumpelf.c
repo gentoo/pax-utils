@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.2 2005/04/12 23:57:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.3 2005/04/13 22:35:44 vapier Exp $
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.2 2005/04/12 23:57:07 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.3 2005/04/13 22:35:44 vapier Exp $";
 
 
 /* helper functions for showing errors */
@@ -73,10 +73,10 @@ static void dumpelf(const char *filename, long file_cnt)
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	printf("struct {\n" \
 	       "\tElf%1$i_Ehdr ehdr;\n" \
-	       "\tElf%1$i_Phdr phdrs[%3$i];\n" \
-	       "\tElf%1$i_Shdr shdrs[%4$i];\n" \
-	       "} dumpedelf_%2$i = {\n\n", \
-	       B, file_cnt, EGET(ehdr->e_phnum)+1, EGET(ehdr->e_shnum)+1); \
+	       "\tElf%1$i_Phdr phdrs[%3$li];\n" \
+	       "\tElf%1$i_Shdr shdrs[%4$li];\n" \
+	       "} dumpedelf_%2$li = {\n\n", \
+	       B, file_cnt, (long)(EGET(ehdr->e_phnum)+1), (long)(EGET(ehdr->e_shnum)+1)); \
 	}
 	MAKE_STRUCT(32)
 	MAKE_STRUCT(64)
@@ -136,28 +136,28 @@ static void dump_ehdr(elfobj *elf, void *ehdr_void)
 	       "\t\t/* [%i] EI_PAD:        */ 0x%02X /* x %i bytes */\n" \
 	       /* "\t\t/ [%i] EI_BRAND:      / 0x%02X\n" */ \
 	       "\t},\n", \
-	       EI_MAG0, ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2], ehdr->e_ident[EI_MAG3], \
-	       EI_CLASS, ehdr->e_ident[EI_CLASS], get_elfeitype(elf, EI_CLASS, ehdr->e_ident[EI_CLASS]), \
-	       EI_DATA, ehdr->e_ident[EI_DATA], get_elfeitype(elf, EI_DATA, ehdr->e_ident[EI_DATA]), \
-	       EI_VERSION, ehdr->e_ident[EI_VERSION], get_elfeitype(elf, EI_VERSION, ehdr->e_ident[EI_VERSION]), \
-	       EI_OSABI, ehdr->e_ident[EI_OSABI], get_elfeitype(elf, EI_OSABI, ehdr->e_ident[EI_OSABI]), \
-	       EI_ABIVERSION, ehdr->e_ident[EI_ABIVERSION], \
-	       EI_PAD, ehdr->e_ident[EI_PAD], EI_NIDENT - EI_PAD \
+	       EI_MAG0, (unsigned int)ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2], ehdr->e_ident[EI_MAG3], \
+	       EI_CLASS, (int)ehdr->e_ident[EI_CLASS], get_elfeitype(elf, EI_CLASS, ehdr->e_ident[EI_CLASS]), \
+	       EI_DATA, (int)ehdr->e_ident[EI_DATA], get_elfeitype(elf, EI_DATA, ehdr->e_ident[EI_DATA]), \
+	       EI_VERSION, (int)ehdr->e_ident[EI_VERSION], get_elfeitype(elf, EI_VERSION, ehdr->e_ident[EI_VERSION]), \
+	       EI_OSABI, (int)ehdr->e_ident[EI_OSABI], get_elfeitype(elf, EI_OSABI, ehdr->e_ident[EI_OSABI]), \
+	       EI_ABIVERSION, (int)ehdr->e_ident[EI_ABIVERSION], \
+	       EI_PAD, (unsigned int)ehdr->e_ident[EI_PAD], EI_NIDENT - EI_PAD \
 	       /* EI_BRAND, ehdr->e_ident[EI_BRAND] */ \
 	); \
-	printf("\t.e_type      = %-10i , /* (%s) */\n", EGET(ehdr->e_type), get_elfetype(elf)); \
-	printf("\t.e_machine   = %-10i , /* (%s) */\n", EGET(ehdr->e_machine), get_elfemtype(EGET(ehdr->e_machine))); \
-	printf("\t.e_version   = %-10i ,\n", EGET(ehdr->e_version)); \
-	printf("\t.e_entry     = 0x%-8X ,\n", EGET(ehdr->e_entry)); \
-	printf("\t.e_phoff     = %-10i , /* (bytes into file) */\n", EGET(ehdr->e_phoff)); \
-	printf("\t.e_shoff     = %-10i , /* (bytes into file) */\n", EGET(ehdr->e_shoff)); \
-	printf("\t.e_flags     = 0x%-8X ,\n", EGET(ehdr->e_flags)); \
-	printf("\t.e_ehsize    = %-10i , /* (bytes) */\n", EGET(ehdr->e_ehsize)); \
-	printf("\t.e_phentsize = %-10i , /* (bytes) */\n", EGET(ehdr->e_phentsize)); \
-	printf("\t.e_phnum     = %-10i , /* (program headers) */\n", EGET(ehdr->e_phnum)); \
-	printf("\t.e_shentsize = %-10i , /* (bytes) */\n", EGET(ehdr->e_shentsize)); \
-	printf("\t.e_shnum     = %-10i , /* (section headers) */\n", EGET(ehdr->e_shnum)); \
-	printf("\t.e_shstrndx  = %-10i\n", EGET(ehdr->e_shstrndx)); \
+	printf("\t.e_type      = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_type), get_elfetype(elf)); \
+	printf("\t.e_machine   = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_machine), get_elfemtype(EGET(ehdr->e_machine))); \
+	printf("\t.e_version   = %-10i ,\n", (int)EGET(ehdr->e_version)); \
+	printf("\t.e_entry     = 0x%-8lX ,\n", (unsigned long)EGET(ehdr->e_entry)); \
+	printf("\t.e_phoff     = %-10li , /* (bytes into file) */\n", (unsigned long)EGET(ehdr->e_phoff)); \
+	printf("\t.e_shoff     = %-10li , /* (bytes into file) */\n", (unsigned long)EGET(ehdr->e_shoff)); \
+	printf("\t.e_flags     = 0x%-8X ,\n", (unsigned int)EGET(ehdr->e_flags)); \
+	printf("\t.e_ehsize    = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_ehsize)); \
+	printf("\t.e_phentsize = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_phentsize)); \
+	printf("\t.e_phnum     = %-10i , /* (program headers) */\n", (int)EGET(ehdr->e_phnum)); \
+	printf("\t.e_shentsize = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_shentsize)); \
+	printf("\t.e_shnum     = %-10i , /* (section headers) */\n", (int)EGET(ehdr->e_shnum)); \
+	printf("\t.e_shstrndx  = %-10i\n", (int)EGET(ehdr->e_shstrndx)); \
 	printf("},\n"); \
 	}
 	DUMP_EHDR(32)
@@ -168,15 +168,15 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
-	printf("/* Program Header #%i */\n{\n", phdr_cnt); \
-	printf("\t.p_type   = %-10i , /* [%s] */\n", EGET(phdr->p_type), get_elfptype(EGET(phdr->p_type))); \
-	printf("\t.p_offset = %-10i ,\n", EGET(phdr->p_offset)); \
-	printf("\t.p_vaddr  = %-10i ,\n", EGET(phdr->p_vaddr)); \
-	printf("\t.p_paddr  = %-10i ,\n", EGET(phdr->p_paddr)); \
-	printf("\t.p_filesz = %-10i ,\n", EGET(phdr->p_filesz)); \
-	printf("\t.p_memsz  = %-10i ,\n", EGET(phdr->p_memsz)); \
-	printf("\t.p_flags  = %-10i ,\n", EGET(phdr->p_flags)); \
-	printf("\t.p_align  = %-10i\n", EGET(phdr->p_align)); \
+	printf("/* Program Header #%li */\n{\n", phdr_cnt); \
+	printf("\t.p_type   = %-10li , /* [%s] */\n", (long)EGET(phdr->p_type), get_elfptype(EGET(phdr->p_type))); \
+	printf("\t.p_offset = %-10li ,\n", (long)EGET(phdr->p_offset)); \
+	printf("\t.p_vaddr  = 0x%-8lX ,\n", (unsigned long)EGET(phdr->p_vaddr)); \
+	printf("\t.p_paddr  = 0x%-8lX ,\n", (unsigned long)EGET(phdr->p_paddr)); \
+	printf("\t.p_filesz = %-10li ,\n", (long)EGET(phdr->p_filesz)); \
+	printf("\t.p_memsz  = %-10li ,\n", (long)EGET(phdr->p_memsz)); \
+	printf("\t.p_flags  = %-10li ,\n", (long)EGET(phdr->p_flags)); \
+	printf("\t.p_align  = %-10li\n", (long)EGET(phdr->p_align)); \
 	printf("},\n"); \
 	}
 	DUMP_PHDR(32)
@@ -187,17 +187,17 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt)
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
-	printf("/* Section Header #%i */\n{\n", shdr_cnt); \
-	printf("\t.sh_name      = %-10i ,\n", EGET(shdr->sh_name)); \
-	printf("\t.sh_type      = %-10i ,\n", EGET(shdr->sh_type)); \
-	printf("\t.sh_flags     = %-10i ,\n", EGET(shdr->sh_flags)); \
-	printf("\t.sh_addr      = %-10i ,\n", EGET(shdr->sh_addr)); \
-	printf("\t.sh_offset    = %-10i , /* (bytes) */\n", EGET(shdr->sh_offset)); \
-	printf("\t.sh_size      = %-10i , /* (bytes) */\n", EGET(shdr->sh_size)); \
-	printf("\t.sh_link      = %-10i ,\n", EGET(shdr->sh_link)); \
-	printf("\t.sh_info      = %-10i ,\n", EGET(shdr->sh_info)); \
-	printf("\t.sh_addralign = %-10i ,\n", EGET(shdr->sh_addralign)); \
-	printf("\t.sh_entsize   = %-10i\n", EGET(shdr->sh_entsize)); \
+	printf("/* Section Header #%li */\n{\n", shdr_cnt); \
+	printf("\t.sh_name      = %-10i ,\n", (int)EGET(shdr->sh_name)); \
+	printf("\t.sh_type      = %-10i ,\n", (int)EGET(shdr->sh_type)); \
+	printf("\t.sh_flags     = %-10li ,\n", (long)EGET(shdr->sh_flags)); \
+	printf("\t.sh_addr      = 0x%-8lX ,\n", (unsigned long)EGET(shdr->sh_addr)); \
+	printf("\t.sh_offset    = %-10i , /* (bytes) */\n", (int)EGET(shdr->sh_offset)); \
+	printf("\t.sh_size      = %-10li , /* (bytes) */\n", (long)EGET(shdr->sh_size)); \
+	printf("\t.sh_link      = %-10i ,\n", (int)EGET(shdr->sh_link)); \
+	printf("\t.sh_info      = %-10i ,\n", (int)EGET(shdr->sh_info)); \
+	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
+	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
 	printf("},\n"); \
 	}
 	DUMP_SHDR(32)
