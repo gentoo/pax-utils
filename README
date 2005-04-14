@@ -1,28 +1,38 @@
 pax-utils is a small set of various PaX related utilities for ELF binaries.
+It was written for ELF Q/A on Gentoo systems but can be used on any distro.
 
 == scanelf ==
 Usage: scanelf [options] <dir1> [dir2 dirN ...]
 
+  -p, --path         × Scan all directories in PATH environment
+  -l, --ldpath       × Scan all directories in /etc/ld.so.conf
+  -R, --recursive    × Scan directories recursively
+  -m, --mount        × Don't recursively cross mount points
+
+  -x, --pax          × Print PaX markings
+  -e, --header       × Print GNU_STACK markings
+  -t, --textrel      × Print TEXTREL information
+  -r, --rpath        × Print RPATH information
+  -n, --needed       × Print NEEDED information
+  -s, --symbol <arg> × Find a specified symbol
+  -a, --all          × Print all scanned info (-x -e -t -r)
+
+  -q, --quiet        × Only output 'bad' things
+  -v, --verbose      × Be verbose (can be specified more than once)
+  -o, --file   <arg> × Write output stream to a filename
+  -B, --nobanner     × Don't display the header
+  -h, --help         × Print this help and exit
+  -V, --version      × Print version and exit
+
+== pspax ==
+Usage: pspax [options]
+
 Options:
-  -p, --path        × Scan all directories in PATH environment
-  -l, --ldpath      × Scan all directories in /etc/ld.so.conf
-  -R, --recursive   × Scan directories recursively
-  -m, --mount       × Don't recursively cross mount points
+  -a, --all         × Show all processes
 
-  -x, --pax         × Print PaX markings
-  -e, --header      × Print GNU_STACK markings
-  -t, --textrel     × Print TEXTREL information
-  -r, --rpath       × Print RPATH information
-  -a, --all         × Print all scanned info (-x -e -t -r)
-
-  -q, --quiet       × Only output 'bad' things
-  -v, --verbose     × Be verbose (can be specified more than once)
   -B, --nobanner    × Don't display the header
   -h, --help        × Print this help and exit
   -V, --version     × Print version and exit
-
-== pspax ==
-Usage: pspax
 
 If pspax was compiled with CFLAGS+= -DWANT_SYSCAP and LDFLAGS+=-lcap it
 will also list runtime capabilities If extended attribute support is
@@ -33,3 +43,4 @@ make install
 
 PaX Homepage:
 http://pax.grsecurity.net/
+

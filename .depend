@@ -1,3 +1,4 @@
 scanelf.o: scanelf.c paxelf.h
 pspax.o: pspax.c paxelf.h
+dumpelf.o: dumpelf.c paxelf.h
 paxelf.o: paxelf.c paxelf.h

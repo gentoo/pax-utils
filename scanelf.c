@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.34 2005/04/12 19:11:32 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.35 2005/04/14 00:17:30 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.34 2005/04/12 19:11:32 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.35 2005/04/14 00:17:30 solar Exp $";
 
 
 /* helper functions for showing errors */
@@ -476,8 +476,8 @@ static void usage(int status)
 {
 	int i;
 	printf("¤ Scan ELF binaries for stuff\n"
-	       "Usage: %s [options] <dir1> [dir2 dirN ...]\n\n", argv0);
-	printf("Options:\n");
+	       "Usage: %s [options] <dir1/file1> [dir2 dirN fileN ...]\n\n", argv0);
+	printf("Options: -[%s]\n", PARSE_FLAGS);
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
 			printf("  -%c, --%-13s× %s\n", long_opts[i].val, 
