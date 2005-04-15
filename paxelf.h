@@ -136,4 +136,9 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 # define PF_NORANDMMAP   (1 << 15)	/* Disable RANDMMAP */
 #endif				/* PT_PAX_ */
 
+/* older glibc/uclibc will need this */
+#ifndef EM_ST19
+# define EM_ST19	74
+#endif
+
 #endif /* _PAX_ELF_H */
