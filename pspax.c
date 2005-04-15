@@ -41,18 +41,8 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.10 2005/04/06 13:41:40 solar Exp $";
-
-
-/* helper functions for showing errors */
-#define argv0 "pspax" /*((*argv != NULL) ? argv[0] : __FILE__ "\b\b")*/
-#define warn(fmt, args...) \
-	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
-#define err(fmt, args...) \
-	do { \
-	warn(fmt, ## args); \
-	exit(EXIT_FAILURE); \
-	} while (0)
+static const char *rcsid = "$Id: pspax.c,v 1.11 2005/04/15 22:02:03 vapier Exp $";
+#define argv0 "pspax"
 
 
 

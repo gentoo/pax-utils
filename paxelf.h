@@ -80,6 +80,16 @@ extern const char *get_elfdtype(int type);
 extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 
+/* helper functions for showing errors */
+#define warn(fmt, args...) \
+	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
+#define warnf(fmt, args...) warn("%s(): " fmt, __FUNCTION__, ## args)
+#define err(fmt, args...) \
+	do { \
+	warn(fmt, ## args); \
+	exit(EXIT_FAILURE); \
+	} while (0)
+
 /* PaX flags (to be read in elfhdr.e_flags) */
 #define HF_PAX_PAGEEXEC		1	/* 0: Paging based non-exec pages */
 #define HF_PAX_EMUTRAMP		2	/* 0: Emulate trampolines */

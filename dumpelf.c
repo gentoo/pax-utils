@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.3 2005/04/13 22:35:44 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.4 2005/04/15 22:02:03 vapier Exp $
  */
 
 #include <stdio.h>
@@ -18,21 +18,8 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.3 2005/04/13 22:35:44 vapier Exp $";
-
-
-/* helper functions for showing errors */
-#define argv0 "dumpelf" /*((*argv != NULL) ? argv[0] : __FILE__ "\b\b")*/
-#define warn(fmt, args...) \
-	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
-#define warnf(fmt, args...) warn("%s(): " fmt, __FUNCTION__, ## args)
-#define err(fmt, args...) \
-	do { \
-	warn(fmt, ## args); \
-	exit(EXIT_FAILURE); \
-	} while (0)
-
-
+static const char *rcsid = "$Id: dumpelf.c,v 1.4 2005/04/15 22:02:03 vapier Exp $";
+#define argv0 "dumpelf"
 
 /* prototypes */
 static void dumpelf(const char *filename, long file_cnt);
@@ -76,7 +63,7 @@ static void dumpelf(const char *filename, long file_cnt)
 	       "\tElf%1$i_Phdr phdrs[%3$li];\n" \
 	       "\tElf%1$i_Shdr shdrs[%4$li];\n" \
 	       "} dumpedelf_%2$li = {\n\n", \
-	       B, file_cnt, (long)(EGET(ehdr->e_phnum)+1), (long)(EGET(ehdr->e_shnum)+1)); \
+	       B, file_cnt, (long)EGET(ehdr->e_phnum), (long)EGET(ehdr->e_shnum)); \
 	}
 	MAKE_STRUCT(32)
 	MAKE_STRUCT(64)
@@ -92,13 +79,14 @@ static void dumpelf(const char *filename, long file_cnt)
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+			if (i) printf(",\n"); \
 			dump_phdr(elf, phdr, i); \
 			++phdr; \
 		} }
 		DUMP_PHDRS(32)
 		DUMP_PHDRS(64)
 	}
-	printf("0\n},\n");
+	printf("\n},\n");
 
 	/* dump the section headers */
 	printf("\n.shdrs = {\n");
@@ -108,13 +96,14 @@ static void dumpelf(const char *filename, long file_cnt)
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
+			if (i) printf(",\n"); \
 			dump_shdr(elf, shdr, i); \
 			++shdr; \
 		} }
 		DUMP_SHDRS(32)
 		DUMP_SHDRS(64)
 	}
-	printf("0\n}\n");
+	printf("\n}\n");
 
 	/* finish the namespace struct and get out of here */
 	printf("};\n");
@@ -177,7 +166,7 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 	printf("\t.p_memsz  = %-10li ,\n", (long)EGET(phdr->p_memsz)); \
 	printf("\t.p_flags  = %-10li ,\n", (long)EGET(phdr->p_flags)); \
 	printf("\t.p_align  = %-10li\n", (long)EGET(phdr->p_align)); \
-	printf("},\n"); \
+	printf("}"); \
 	}
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
@@ -198,7 +187,7 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt)
 	printf("\t.sh_info      = %-10i ,\n", (int)EGET(shdr->sh_info)); \
 	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
 	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
-	printf("},\n"); \
+	printf("}"); \
 	}
 	DUMP_SHDR(32)
 	DUMP_SHDR(64)
