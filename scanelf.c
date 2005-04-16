@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.36 2005/04/15 22:02:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.37 2005/04/16 06:34:39 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.36 2005/04/15 22:02:03 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.37 2005/04/16 06:34:39 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -51,6 +51,7 @@ static void parseargs(int argc, char *argv[]);
 /* variables to control behavior */
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
+static char scan_symlink = 1;
 static char dir_recurse = 0;
 static char dir_crossmount = 1;
 static char show_pax = 0;
@@ -74,11 +75,13 @@ static void scanelf_file(const char *filename)
 	elfobj *elf;
 	struct stat st;
 
-	/* make sure path exists */
+	/* make sure 'filename' exists */
 	if (lstat(filename, &st) == -1)
 		return;
-	if (!S_ISREG(st.st_mode))
+	/* always handle regular files and handle symlinked files if no -y */
+	if (!(S_ISREG(st.st_mode) || (S_ISLNK(st.st_mode) && scan_symlink)))
 		return;
+
 	found_pax = found_stack = found_relro = found_textrel = \
 	found_rpath = found_needed = found_sym = 0;
 
@@ -417,13 +420,14 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmxetrns:aqvo:BhV"
+#define PARSE_FLAGS "plRmyxetrns:aqvo:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
+	{"symlink",   no_argument, NULL, 'y'},
 	{"pax",       no_argument, NULL, 'x'},
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
@@ -443,7 +447,8 @@ static char *opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
 	"Scan directories recursively",
-	"Don't recursively cross mount points\n",
+	"Don't recursively cross mount points",
+	"Don't scan symlinks\n",
 	"Print PaX markings",
 	"Print GNU_STACK markings",
 	"Print TEXTREL information",
@@ -464,7 +469,7 @@ static char *opts_help[] = {
 static void usage(int status)
 {
 	int i;
-	printf("¤ Scan ELF binaries for stuff\n"
+	printf("¤ Scan ELF binaries for stuff\n\n"
 	       "Usage: %s [options] <dir1/file1> [dir2 dirN fileN ...]\n\n", argv0);
 	printf("Options: -[%s]\n", PARSE_FLAGS);
 	for (i = 0; long_opts[i].name; ++i)
@@ -505,6 +510,7 @@ static void parseargs(int argc, char *argv[])
 
 		case 's': find_sym = strdup(optarg); break;
 
+		case 'y': scan_symlink = 0; break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
