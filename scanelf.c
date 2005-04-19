@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.37 2005/04/16 06:34:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.38 2005/04/19 22:19:26 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.37 2005/04/16 06:34:39 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.38 2005/04/19 22:19:26 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -59,6 +59,7 @@ static char show_stack = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
 static char show_needed = 0;
+static char show_interp = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
@@ -71,7 +72,7 @@ static void scanelf_file(const char *filename)
 {
 	int i;
 	char found_pax, found_stack, found_relro, found_textrel, 
-	     found_rpath, found_needed, found_sym;
+	     found_rpath, found_needed, found_interp, found_sym;
 	elfobj *elf;
 	struct stat st;
 
@@ -83,7 +84,7 @@ static void scanelf_file(const char *filename)
 		return;
 
 	found_pax = found_stack = found_relro = found_textrel = \
-	found_rpath = found_needed = found_sym = 0;
+	found_rpath = found_needed = found_interp = found_sym = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -106,6 +107,7 @@ static void scanelf_file(const char *filename)
 		if (show_textrel) printf("TEXTREL ");
 		if (show_rpath) printf("RPATH ");
 		if (show_needed) printf("NEEDED ");
+		if (show_interp) printf("INTERP ");
 		printf(" FILE\n");
 		show_banner = 0;
 	}
@@ -250,6 +252,26 @@ static void scanelf_file(const char *filename)
 		if (!be_quiet && !found_needed)
 			printf("  -    ");
 		else if (found_needed)
+			printf(" ");
+	}
+
+	/* print out all the INTERP info (i.e. glibc is /lib/ld-linux.so.2) */
+	if (show_interp) {
+		void *strtbl_void = elf_findsecbyname(elf, ".interp");
+
+		if (strtbl_void) {
+#define SHOW_INTERP(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		printf("%s ", elf->data + EGET(strtbl->sh_offset)); \
+		found_interp = 1; \
+		}
+		SHOW_INTERP(32)
+		SHOW_INTERP(64)
+		}
+		if (!be_quiet && !found_interp)
+			printf("  -    ");
+		else if (found_interp)
 			printf(" ");
 	}
 
@@ -420,7 +442,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrns:aqvo:BhV"
+#define PARSE_FLAGS "plRmyxetrnis:aqvo:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -433,6 +455,7 @@ static struct option const long_opts[] = {
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
 	{"needed",    no_argument, NULL, 'n'},
+	{"interp",    no_argument, NULL, 'i'},
 	{"symbol",    a_argument,  NULL, 's'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
@@ -454,6 +477,7 @@ static char *opts_help[] = {
 	"Print TEXTREL information",
 	"Print RPATH information",
 	"Print NEEDED information",
+	"Print INTERP information",
 	"Find a specified symbol",
 	"Print all scanned info (-x -e -t -r)\n",
 	"Only output 'bad' things",
@@ -521,9 +545,10 @@ static void parseargs(int argc, char *argv[])
 		case 't': show_textrel = 1; break;
 		case 'r': show_rpath = 1; break;
 		case 'n': show_needed = 1; break;
+		case 'i': show_interp = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_stack = show_textrel = show_needed = show_rpath = 1; break;
+		case 'a': show_pax = show_stack = show_textrel = show_rpath = show_needed = show_interp = 1; break;
 
 		case ':':
 			warn("Option missing parameter");
