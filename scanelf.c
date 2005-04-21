@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.39 2005/04/20 22:06:08 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.40 2005/04/21 00:13:03 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.39 2005/04/20 22:06:08 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.40 2005/04/21 00:13:03 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -227,9 +227,9 @@ static void scanelf_file_interp(elfobj *elf, char *found_interp)
 	if (strtbl_void) {
 #define SHOW_INTERP(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
-		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-		printf("%s ", elf->data + EGET(strtbl->sh_offset)); \
-		*found_interp = 1; \
+			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+			printf("%s ", elf->data + EGET(strtbl->sh_offset)); \
+			*found_interp = 1; \
 		}
 		SHOW_INTERP(32)
 		SHOW_INTERP(64)

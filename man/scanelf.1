@@ -38,6 +38,12 @@ Print TEXTREL information
 \fB\-r, \-\-rpath\fR
 Print RPATH information
 .TP
+\fB\-n, \-\-needed\fR
+Print NEEDED information
+.TP
+\fB\-i, \-\-interp\fR
+Print INTERP information
+.TP
 \fB\-a, \-\-all\fR
 Print all scanned info (-x -e -t -r)
 
@@ -48,15 +54,21 @@ Only output 'bad' things
 \fB\-v, \-\-verbose\fR
 Be verbose (can be specified more than once)
 .TP
+\fB\-F, \-\-format\fR
+Use specified format for output.
+ The format modifiers mainly correspond to the getopt counterparts
+  \fB%F\fR	FILENAME
+  \fB%x\fR	PaX-Flags
+  \fB%e\fR	STACK/RELRO
+  \fB%t\fR	TEXTREL
+  \fB%r\fR	RPATH
+  \fB%n\fR	NEEDED
+  \fB%i\fR	INTERP
+  \fB%s\fR	symbol
+
+.TP
 \fB\-B, \-\-nobanner\fR
 Don't display the header
-.TP
-\fB\-h, \-\-help\fR
-Print this help and exit
-.TP
-\fB\-V, \-\-version\fR
-Print version and exit
-
 .TP
 \fB\-h, \-\-help\fR
 Print this help and exit
@@ -93,7 +105,6 @@ options) and send bug reports to pax-utils <solar@gentoo.org> or
 .BR paxctl (1),
 .BR pspax (1),
 .BR gradm (8),
-.BR scanelf (1),
 .BR readelf (1),
 .SH "AUTHORS"
 scanelf was written by <solar@gentoo.org> and <vapier@gentoo.org>
