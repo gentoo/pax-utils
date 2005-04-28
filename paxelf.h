@@ -1,4 +1,5 @@
 /*
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.19 2005/04/28 16:13:27 solar Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
