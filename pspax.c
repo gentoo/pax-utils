@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.11 2005/04/15 22:02:03 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.12 2005/05/06 02:22:12 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -80,6 +80,15 @@ static struct passwd *get_proc_uid(pid_t pid)
 	static char s[PATH_MAX];
 
 	snprintf(s, sizeof(s), PROC_DIR "/%d/stat", (int) pid);
+
+	/* this is bullshit but getpwuid() is leaking memory
+	 * and I've wasted a few hrs 1 day tracking it down.
+	 * I forgot I tracked it down before and saw pspax leaking
+	 * memory so I tracked it down again (silly me)
+	 * anyway.. please leave this comment here so I don't waste my
+	 * time again the next time I forget.
+	 * and till such time as getpwuid()/nis/nss/pam or whatever does not suck.
+	 */
 	if ((stat(s, &st)) != (-1))
 		if ((pwd = getpwuid(st.st_uid)) != NULL)
 			return pwd;
@@ -148,6 +157,7 @@ static void pspax()
 	register DIR *dir;
 	register struct dirent *de;
 	pid_t pid;
+	int have_attr;
 	struct passwd *uid;
 	struct stat st;
 	const char *pax, *type, *name, *caps, *attr;
@@ -155,15 +165,21 @@ static void pspax()
 	ssize_t length;
 	cap_t cap_d;
 	cap_d = cap_init();
-#else
-	caps = NULL;
 #endif
+
+	caps = NULL;
 
 	chdir(PROC_DIR);
 	if (!(dir = opendir(PROC_DIR))) {
 		perror(PROC_DIR);
 		exit(EXIT_FAILURE);
 	}
+
+	if (access("/proc/self/attr/current", R_OK) != (-1))
+		have_attr = 1;
+	else
+		have_attr = 0;
+
 	if (show_banner)
 		printf("%-8s %-6s %-6s %-10s %-16s %-4s %-4s\n",
 		       "USER", "PID", "PAX", "ELF_TYPE", "NAME", "CAPS", "ATTR");
@@ -186,7 +202,7 @@ static void pspax()
 			pax = get_proc_status(pid, "PAX");
 			type = get_pid_type(pid);
 			name = get_proc_name(pid);
-			attr = get_pid_attr(pid);
+			attr = (have_attr ? get_pid_attr(pid) : NULL);
 
 			if (show_all || type)
 				printf("%-8s %-6d %-6s %-10s %-16s %-4s %s\n",
