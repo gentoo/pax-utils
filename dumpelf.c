@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.4 2005/04/15 22:02:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.5 2005/05/06 01:04:36 vapier Exp $
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.4 2005/04/15 22:02:03 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.5 2005/05/06 01:04:36 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -157,7 +157,7 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
-	printf("/* Program Header #%li */\n{\n", phdr_cnt); \
+	printf("/* Program Header #%li 0x%lX */\n{\n", phdr_cnt, (unsigned long)phdr_void - (unsigned long)elf->data); \
 	printf("\t.p_type   = %-10li , /* [%s] */\n", (long)EGET(phdr->p_type), get_elfptype(EGET(phdr->p_type))); \
 	printf("\t.p_offset = %-10li ,\n", (long)EGET(phdr->p_offset)); \
 	printf("\t.p_vaddr  = 0x%-8lX ,\n", (unsigned long)EGET(phdr->p_vaddr)); \
@@ -176,7 +176,7 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt)
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
-	printf("/* Section Header #%li */\n{\n", shdr_cnt); \
+	printf("/* Section Header #%li 0x%lX */\n{\n", shdr_cnt, (unsigned long)shdr_void - (unsigned long)elf->data); \
 	printf("\t.sh_name      = %-10i ,\n", (int)EGET(shdr->sh_name)); \
 	printf("\t.sh_type      = %-10i ,\n", (int)EGET(shdr->sh_type)); \
 	printf("\t.sh_flags     = %-10li ,\n", (long)EGET(shdr->sh_flags)); \
