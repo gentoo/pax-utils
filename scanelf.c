@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.40 2005/04/21 00:13:03 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.41 2005/05/06 01:01:42 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.40 2005/04/21 00:13:03 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.41 2005/05/06 01:01:42 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -47,6 +47,11 @@ static void scanelf_ldpath();
 static void scanelf_envpath();
 static void usage(int status);
 static void parseargs(int argc, char *argv[]);
+static char *xstrdup(char *s);
+static void *xmalloc(size_t size);
+static void xstrcat(char **dst, const char *src, size_t *curr_len);
+static inline void xchrcat(char **dst, const char append, size_t *curr_len);
+static int xemptybuffer(const char *buff);
 
 /* variables to control behavior */
 static char scan_ldpath = 0;
@@ -69,46 +74,64 @@ static char *out_format = NULL;
 
 
 /* sub-funcs for scanelf_file() */
-static void scanelf_file_pax(elfobj *elf, char *found_pax)
+static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
-	char *paxflags;
-	if (!show_pax) return;
+	static char *paxflags;
+
+	if (!show_pax) return NULL;
 
 	paxflags = pax_short_hf_flags(PAX_FLAGS(elf));
 	if (!be_quiet || (be_quiet && strncmp(paxflags, "PeMRxS", 6))) {
 		*found_pax = 1;
-		printf("%s ", pax_short_hf_flags(PAX_FLAGS(elf)));
+		return paxflags;
 	}
+
+	return NULL;
 }
-static void scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro)
+static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro)
 {
-	int i;
-	if (!show_stack) return;
+	static char ret[7];
+	char *found;
+	int i, off, shown;
+
+	if (!show_stack) return NULL;
+
+	shown = 0;
+	sprintf(ret, "--- ---");
 #define SHOW_STACK(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_GNU_STACK && \
-		    EGET(phdr[i].p_type) != PT_GNU_RELRO) continue; \
+		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
+			found = found_stack; \
+			off = 0; \
+		} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
+			found = found_relro; \
+			off = 3; \
+		} else \
+			continue; \
 		if (be_quiet && !(EGET(phdr[i].p_flags) & PF_X)) \
 			continue; \
-		if (EGET(phdr[i].p_type) == PT_GNU_STACK) \
-			*found_stack = 1; \
-		if (EGET(phdr[i].p_type) == PT_GNU_RELRO) \
-			*found_relro = 1; \
-		printf("%s ", gnu_short_stack_flags(EGET(phdr[i].p_flags))); \
+		memcpy(ret+off, gnu_short_stack_flags(EGET(phdr[i].p_flags)), 3); \
+		*found = 1; \
+		++shown; \
 	} \
 	}
 	SHOW_STACK(32)
 	SHOW_STACK(64)
-	if (!be_quiet && !*found_stack) printf("--- ");
-	if (!be_quiet && !*found_relro) printf("--- ");
+	if (be_quiet && !shown)
+		return NULL;
+	else
+		return ret;
 }
-static void scanelf_file_textrel(elfobj *elf, char *found_textrel)
+static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
+	static char *ret = "TEXTREL";
 	int i;
-	if (!show_textrel) return;
+
+	if (!show_textrel) return NULL;
+
 #define SHOW_TEXTREL(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Dyn *dyn; \
@@ -121,16 +144,19 @@ static void scanelf_file_textrel(elfobj *elf, char *found_textrel)
 			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 				*found_textrel = 1; \
 				/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
-				printf("TEXTREL "); \
+				return ret; \
 			} \
 			++dyn; \
 		} \
 	} }
 	SHOW_TEXTREL(32)
 	SHOW_TEXTREL(64)
-	if (!be_quiet && !*found_textrel) printf("------- ");
+	if (be_quiet)
+		return NULL;
+	else
+		return "   -   ";
 }
-static void scanelf_file_rpath(elfobj *elf, char *found_rpath)
+static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	/* TODO: if be_quiet, only output RPATH's which aren't in /etc/ld.so.conf */
 	int i;
@@ -154,9 +180,11 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath)
 			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_RPATH) { \
+					if (rpath) warn("ELF has multiple DT_RPATH's !?"); \
 					rpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
 					*found_rpath = 1; \
 				} else if (EGET(dyn->d_tag) == DT_RUNPATH) { \
+					if (runpath) warn("ELF has multiple DT_RUNPATH's !?"); \
 					runpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
 					*found_rpath = 1; \
 				} \
@@ -166,19 +194,24 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath)
 		SHOW_RPATH(32)
 		SHOW_RPATH(64)
 	}
+
 	if (rpath && runpath) {
-		if (!strcmp(rpath, runpath))
-			printf("%-5s ", runpath);
-		else {
+		if (!strcmp(rpath, runpath)) {
+			xstrcat(ret, runpath, ret_len);
+		} else {
 			fprintf(stderr, "RPATH [%s] != RUNPATH [%s]\n", rpath, runpath);
-			printf("{%s,%s} ", rpath, runpath);
+			xchrcat(ret, '{', ret_len);
+			xstrcat(ret, rpath, ret_len);
+			xchrcat(ret, ',', ret_len);
+			xstrcat(ret, runpath, ret_len);
+			xchrcat(ret, '}', ret_len);
 		}
 	} else if (rpath || runpath)
-		printf("%-5s ", (runpath ? runpath : rpath));
-	else if (!be_quiet && !*found_rpath)
-		printf("  -   ");
+		xstrcat(ret, (runpath ? runpath : rpath), ret_len);
+	else if (!be_quiet)
+		xstrcat(ret, "  -  ", ret_len);
 }
-static void scanelf_file_needed(elfobj *elf, char *found_needed)
+static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, size_t *ret_len)
 {
 	int i;
 	char *needed;
@@ -201,8 +234,8 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed)
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
 					needed = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (*found_needed) printf(","); \
-					printf("%s", needed); \
+					if (*found_needed) xchrcat(ret, ',', ret_len); \
+					xstrcat(ret, needed, ret_len); \
 					*found_needed = 1; \
 				} \
 				++dyn; \
@@ -211,16 +244,12 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed)
 		SHOW_NEEDED(32)
 		SHOW_NEEDED(64)
 	}
-	if (!be_quiet && !*found_needed)
-		printf("  -    ");
-	else if (*found_needed)
-		printf(" ");
 }
-static void scanelf_file_interp(elfobj *elf, char *found_interp)
+static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 {
 	void *strtbl_void;
 
-	if (!show_interp) return;
+	if (!show_interp) return NULL;
 
 	strtbl_void = elf_findsecbyname(elf, ".interp");
 
@@ -228,23 +257,20 @@ static void scanelf_file_interp(elfobj *elf, char *found_interp)
 #define SHOW_INTERP(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
 			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-			printf("%s ", elf->data + EGET(strtbl->sh_offset)); \
 			*found_interp = 1; \
+			return elf->data + EGET(strtbl->sh_offset); \
 		}
 		SHOW_INTERP(32)
 		SHOW_INTERP(64)
 	}
-	if (!be_quiet && !*found_interp)
-		printf("  -    ");
-	else if (*found_interp)
-		printf(" ");
+	return NULL;
 }
-static void scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
+static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
 {
 	int i;
 	void *symtab_void, *strtab_void;
 
-	if (!find_sym) return;
+	if (!find_sym) return NULL;
 
 	symtab_void = elf_findsecbyname(elf, ".symtab");
 	strtab_void = elf_findsecbyname(elf, ".strtab");
@@ -277,14 +303,15 @@ static void scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
 		FIND_SYM(32)
 		FIND_SYM(64)
 	}
-	if (*find_sym != '*') {
-		if (*found_sym)
-			printf(" %s ", find_sym);
-		else if (!be_quiet)
-			printf(" - ");
-	}
+	if (*find_sym != '*' && *found_sym)
+		return find_sym;
+	if (be_quiet)
+		return NULL;
+	else
+		return " - ";
 }
 /* scan an elf file and show all the fun stuff */
+#define prints(str) fputs(str, stdout)
 static void scanelf_file(const char *filename)
 {
 	int i;
@@ -293,6 +320,8 @@ static void scanelf_file(const char *filename)
 	     found_file;
 	elfobj *elf;
 	struct stat st;
+	static char *out_buffer = NULL;
+	static size_t out_len;
 
 	/* make sure 'filename' exists */
 	if (lstat(filename, &st) == -1) {
@@ -316,85 +345,77 @@ static void scanelf_file(const char *filename)
 	}
 
 	if (be_verbose > 1)
-		printf("%s: {%s,%s} scanning file\n", filename,
+		printf("%s: scanning file {%s,%s}\n", filename,
 		       get_elfeitype(elf, EI_CLASS, elf->elf_class),
 		       get_elfeitype(elf, EI_DATA, elf->data[EI_DATA]));
 	else if (be_verbose)
 		printf("%s: scanning file\n", filename);
 
+	/* init output buffer */
+	if (!out_buffer) {
+		out_len = sizeof(char) * 80;
+		out_buffer = (char*)xmalloc(out_len);
+	}
+	*out_buffer = '\0';
+
 	/* show the header */
 	if (!be_quiet && show_banner) {
-		if (out_format) {
-			for (i=0; out_format[i]; ++i) {
-				if (out_format[i] != '%') continue;
+		for (i=0; out_format[i]; ++i) {
+			if (out_format[i] != '%') continue;
 
-				switch (out_format[++i]) {
-				case '%': break;
-				case 'F': printf("FILE "); break;
-				case 'x': printf(" PAX   "); break;
-				case 'e': printf("STK/REL "); break;
-				case 't': printf("TEXTREL "); break;
-				case 'r': printf("RPATH "); break;
-				case 'n': printf("NEEDED "); break;
-				case 'i': printf("INTERP "); break;
-				case 's': printf("SYM "); break;
-				}
+			switch (out_format[++i]) {
+			case '%': break;
+			case 'F': prints("FILE "); break;
+			case 'o': prints(" TYPE   "); break;
+			case 'x': prints(" PAX   "); break;
+			case 'e': prints("STK/REL "); break;
+			case 't': prints("TEXTREL "); break;
+			case 'r': prints("RPATH "); break;
+			case 'n': prints("NEEDED "); break;
+			case 'i': prints("INTERP "); break;
+			case 's': prints("SYM "); break;
 			}
-		} else {
-			printf(" TYPE   ");
-			if (show_pax) printf(" PAX   ");
-			if (show_stack) printf("STK/REL ");
-			if (show_textrel) printf("TEXTREL ");
-			if (show_rpath) printf("RPATH ");
-			if (show_needed) printf("NEEDED ");
-			if (show_interp) printf("INTERP ");
-			if (find_sym) printf("SYM ");
 		}
-		if (!found_file) printf(" FILE");
-		printf("\n");
+		prints("\n");
 		show_banner = 0;
 	}
 
 	/* dump all the good stuff */
-	if (!be_quiet && !out_format)
-		printf("%-7s ", get_elfetype(elf));
+	for (i=0; out_format[i]; ++i) {
+		const char *out;
 
-	if (out_format) {
-		for (i=0; out_format[i]; ++i) {
-			if (out_format[i] != '%') {
-				printf("%c", out_format[i]);
-				continue;
-			}
+		/* make sure we trim leading spaces in quiet mode */
+		if (be_quiet && *out_buffer == ' ' && !out_buffer[1])
+			*out_buffer = '\0';
 
-			switch (out_format[++i]) {
-			case '%': printf("%%"); break;
-			case 'F': found_file = 1; printf("%s ", filename); break;
-			case 'x': scanelf_file_pax(elf, &found_pax); break;
-			case 'e': scanelf_file_stack(elf, &found_stack, &found_relro); break;
-			case 't': scanelf_file_textrel(elf, &found_textrel); break;
-			case 'r': scanelf_file_rpath(elf, &found_rpath); break;
-			case 'n': scanelf_file_needed(elf, &found_needed); break;
-			case 'i': scanelf_file_interp(elf, &found_interp); break;
-			case 's': scanelf_file_sym(elf, &found_sym, filename); break;
-			}
+		if (out_format[i] != '%') {
+			xchrcat(&out_buffer, out_format[i], &out_len);
+			continue;
 		}
-	} else {
-		scanelf_file_pax(elf, &found_pax);
-		scanelf_file_stack(elf, &found_stack, &found_relro);
-		scanelf_file_textrel(elf, &found_textrel);
-		scanelf_file_rpath(elf, &found_rpath);
-		scanelf_file_needed(elf, &found_needed);
-		scanelf_file_interp(elf, &found_interp);
-		scanelf_file_sym(elf, &found_sym, filename);
+
+		out = NULL;
+		switch (out_format[++i]) {
+		case '%': xchrcat(&out_buffer, '%', &out_len); break;
+		case 'F': found_file = 1; xstrcat(&out_buffer, filename, &out_len); break;
+		case 'o': out = get_elfetype(elf); break;
+		case 'x': out = scanelf_file_pax(elf, &found_pax); break;
+		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro); break;
+		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
+		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
+		case 'n': scanelf_file_needed(elf, &found_needed, &out_buffer, &out_len); break;
+		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
+		case 's': out = scanelf_file_sym(elf, &found_sym, filename); break;
+		}
+		if (out) xstrcat(&out_buffer, out, &out_len);
 	}
 
 	if (!found_file) {
 		if (!be_quiet || found_pax || found_stack || found_textrel || \
-		    found_rpath || found_needed || found_sym)
-			puts(filename);
-	} else {
-		printf("\n");
+		    found_rpath || found_needed || found_interp || found_sym)
+			xstrcat(&out_buffer, filename, &out_len);
 	}
+	if (!(be_quiet && xemptybuffer(out_buffer)))
+		puts(out_buffer);
 
 	unreadelf(elf);
 }
@@ -461,10 +482,7 @@ static void scanelf_ldpath()
 
 	scan_l = scan_ul = scan_ull = 0;
 
-	if ((path = malloc(_POSIX_PATH_MAX)) == NULL) {
-		warn("Can not malloc() memory for ldpath scanning");
-		return;
-	}
+	path = (char*)xmalloc(_POSIX_PATH_MAX);
 	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL)
 		if (*path == '/') {
 			if ((p = strrchr(path, '\r')) != NULL)
@@ -492,9 +510,7 @@ static void scanelf_envpath()
 	path = getenv("PATH");
 	if (!path)
 		err("PATH is not set in your env !");
-
-	if ((path = strdup(path)) == NULL)
-		err("strdup failed: %s", strerror(errno));
+	path = xstrdup(path);
 
 	while ((p = strrchr(path, ':')) != NULL) {
 		scanelf_dir(p + 1);
@@ -601,28 +617,15 @@ static void parseargs(int argc, char *argv[])
 
 		case 's': {
 			size_t len;
-			find_sym = strdup(optarg);
-			if (!find_sym) {
-				warnf("Could not malloc() mem for sym scan");
-				find_sym = NULL;
-				break;
-			}
+			find_sym = xstrdup(optarg);
 			len = strlen(find_sym) + 1;
-			versioned_symname = (char *)malloc(sizeof(char) * (len+1));
-			if (!versioned_symname) {
-				free(find_sym);
-				find_sym = NULL;
-				warnf("Could not malloc() mem for sym scan");
-				break;
-			}
+			versioned_symname = (char*)xmalloc(sizeof(char) * (len+1));
 			sprintf(versioned_symname, "%s@", find_sym);
 			break;
 		}
 
 		case 'F': {
 			out_format = strdup(optarg);
-			if (!out_format)
-				err("Could not malloc() mem for output format");
 			break;
 		}
 
@@ -669,6 +672,7 @@ static void parseargs(int argc, char *argv[])
 			case '%': break;
 			case 'F': break;
 			case 's': break;
+			case 'o': break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_stack = 1; break;
 			case 't': show_textrel = 1; break;
@@ -680,7 +684,22 @@ static void parseargs(int argc, char *argv[])
 				    out_format[flag], flag+1);
 			}
 		}
+
+	/* construct our default format */
+	} else {
+		size_t fmt_len = 30;
+		out_format = (char*)xmalloc(sizeof(char) * fmt_len);
+		if (!be_quiet)    xstrcat(&out_format, "%o ", &fmt_len);
+		if (show_pax)     xstrcat(&out_format, "%x ", &fmt_len);
+		if (show_stack)   xstrcat(&out_format, "%e ", &fmt_len);
+		if (show_textrel) xstrcat(&out_format, "%t ", &fmt_len);
+		if (show_rpath)   xstrcat(&out_format, "%r ", &fmt_len);
+		if (show_needed)  xstrcat(&out_format, "%n ", &fmt_len);
+		if (show_interp)  xstrcat(&out_format, "%i ", &fmt_len);
+		if (find_sym)     xstrcat(&out_format, "%s ", &fmt_len);
+		if (!be_quiet)    xstrcat(&out_format, "%F ", &fmt_len);
 	}
+	if (be_verbose > 2) printf("Format: %s\n", out_format);
 
 	/* now lets actually do the scanning */
 	if (scan_ldpath) scanelf_ldpath();
@@ -696,6 +715,51 @@ static void parseargs(int argc, char *argv[])
 		free(versioned_symname);
 	}
 	if (out_format) free(out_format);
+}
+
+
+
+/* utility funcs */
+static char *xstrdup(char *s)
+{
+	char *ret = strdup(s);
+	if (!ret) err("Could not strdup(): %s", strerror(errno));
+	return ret;
+}
+static void *xmalloc(size_t size)
+{
+	void *ret = malloc(size);
+	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
+	return ret;
+}
+static void xstrcat(char **dst, const char *src, size_t *curr_len)
+{
+	long new_len;
+
+	new_len = strlen(*dst) + strlen(src);
+	if (*curr_len <= new_len) {
+		*curr_len = new_len + (*curr_len / 2);
+		*dst = realloc(*dst, *curr_len);
+		if (!*dst)
+			err("could not realloc %li bytes", (unsigned long)*curr_len);
+	}
+
+	strcat(*dst, src);
+}
+static inline void xchrcat(char **dst, const char append, size_t *curr_len)
+{
+	static char my_app[2];
+	my_app[0] = append;
+	my_app[1] = '\0';
+	xstrcat(dst, my_app, curr_len);
+}
+static int xemptybuffer(const char *buff)
+{
+	long i;
+	for (i=0; buff[i]; ++i)
+		if (buff[i] != ' ')
+			return 0;
+	return 1;
 }
 
 
