@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.5 2005/05/06 01:04:36 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.6 2005/05/10 22:53:31 vapier Exp $
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.5 2005/05/06 01:04:36 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.6 2005/05/10 22:53:31 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -46,13 +46,19 @@ static void parseargs(int argc, char *argv[]);
 static void dumpelf(const char *filename, long file_cnt)
 {
 	elfobj *elf;
-	int i;
+	unsigned long i;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL)
 		return;
 
-	printf("\n/*\n * ELF dump of '%s'\n */\n\n", filename);
+	printf(
+		"\n"
+		"/*\n"
+		" * ELF dump of '%s'\n"
+		" *     %li (0x%lX) bytes\n"
+		" */\n\n",
+		filename, (unsigned long)elf->len, (unsigned long)elf->len);
 
 	/* setup the struct to namespace this elf */
 #define MAKE_STRUCT(B) \
@@ -78,13 +84,16 @@ static void dumpelf(const char *filename, long file_cnt)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+		uint16_t phnum = EGET(ehdr->e_phnum); \
+		for (i = 0; i < phnum; ++i) { \
 			if (i) printf(",\n"); \
 			dump_phdr(elf, phdr, i); \
 			++phdr; \
 		} }
 		DUMP_PHDRS(32)
 		DUMP_PHDRS(64)
+	} else {
+		printf(" /* no program headers ! */ ");
 	}
 	printf("\n},\n");
 
@@ -95,13 +104,16 @@ static void dumpelf(const char *filename, long file_cnt)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
-		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
+		uint16_t shnum = EGET(ehdr->e_shnum); \
+		for (i = 0; i < shnum; ++i) { \
 			if (i) printf(",\n"); \
 			dump_shdr(elf, shdr, i); \
 			++shdr; \
 		} }
 		DUMP_SHDRS(32)
 		DUMP_SHDRS(64)
+	} else {
+		printf(" /* no section headers ! */ ");
 	}
 	printf("\n}\n");
 
