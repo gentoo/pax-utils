@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.19 2005/04/28 16:13:27 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.20 2005/05/10 22:44:22 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -18,6 +18,8 @@
 #ifndef ELF_CLASS
 # error "UNABLE TO DETECT ELF_CLASS"
 #endif
+
+typedef uint64_t ptr_t;
 
 extern char do_reverse_endian;
 /* Get a value 'X' in the elf header, compensating for endianness. */
