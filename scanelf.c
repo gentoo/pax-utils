@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.43 2005/05/06 02:55:27 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.44 2005/05/10 22:54:25 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.43 2005/05/06 02:55:27 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.44 2005/05/10 22:54:25 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -92,12 +92,14 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 {
 	static char ret[8];
 	char *found;
-	int i, off, shown;
+	unsigned long i, off, shown;
 
 	if (!show_stack) return NULL;
 
 	shown = 0;
 	strcpy(ret, "--- ---");
+
+	if (elf->phdr) {
 #define SHOW_STACK(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
@@ -120,6 +122,8 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 	}
 	SHOW_STACK(32)
 	SHOW_STACK(64)
+	}
+
 	if (be_quiet && !shown)
 		return NULL;
 	else
@@ -128,18 +132,22 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
 	static char *ret = "TEXTREL";
-	int i;
+	unsigned long i;
 
 	if (!show_textrel) return NULL;
 
+	if (elf->phdr) {
 #define SHOW_TEXTREL(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Dyn *dyn; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Off offset; \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (phdr[i].p_type != PT_DYNAMIC) continue; \
-		dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+		dyn = DYN ## B (elf->data + offset); \
 		while (EGET(dyn->d_tag) != DT_NULL) { \
 			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 				*found_textrel = 1; \
@@ -151,6 +159,8 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	} }
 	SHOW_TEXTREL(32)
 	SHOW_TEXTREL(64)
+	}
+
 	if (be_quiet)
 		return NULL;
 	else
@@ -159,7 +169,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	/* TODO: if be_quiet, only output RPATH's which aren't in /etc/ld.so.conf */
-	int i;
+	unsigned long i;
 	char *rpath, *runpath;
 	void *strtbl_void;
 
@@ -168,24 +178,31 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 	rpath = runpath = NULL;
 
-	if (strtbl_void) {
+	if (elf->phdr && strtbl_void) {
 #define SHOW_RPATH(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
-			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+			offset = EGET(phdr[i].p_offset); \
+			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			dyn = DYN ## B (elf->data + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_RPATH) { \
 					if (rpath) warn("ELF has multiple DT_RPATH's !?"); \
-					rpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					if (offset >= elf->len) continue; \
+					rpath = (char*)(elf->data + offset); \
 					*found_rpath = 1; \
 				} else if (EGET(dyn->d_tag) == DT_RUNPATH) { \
 					if (runpath) warn("ELF has multiple DT_RUNPATH's !?"); \
-					runpath = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					if (offset >= elf->len) continue; \
+					runpath = (char*)(elf->data + offset); \
 					*found_rpath = 1; \
 				} \
 				++dyn; \
@@ -213,7 +230,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 }
 static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, size_t *ret_len)
 {
-	int i;
+	unsigned long i;
 	char *needed;
 	void *strtbl_void;
 
@@ -221,19 +238,24 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
-	if (strtbl_void) {
+	if (elf->phdr && strtbl_void) {
 #define SHOW_NEEDED(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
-			dyn = DYN ## B (elf->data + EGET(phdr[i].p_offset)); \
+			offset = EGET(phdr[i].p_offset); \
+			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			dyn = DYN ## B (elf->data + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
-					needed = elf->data + EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					if (offset >= elf->len) continue; \
+					needed = (char*)(elf->data + offset); \
 					if (*found_needed) xchrcat(ret, ',', ret_len); \
 					xstrcat(ret, needed, ret_len); \
 					*found_needed = 1; \
@@ -267,7 +289,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 }
 static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
 {
-	int i;
+	unsigned long i;
 	void *symtab_void, *strtab_void;
 
 	if (!find_sym) return NULL;
@@ -281,7 +303,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-		int cnt = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
+		unsigned long cnt = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 		char *symname; \
 		for (i = 0; i < cnt; ++i) { \
 			if (sym->st_name) { \
@@ -314,7 +336,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 #define prints(str) fputs(str, stdout)
 static void scanelf_file(const char *filename)
 {
-	int i;
+	unsigned long i;
 	char found_pax, found_stack, found_relro, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_sym,
 	     found_file;
@@ -575,7 +597,7 @@ static char *opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	int i;
+	unsigned long i;
 	printf("¤ Scan ELF binaries for stuff\n\n"
 	       "Usage: %s [options] <dir1/file1> [dir2 dirN fileN ...]\n\n", argv0);
 	printf("Options: -[%s]\n", PARSE_FLAGS);
