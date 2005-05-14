@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.44 2005/05/10 22:54:25 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.45 2005/05/14 00:18:56 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.44 2005/05/10 22:54:25 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.45 2005/05/14 00:18:56 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -492,6 +492,26 @@ static void scanelf_dir(const char *path)
 	closedir(dir);
 }
 
+int scanelf_from_file(char *filename) {
+	FILE *fp = NULL;
+	char *p;
+	char path[_POSIX_PATH_MAX];
+
+	if (((strcmp(filename, "-")) == 0) && (ttyname(0) == NULL))
+		fp = stdin;
+	else if ((fp = fopen(filename, "r")) == NULL)
+		return 1;
+
+	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
+		if ((p = strchr(path, '\n')) != NULL)
+			*p = 0;
+		scanelf_dir(path);
+	}
+	if (fp != stdin)
+		fclose(fp);
+	return 0;
+}
+
 /* scan /etc/ld.so.conf for paths */
 static void scanelf_ldpath()
 {
@@ -545,7 +565,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnis:aqvF:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnis:aqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -564,6 +584,7 @@ static struct option const long_opts[] = {
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
 	{"format",    a_argument,  NULL, 'F'},
+	{"from",      a_argument,  NULL, 'f'},
 	{"file",      a_argument,  NULL, 'o'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
@@ -587,6 +608,7 @@ static char *opts_help[] = {
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
+	"Read input stream from a filename",
 	"Write output stream to a filename",
 	"Don't display the header",
 	"Print this help and exit",
@@ -608,6 +630,20 @@ static void usage(int status)
 		else
 			printf("  -%c, --%-6s <arg> × %s\n", long_opts[i].val,
 			       long_opts[i].name, opts_help[i]);
+
+	if (status != EXIT_SUCCESS)
+		exit(status);
+
+	puts("\nThe format modifiers for the -F option are");
+	puts("  %F	Filename");
+	puts("  %x	PaX Flags");
+	puts("  %e	STACK/RELRO");
+	puts("  %t	TEXTREL");
+	puts("  %r	RPATH");
+	puts("  %n	NEEDED");
+	puts("  %i	INTERP");
+	puts("  %s	symbol");
+
 	exit(status);
 }
 
@@ -615,6 +651,7 @@ static void usage(int status)
 static void parseargs(int argc, char *argv[])
 {
 	int flag;
+	char *from_file = NULL;
 
 	opterr = 0;
 	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
@@ -627,7 +664,10 @@ static void parseargs(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
-
+		case 'f':
+			if (from_file == NULL)
+				from_file = xstrdup(optarg);
+			break;
 		case 'o': {
 			FILE *fp = NULL;
 			fp = freopen(optarg, "w", stdout);
@@ -647,7 +687,7 @@ static void parseargs(int argc, char *argv[])
 		}
 
 		case 'F': {
-			out_format = strdup(optarg);
+			out_format = xstrdup(optarg);
 			break;
 		}
 
@@ -726,7 +766,12 @@ static void parseargs(int argc, char *argv[])
 	/* now lets actually do the scanning */
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
-	if (optind == argc && !scan_ldpath && !scan_envpath)
+	if (from_file) {
+		scanelf_from_file(from_file);
+		free(from_file);
+		from_file = *argv;
+	}
+	if (optind == argc && !scan_ldpath && !scan_envpath && !from_file)
 		err("Nothing to scan !?");
 	while (optind < argc)
 		scanelf_dir(argv[optind++]);
