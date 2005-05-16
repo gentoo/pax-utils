@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.17 2005/05/10 22:51:43 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.18 2005/05/16 21:59:55 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -337,8 +337,8 @@ elfobj *readelf(const char *filename)
 
 	elf->fd = fd;
 	elf->len = st.st_size;
-	elf->data = (char *) mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (elf->data == (char *) MAP_FAILED)
+	elf->data = (char*)mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (elf->data == (char*)MAP_FAILED)
 		goto free_elf_and_return;
 
 	if (!IS_ELF_BUFFER(elf->data)) /* make sure we have an elf */
@@ -348,41 +348,28 @@ elfobj *readelf(const char *filename)
 
 	elf->elf_class = elf->data[EI_CLASS];
 	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
-	elf->ehdr = (void *)elf->data;
+	elf->ehdr = (void*)elf->data;
 
-#define EPTR(X, type, max, base) \
-	((type*)__extension__ ({ \
-		ptr_t __res; \
-		__res = EGET(X); \
-		if (__res > (ptr_t)max - sizeof(type)) \
-			__res = 0; \
-		else \
-			__res += (ptr_t)base; \
-		__res; \
-	}))
 #define READELF_HEADER(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-		ptr_t start, end, size; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		start = (ptr_t)elf->data; \
+		Elf ## B ## _Off size; \
 		/* verify program header */ \
-		elf->phdr = EPTR(ehdr->e_phoff, Elf ## B ## _Phdr, elf->len, elf->data); \
+		elf->phdr = elf->data + EGET(ehdr->e_phoff); \
 		size = EGET(ehdr->e_phnum) * EGET(ehdr->e_phentsize); \
-		end = (ptr_t)elf->phdr; \
-		if (end + size < end || /* check overflow */ \
-		    end + size < start || /* past start of mem */ \
-		    end + size > start + elf->len) /* before end of mem */ \
+		if (elf->phdr < elf->ehdr || /* check overflow */ \
+		    elf->phdr + size < elf->phdr || /* before start of mem */ \
+		    elf->phdr + size > elf->ehdr + elf->len) /* before end of mem */ \
 		{ \
 			warn("%s: Invalid program header info", filename); \
 			elf->phdr = NULL; \
 		} \
 		/* verify section header */ \
-		elf->shdr = EPTR(ehdr->e_shoff, Elf32_Shdr, elf->len, elf->data); \
+		elf->shdr = elf->data + EGET(ehdr->e_shoff); \
 		size = EGET(ehdr->e_shnum) * EGET(ehdr->e_shentsize); \
-		end = (ptr_t)elf->shdr; \
-		if (end + size < end || /* check overflow */ \
-		    end + size < start || /* past start of mem */ \
-		    end + size > start + elf->len) /* before end of mem */ \
+		if (elf->shdr < elf->ehdr || /* check overflow */ \
+		    elf->shdr + size < elf->shdr || /* before start of mem */ \
+		    elf->shdr + size > elf->ehdr + elf->len) /* before end of mem */ \
 		{ \
 			warn("%s: Invalid section header info", filename); \
 			elf->shdr = NULL; \
@@ -481,7 +468,7 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 	for (i = 0; i < shnum; ++i) { \
 		if (shdr[i].sh_offset >= elf->len - ehdr->e_shentsize) continue; \
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
-		if ((ptr_t)offset >= elf->len) continue; \
+		if (offset >= elf->len) continue; \
 		shdr_name = (char*)(elf->data + offset); \
 		if (!strcmp(shdr_name, name)) \
 			return &(shdr[i]); \
