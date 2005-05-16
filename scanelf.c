@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.45 2005/05/14 00:18:56 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.46 2005/05/16 21:59:06 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.45 2005/05/14 00:18:56 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.46 2005/05/16 21:59:06 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -604,7 +604,7 @@ static char *opts_help[] = {
 	"Print NEEDED information",
 	"Print INTERP information",
 	"Find a specified symbol",
-	"Print all scanned info (-x -e -t -r)\n",
+	"Print all scanned info (-x -e -t -r -n -i)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
@@ -634,15 +634,10 @@ static void usage(int status)
 	if (status != EXIT_SUCCESS)
 		exit(status);
 
-	puts("\nThe format modifiers for the -F option are");
-	puts("  %F	Filename");
-	puts("  %x	PaX Flags");
-	puts("  %e	STACK/RELRO");
-	puts("  %t	TEXTREL");
-	puts("  %r	RPATH");
-	puts("  %n	NEEDED");
-	puts("  %i	INTERP");
-	puts("  %s	symbol");
+	puts("\nThe format modifiers for the -F option are:");
+	puts(" %F Filename \t%x PaX Flags \t%e STACK/RELRO");
+	puts(" %t TEXTREL  \t%r RPATH     \t%n NEEDED");
+	puts(" %i INTERP   \t%s symbol");
 
 	exit(status);
 }
