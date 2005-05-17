@@ -5,6 +5,7 @@ used on any distro.
 == scanelf ==
 Usage: scanelf [options] <dir1/file1> [dir2 dirN fileN ...]
 
+Options: -[plRmyxetrnis:aqvF:f:o:BhV]
   -p, --path         × Scan all directories in PATH environment
   -l, --ldpath       × Scan all directories in /etc/ld.so.conf
   -R, --recursive    × Scan directories recursively
@@ -18,25 +19,21 @@ Usage: scanelf [options] <dir1/file1> [dir2 dirN fileN ...]
   -n, --needed       × Print NEEDED information
   -i, --interp       × Print INTERP information
   -s, --symbol <arg> × Find a specified symbol
-  -a, --all          × Print all scanned info (-x -e -t -r)
+  -a, --all          × Print all scanned info (-x -e -t -r -n -i)
 
   -q, --quiet        × Only output 'bad' things
   -v, --verbose      × Be verbose (can be specified more than once)
   -F, --format <arg> × Use specified format for output
+  -f, --from   <arg> × Read input stream from a filename
   -o, --file   <arg> × Write output stream to a filename
   -B, --nobanner     × Don't display the header
   -h, --help         × Print this help and exit
   -V, --version      × Print version and exit
 
-The format modifiers for the -F option are
-  %F	Filename
-  %x	PaX Flags
-  %e	STACK/RELRO
-  %t	TEXTREL
-  %r	RPATH
-  %n	NEEDED
-  %i	INTERP
-  %s	symbol
+The format modifiers for the -F option are:
+ %F Filename 	%x PaX Flags 	%e STACK/RELRO
+ %t TEXTREL  	%r RPATH     	%n NEEDED
+ %i INTERP   	%s symbol
 
 == pspax ==
 Usage: pspax [options]
