@@ -24,7 +24,9 @@ Scan directories recursively
 .TP
 \fB\-m, \-\-mount\fR
 Don't recursively cross mount points
-
+.TP
+\fB\-y, \-\-symlink\fR
+Don't scan symlinks
 .TP
 \fB\-x, \-\-pax\fR
 Print PaX markings
@@ -44,6 +46,9 @@ Print NEEDED information
 \fB\-i, \-\-interp\fR
 Print INTERP information
 .TP
+\fB\-s, \-\-symbol <arg>\fR
+Find a specified symbol
+.TP
 \fB\-a, \-\-all\fR
 Print all scanned info (-x -e -t -r -n -i)
 .TP
@@ -53,7 +58,7 @@ Only output 'bad' things when the -a/-F flags are not given.
 \fB\-v, \-\-verbose\fR
 Be verbose (can be specified more than once)
 .TP
-\fB\-F, \-\-format\fR
+\fB\-F, \-\-format <arg>\fR
 Use specified format for output.
  The format modifiers mainly correspond to the getopt counterparts
   \fB%F\fR	FILENAME
@@ -64,7 +69,12 @@ Use specified format for output.
   \fB%n\fR	NEEDED
   \fB%i\fR	INTERP
   \fB%s\fR	symbol
-
+.TP
+\fB\-f, \-\-from <arg>\fR
+Read input stream from a filename
+.TP
+\fB\-o, \-\-file <arg>\fR
+Write output stream to a filename
 .TP
 \fB\-B, \-\-nobanner\fR
 Don't display the header
