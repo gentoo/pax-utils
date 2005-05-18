@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.53 2005/05/18 21:01:56 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.54 2005/05/18 21:16:32 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.53 2005/05/18 21:01:56 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.54 2005/05/18 21:16:32 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -51,7 +51,6 @@ static char *xstrdup(char *s);
 static void *xmalloc(size_t size);
 static void xstrcat(char **dst, const char *src, size_t *curr_len);
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
-static int xemptybuffer(const char *buff);
 
 /* variables to control behavior */
 static char *ldpaths[256];
@@ -495,16 +494,15 @@ static void scanelf_file(const char *filename)
 		if (out) xstrcat(&out_buffer, out, &out_len);
 	}
 
-	if (!found_file) {
-		if (!be_quiet || found_pax || found_stack || found_textrel || \
-		    found_rpath || found_needed || found_interp || found_bind || \
-		    found_sym)
-		{
-			xchrcat(&out_buffer, ' ', &out_len);
-			xstrcat(&out_buffer, filename, &out_len);
-		}
+#define FOUND_SOMETHING() \
+	(found_pax || found_stack || found_textrel || found_rpath || \
+	 found_needed || found_interp || found_bind || found_sym)
+
+	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
+		xchrcat(&out_buffer, ' ', &out_len);
+		xstrcat(&out_buffer, filename, &out_len);
 	}
-	if (!(be_quiet && xemptybuffer(out_buffer)))
+	if (!be_quiet || (be_quiet && FOUND_SOMETHING()))
 		puts(out_buffer);
 
 	unreadelf(elf);
@@ -906,14 +904,6 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 	my_app[0] = append;
 	my_app[1] = '\0';
 	xstrcat(dst, my_app, curr_len);
-}
-static int xemptybuffer(const char *buff)
-{
-	long i;
-	for (i = 0; buff[i]; ++i)
-		if (buff[i] != ' ')
-			return 0;
-	return 1;
 }
 
 
