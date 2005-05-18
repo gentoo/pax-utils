@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.52 2005/05/18 14:37:21 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.53 2005/05/18 21:01:56 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.52 2005/05/18 14:37:21 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.53 2005/05/18 21:01:56 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -112,7 +112,7 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 			off = 0; \
 		} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
 			found = found_relro; \
-			off = 3; \
+			off = 4; \
 		} else \
 			continue; \
 		if (be_quiet && !(EGET(phdr[i].p_flags) & PF_X)) \
