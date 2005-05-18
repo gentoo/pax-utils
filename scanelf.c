@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.48 2005/05/18 02:51:02 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.49 2005/05/18 04:08:30 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.48 2005/05/18 02:51:02 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.49 2005/05/18 04:08:30 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -66,6 +66,7 @@ static char show_textrel = 0;
 static char show_rpath = 0;
 static char show_needed = 0;
 static char show_interp = 0;
+static char show_bind = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
@@ -268,7 +269,10 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
 					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= elf->len) continue; \
+					if (offset >= elf->len) { \
+						++dyn; \
+						continue; \
+					} \
 					needed = (char*)(elf->data + offset); \
 					if (*found_needed) xchrcat(ret, ',', ret_len); \
 					xstrcat(ret, needed, ret_len); \
@@ -300,6 +304,47 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		SHOW_INTERP(64)
 	}
 	return NULL;
+}
+static char *scanelf_file_bind(elfobj *elf, char *found_bind)
+{
+	unsigned long i;
+	struct stat s;
+
+	if (!show_bind) return NULL;
+
+#define SHOW_BIND(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Dyn *dyn; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		Elf ## B ## _Off offset; \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			offset = EGET(phdr[i].p_offset); \
+			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			dyn = DYN ## B (elf->data + offset); \
+			while (EGET(dyn->d_tag) != DT_NULL) { \
+				if (EGET(dyn->d_tag) == DT_BIND_NOW || \
+				   (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) \
+				{ \
+					if (be_quiet) return NULL; \
+					*found_bind = 1; \
+					return "NOW"; \
+				} \
+				++dyn; \
+			} \
+		} \
+	}
+	SHOW_BIND(32)
+	SHOW_BIND(64)
+
+	fstat(elf->fd, &s);
+	if (be_quiet && !(s.st_mode & S_ISUID || s.st_mode & S_ISGID)) {
+		return NULL;
+	} else {
+		*found_bind = 1;
+		return "LAZY";
+	}
 }
 static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
 {
@@ -352,8 +397,8 @@ static void scanelf_file(const char *filename)
 {
 	unsigned long i;
 	char found_pax, found_stack, found_relro, found_textrel, 
-	     found_rpath, found_needed, found_interp, found_sym,
-	     found_file;
+	     found_rpath, found_needed, found_interp, found_bind,
+	     found_sym, found_file;
 	elfobj *elf;
 	struct stat st;
 	static char *out_buffer = NULL;
@@ -371,8 +416,8 @@ static void scanelf_file(const char *filename)
 	}
 
 	found_pax = found_stack = found_relro = found_textrel = \
-	found_rpath = found_needed = found_interp = found_sym = \
-	found_file = 0;
+	found_rpath = found_needed = found_interp = found_bind = \
+	found_sym = found_file = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -396,12 +441,12 @@ static void scanelf_file(const char *filename)
 
 	/* show the header */
 	if (!be_quiet && show_banner) {
-		for (i=0; out_format[i]; ++i) {
+		for (i = 0; out_format[i]; ++i) {
 			if (out_format[i] != '%') continue;
 
 			switch (out_format[++i]) {
 			case '%': break;
-			case 'F': prints("FILE "); break;
+			case 'F': prints("FILE "); found_file = 1; break;
 			case 'o': prints(" TYPE   "); break;
 			case 'x': prints(" PAX   "); break;
 			case 'e': prints("STK/REL "); break;
@@ -409,15 +454,18 @@ static void scanelf_file(const char *filename)
 			case 'r': prints("RPATH "); break;
 			case 'n': prints("NEEDED "); break;
 			case 'i': prints("INTERP "); break;
+			case 'b': prints("BIND "); break;
 			case 's': prints("SYM "); break;
 			}
 		}
+		if (!found_file) prints("FILE ");
 		prints("\n");
+		found_file = 0;
 		show_banner = 0;
 	}
 
 	/* dump all the good stuff */
-	for (i=0; out_format[i]; ++i) {
+	for (i = 0; out_format[i]; ++i) {
 		const char *out;
 
 		/* make sure we trim leading spaces in quiet mode */
@@ -440,6 +488,7 @@ static void scanelf_file(const char *filename)
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'n': scanelf_file_needed(elf, &found_needed, &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
+		case 'b': out = scanelf_file_bind(elf, &found_bind); break;
 		case 's': out = scanelf_file_sym(elf, &found_sym, filename); break;
 		}
 		if (out) xstrcat(&out_buffer, out, &out_len);
@@ -447,8 +496,12 @@ static void scanelf_file(const char *filename)
 
 	if (!found_file) {
 		if (!be_quiet || found_pax || found_stack || found_textrel || \
-		    found_rpath || found_needed || found_interp || found_sym)
+		    found_rpath || found_needed || found_interp || found_bind || \
+		    found_sym)
+		{
+			xchrcat(&out_buffer, ' ', &out_len);
 			xstrcat(&out_buffer, filename, &out_len);
+		}
 	}
 	if (!(be_quiet && xemptybuffer(out_buffer)))
 		puts(out_buffer);
@@ -601,7 +654,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnis:aqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnibs:aqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -615,6 +668,7 @@ static struct option const long_opts[] = {
 	{"rpath",     no_argument, NULL, 'r'},
 	{"needed",    no_argument, NULL, 'n'},
 	{"interp",    no_argument, NULL, 'i'},
+	{"bind",      no_argument, NULL, 'b'},
 	{"symbol",    a_argument,  NULL, 's'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
@@ -639,6 +693,7 @@ static char *opts_help[] = {
 	"Print RPATH information",
 	"Print NEEDED information",
 	"Print INTERP information",
+	"Print BIND information",
 	"Find a specified symbol",
 	"Print all scanned info (-x -e -t -r -n -i)\n",
 	"Only output 'bad' things",
@@ -673,7 +728,7 @@ static void usage(int status)
 	puts("\nThe format modifiers for the -F option are:");
 	puts(" %F Filename \t%x PaX Flags \t%e STACK/RELRO");
 	puts(" %t TEXTREL  \t%r RPATH     \t%n NEEDED");
-	puts(" %i INTERP   \t%s symbol");
+	puts(" %i INTERP   \t%b BIND      \t%s symbol");
 
 	exit(status);
 }
@@ -734,26 +789,19 @@ static void parseargs(int argc, char *argv[])
 		case 'r': show_rpath = 1; break;
 		case 'n': show_needed = 1; break;
 		case 'i': show_interp = 1; break;
+		case 'b': show_bind = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
 		case 'a': show_pax = show_stack = show_textrel = show_rpath = show_needed = show_interp = 1; break;
 
 		case ':':
-			warn("Option missing parameter\n");
-			usage(EXIT_FAILURE);
-			break;
+			err("Option missing parameter\n");
 		case '?':
-			warn("Unknown option\n");
-			usage(EXIT_FAILURE);
-			break;
+			err("Unknown option\n");
 		default:
 			err("Unhandled option '%c'", i);
-			break;
 		}
 	}
-
-	if (be_quiet && be_verbose)
-		err("You can be quiet or you can be verbose, not both, stupid");
 
 	/* let the format option override all other options */
 	if (out_format) {
@@ -772,6 +820,7 @@ static void parseargs(int argc, char *argv[])
 			case 'r': show_rpath = 1; break;
 			case 'n': show_needed = 1; break;
 			case 'i': show_interp = 1; break;
+			case 'b': show_bind = 1; break;
 			default:
 				err("Invalid format specifier '%c' (byte %i)", 
 				    out_format[i], i+1);
@@ -789,6 +838,7 @@ static void parseargs(int argc, char *argv[])
 		if (show_rpath)   xstrcat(&out_format, "%r ", &fmt_len);
 		if (show_needed)  xstrcat(&out_format, "%n ", &fmt_len);
 		if (show_interp)  xstrcat(&out_format, "%i ", &fmt_len);
+		if (show_bind)    xstrcat(&out_format, "%b ", &fmt_len);
 		if (find_sym)     xstrcat(&out_format, "%s ", &fmt_len);
 		if (!be_quiet)    xstrcat(&out_format, "%F ", &fmt_len);
 	}
@@ -858,7 +908,7 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 static int xemptybuffer(const char *buff)
 {
 	long i;
-	for (i=0; buff[i]; ++i)
+	for (i = 0; buff[i]; ++i)
 		if (buff[i] != ' ')
 			return 0;
 	return 1;
