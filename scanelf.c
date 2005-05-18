@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.46 2005/05/16 21:59:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.47 2005/05/18 01:08:46 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.46 2005/05/16 21:59:06 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.47 2005/05/18 01:08:46 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -492,7 +492,8 @@ static void scanelf_dir(const char *path)
 	closedir(dir);
 }
 
-int scanelf_from_file(char *filename) {
+static int scanelf_from_file(char *filename)
+{
 	FILE *fp = NULL;
 	char *p;
 	char path[_POSIX_PATH_MAX];
