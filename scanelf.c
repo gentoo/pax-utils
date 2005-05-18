@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.47 2005/05/18 01:08:46 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.48 2005/05/18 02:51:02 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.47 2005/05/18 01:08:46 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.48 2005/05/18 02:51:02 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -54,6 +54,7 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len);
 static int xemptybuffer(const char *buff);
 
 /* variables to control behavior */
+static char *ldpaths[256];
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
 static char scan_symlink = 1;
@@ -168,9 +169,9 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
-	/* TODO: if be_quiet, only output RPATH's which aren't in /etc/ld.so.conf */
-	unsigned long i;
-	char *rpath, *runpath;
+	/* TODO: when checking RPATH entries, check each subpath (between :) in ld.so.conf */
+	unsigned long i, s;
+	char *rpath, *runpath, **r;
 	void *strtbl_void;
 
 	if (!show_rpath) return;
@@ -186,24 +187,37 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 		Elf ## B ## _Off offset; \
+		Elf ## B ## _Sxword word; \
+		/* Scan all the program headers */ \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			/* Just scan dynamic headers */ \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			/* Just scan dynamic RPATH/RUNPATH headers */ \
 			dyn = DYN ## B (elf->data + offset); \
-			while (EGET(dyn->d_tag) != DT_NULL) { \
-				if (EGET(dyn->d_tag) == DT_RPATH) { \
-					if (rpath) warn("ELF has multiple DT_RPATH's !?"); \
-					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= elf->len) continue; \
-					rpath = (char*)(elf->data + offset); \
-					*found_rpath = 1; \
-				} else if (EGET(dyn->d_tag) == DT_RUNPATH) { \
-					if (runpath) warn("ELF has multiple DT_RUNPATH's !?"); \
-					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= elf->len) continue; \
-					runpath = (char*)(elf->data + offset); \
-					*found_rpath = 1; \
+			while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
+				if (word == DT_RPATH) { \
+					r = &rpath; \
+				} else if (word == DT_RUNPATH) { \
+					r = &runpath; \
+				} else { \
+					++dyn; \
+					continue; \
+				} \
+				/* Verify the memory is somewhat sane */ \
+				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+				if (offset < elf->len) { \
+					if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
+					*r = (char*)(elf->data + offset); \
+					/* If quiet, don't output paths in ld.so.conf */ \
+					if (be_quiet) \
+						for (s = 0; ldpaths[s]; ++s) \
+							if (!strcmp(ldpaths[s], *r)) { \
+								*r = NULL; \
+								break; \
+							} \
+					if (*r) *found_rpath = 1; \
 				} \
 				++dyn; \
 			} \
@@ -513,32 +527,53 @@ static int scanelf_from_file(char *filename)
 	return 0;
 }
 
+static void load_ld_so_conf()
+{
+	FILE *fp = NULL;
+	char *p;
+	char path[_POSIX_PATH_MAX];
+	int i = 0;
+
+	if ((fp = fopen("/etc/ld.so.conf", "r")) == NULL)
+		return;
+
+	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
+		if (*path != '/')
+			continue;
+
+		if ((p = strrchr(path, '\r')) != NULL)
+			*p = 0;
+		if ((p = strchr(path, '\n')) != NULL)
+			*p = 0;
+
+		ldpaths[i++] = xstrdup(path);
+
+		if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+			break;
+	}
+	ldpaths[i] = NULL;
+
+	fclose(fp);
+}
+
 /* scan /etc/ld.so.conf for paths */
 static void scanelf_ldpath()
 {
 	char scan_l, scan_ul, scan_ull;
-	char *path, *p;
-	FILE *fp;
+	int i = 0;
 
-	if ((fp = fopen("/etc/ld.so.conf", "r")) == NULL)
-		err("Unable to open ld.so.conf: %s", strerror(errno));
+	if (!ldpaths[0])
+		err("Unable to load any paths from ld.so.conf");
 
 	scan_l = scan_ul = scan_ull = 0;
 
-	path = (char*)xmalloc(_POSIX_PATH_MAX);
-	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL)
-		if (*path == '/') {
-			if ((p = strrchr(path, '\r')) != NULL)
-				*p = 0;
-			if ((p = strrchr(path, '\n')) != NULL)
-				*p = 0;
-			if (!scan_l   && !strcmp(path, "/lib")) scan_l = 1;
-			if (!scan_ul  && !strcmp(path, "/usr/lib")) scan_ul = 1;
-			if (!scan_ull && !strcmp(path, "/usr/local/lib")) scan_ull = 1;
-			scanelf_dir(path);
-		}
-	free(path);
-	fclose(fp);
+	while (ldpaths[i]) {
+		if (!scan_l   && !strcmp(ldpaths[i], "/lib")) scan_l = 1;
+		if (!scan_ul  && !strcmp(ldpaths[i], "/usr/lib")) scan_ul = 1;
+		if (!scan_ull && !strcmp(ldpaths[i], "/usr/local/lib")) scan_ull = 1;
+		scanelf_dir(ldpaths[i]);
+		++i;
+	}
 
 	if (!scan_l)   scanelf_dir("/lib");
 	if (!scan_ul)  scanelf_dir("/usr/lib");
@@ -646,12 +681,12 @@ static void usage(int status)
 /* parse command line arguments and preform needed actions */
 static void parseargs(int argc, char *argv[])
 {
-	int flag;
+	int i;
 	char *from_file = NULL;
 
 	opterr = 0;
-	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
-		switch (flag) {
+	while ((i=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
+		switch (i) {
 
 		case 'V':
 			printf("%s compiled %s\n%s\n"
@@ -712,7 +747,7 @@ static void parseargs(int argc, char *argv[])
 			usage(EXIT_FAILURE);
 			break;
 		default:
-			err("Unhandled option '%c'", flag);
+			err("Unhandled option '%c'", i);
 			break;
 		}
 	}
@@ -723,10 +758,10 @@ static void parseargs(int argc, char *argv[])
 	/* let the format option override all other options */
 	if (out_format) {
 		show_pax = show_stack = show_textrel = show_rpath = show_needed = show_interp = 0;
-		for (flag=0; out_format[flag]; ++flag) {
-			if (out_format[flag] != '%') continue;
+		for (i = 0; out_format[i]; ++i) {
+			if (out_format[i] != '%') continue;
 
-			switch (out_format[++flag]) {
+			switch (out_format[++i]) {
 			case '%': break;
 			case 'F': break;
 			case 's': break;
@@ -739,7 +774,7 @@ static void parseargs(int argc, char *argv[])
 			case 'i': show_interp = 1; break;
 			default:
 				err("Invalid format specifier '%c' (byte %i)", 
-				    out_format[flag], flag+1);
+				    out_format[i], i+1);
 			}
 		}
 
@@ -760,6 +795,8 @@ static void parseargs(int argc, char *argv[])
 	if (be_verbose > 2) printf("Format: %s\n", out_format);
 
 	/* now lets actually do the scanning */
+	if (scan_ldpath || (show_rpath && be_quiet))
+		load_ld_so_conf();
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (from_file) {
@@ -778,6 +815,8 @@ static void parseargs(int argc, char *argv[])
 		free(versioned_symname);
 	}
 	if (out_format) free(out_format);
+	for (i = 0; ldpaths[i]; ++i)
+		free(ldpaths[i]);
 }
 
 
