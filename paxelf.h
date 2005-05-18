@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.21 2005/05/18 01:05:57 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.22 2005/05/18 19:59:36 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -53,7 +53,7 @@ typedef struct {
 	void *shdr;
 	char *data;
 	char elf_class;
-	int len;
+	off_t len;
 	int fd;
 } elfobj;
 #define EHDR32(ptr) ((Elf32_Ehdr *)(ptr))
