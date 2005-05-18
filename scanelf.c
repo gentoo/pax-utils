@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.49 2005/05/18 04:08:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.50 2005/05/18 04:10:14 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.49 2005/05/18 04:08:30 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.50 2005/05/18 04:10:14 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -792,7 +792,8 @@ static void parseargs(int argc, char *argv[])
 		case 'b': show_bind = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_stack = show_textrel = show_rpath = show_needed = show_interp = 1; break;
+		case 'a': show_pax = show_stack = show_textrel = show_rpath = \
+		          show_needed = show_interp = show_bind = 1; break;
 
 		case ':':
 			err("Option missing parameter\n");
