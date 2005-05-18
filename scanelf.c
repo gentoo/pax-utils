@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.50 2005/05/18 04:10:14 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.51 2005/05/18 05:15:48 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.50 2005/05/18 04:10:14 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.51 2005/05/18 05:15:48 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -311,6 +311,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	struct stat s;
 
 	if (!show_bind) return NULL;
+	if (!elf->phdr) return NULL;
 
 #define SHOW_BIND(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
