@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.20 2005/04/07 00:18:33 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.21 2005/05/18 22:44:38 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -67,4 +67,4 @@ install: all
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
 	done
 
-include .depend
+-include .depend
