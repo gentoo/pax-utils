@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.19 2005/05/18 19:59:27 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.20 2005/05/19 22:16:27 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -338,14 +338,15 @@ elfobj *readelf(const char *filename)
 	elf->len = st.st_size;
 	elf->data = (char*)mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (elf->data == (char*)MAP_FAILED) {
-		warn("mmap of %li bytes failed :(", (unsigned long)elf->len);
+		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)elf->len);
 		goto free_elf_and_return;
 	}
 
 	if (!IS_ELF_BUFFER(elf->data)) /* make sure we have an elf */
 		goto unmap_data_and_return;
 	if (!DO_WE_LIKE_ELF(elf->data)) { /* check class and stuff */
-		warn("readelf no likey {%s,%s,%s,%s}",
+		warn("we no likey %s: {%s,%s,%s,%s}",
+		     filename,
 		     get_elfeitype(elf, EI_CLASS, elf->data[EI_CLASS]),
 		     get_elfeitype(elf, EI_DATA, elf->data[EI_DATA]),
 		     get_elfeitype(elf, EI_VERSION, elf->data[EI_VERSION]),
