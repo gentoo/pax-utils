@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.54 2005/05/18 21:16:32 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.55 2005/05/19 22:17:11 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.54 2005/05/18 21:16:32 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.55 2005/05/19 22:17:11 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -410,7 +410,11 @@ static void scanelf_file(const char *filename)
 		return;
 	}
 	/* always handle regular files and handle symlinked files if no -y */
-	if (!(S_ISREG(st.st_mode) || (S_ISLNK(st.st_mode) && scan_symlink))) {
+	if (S_ISLNK(st.st_mode)) {
+		if (!scan_symlink) return;
+		stat(filename, &st);
+	}
+	if (!S_ISREG(st.st_mode)) {
 		if (be_verbose > 2) printf("%s: skipping non-file\n", filename);
 		return;
 	}
