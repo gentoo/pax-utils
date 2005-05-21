@@ -1,4 +1,4 @@
-.TH "scanelf" "1" "0.1" "Ned Ludd, Mike Frysinger" ""
+.TH "scanelf" "1" "May 2005" "Ned Ludd, Mike Frysinger" "User Commands"
 .SH "NAME"
 .LP 
 scanelf \- 
@@ -50,17 +50,19 @@ Print INTERP information
 Find a specified symbol
 .TP
 \fB\-a, \-\-all\fR
-Print all scanned info (-x -e -t -r -n -i)
+Print all scanned info (-x -e -t -r -n -i -b)
 .TP
 \fB\-q, \-\-quiet\fR
-Only output 'bad' things when the -a/-F flags are not given.
+Only output 'bad' things.
 .TP
 \fB\-v, \-\-verbose\fR
 Be verbose (can be specified more than once)
 .TP
 \fB\-F, \-\-format <arg>\fR
+The format modifiers mainly correspond to the getopt counterparts.
+This option implies -a internally.
+
 Use specified format for output.
- The format modifiers mainly correspond to the getopt counterparts
   \fB%F\fR	FILENAME
   \fB%x\fR	PaX-Flags
   \fB%e\fR	STACK/RELRO

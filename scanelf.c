@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.56 2005/05/21 00:34:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.57 2005/05/21 17:58:30 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.56 2005/05/21 00:34:07 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.57 2005/05/21 17:58:30 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -91,14 +91,13 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 }
 static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro)
 {
-	static char ret[8];
+	static char ret[8] = "--- ---";
 	char *found;
 	unsigned long i, off, shown;
 
 	if (!show_stack) return NULL;
 
 	shown = 0;
-	strcpy(ret, "--- ---");
 
 	if (elf->phdr) {
 #define SHOW_STACK(B) \
@@ -391,7 +390,8 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 		return " - ";
 }
 /* scan an elf file and show all the fun stuff */
-#define prints(str) fputs(str, stdout)
+// #define prints(str) fputs(str, stdout)
+#define prints(str) write(fileno(stdout), str, strlen(str))
 static void scanelf_file(const char *filename)
 {
 	unsigned long i;
@@ -683,6 +683,7 @@ static struct option const long_opts[] = {
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
+
 static char *opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
@@ -697,7 +698,7 @@ static char *opts_help[] = {
 	"Print INTERP information",
 	"Print BIND information",
 	"Find a specified symbol",
-	"Print all scanned info (-x -e -t -r -n -i)\n",
+	"Print all scanned info (-x -e -t -r -n -i -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
@@ -881,12 +882,14 @@ static char *xstrdup(char *s)
 	if (!ret) err("Could not strdup(): %s", strerror(errno));
 	return ret;
 }
+
 static void *xmalloc(size_t size)
 {
 	void *ret = malloc(size);
 	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
 	return ret;
 }
+
 static void xstrcat(char **dst, const char *src, size_t *curr_len)
 {
 	long new_len;
@@ -901,6 +904,7 @@ static void xstrcat(char **dst, const char *src, size_t *curr_len)
 
 	strcat(*dst, src);
 }
+
 static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 {
 	static char my_app[2];
@@ -908,7 +912,6 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 	my_app[1] = '\0';
 	xstrcat(dst, my_app, curr_len);
 }
-
 
 
 int main(int argc, char *argv[])

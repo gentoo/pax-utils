@@ -1,15 +1,31 @@
-.TH "scanelf" "1" "0.1" "Ned Ludd" ""
+.TH "scanelf" "1" "User Commands" "Ned Ludd" "User Commands"
 .SH "NAME"
 .LP 
 scanelf \- 
 user-space utility to scan elf files
 .SH "SYNTAX"
 .LP 
+Usage: pspax [options]
+
 user@shell$ pspax
 .BR 
 .SH "DESCRIPTION"
 pspax is a user-space utility that scans the proc directory and list ELF types, as well as thier respctive PaX flags and filenames and attributes. Depending on pspax was compiled it additionaly will display the process running set of caabilities.
 .LP 
+.SH "OPTIONS"
+.TP
+\fB\-a, \-\-all\fR
+* Show all processes
+.TP
+\fB\-B, \-\-nobanner\fR
+* Don't display the header
+.TP
+\fB\-h, \-\-help\fR
+* Print this help and exit
+.TP
+\fB\-V, \-\-version\fR
+* Print version and exit
+.LP
 .SH "FILES"
 .LP 
 \fI/proc/\fP 
@@ -27,8 +43,7 @@ To run this program the standard way type:
 .LP
 pspax
 .SH "REPORTING BUGS"
-Please include as much information as possible (using any available debugging 
-options) and send bug reports to pax-utils <solar@gentoo.org>.
+Please include as much information as possible (using any available debugging options) and send bug reports to pax-utils <solar@gentoo.org>.
 .SH "SEE ALSO"
 .BR chpax (1),
 .BR paxctl (1),
@@ -36,4 +51,4 @@ options) and send bug reports to pax-utils <solar@gentoo.org>.
 .BR gradm (8),
 .BR scanelf (1),
 .SH "AUTHORS"
-scanelf was written by <solar@gentoo.org>
+scanelf was written by <solar and vapier @gentoo.org>
