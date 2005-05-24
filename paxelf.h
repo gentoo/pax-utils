@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.22 2005/05/18 19:59:36 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.23 2005/05/24 22:01:22 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -13,10 +13,6 @@
 # include <byteswap.h>
 #else
 # include <sys/elf_common.h>
-#endif
-
-#ifndef ELF_CLASS
-# error "UNABLE TO DETECT ELF_CLASS"
 #endif
 
 extern char do_reverse_endian;
