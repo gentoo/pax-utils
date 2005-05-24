@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.57 2005/05/21 17:58:30 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.58 2005/05/24 22:04:34 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.57 2005/05/21 17:58:30 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.58 2005/05/24 22:04:34 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -809,7 +809,8 @@ static void parseargs(int argc, char *argv[])
 
 	/* let the format option override all other options */
 	if (out_format) {
-		show_pax = show_stack = show_textrel = show_rpath = show_needed = show_interp = 0;
+		show_pax = show_stack = show_textrel = show_rpath = \
+		show_needed = show_interp = show_bind = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (out_format[i] != '%') continue;
 
