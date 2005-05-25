@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.58 2005/05/24 22:04:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.59 2005/05/25 21:58:03 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.58 2005/05/24 22:04:34 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.59 2005/05/25 21:58:03 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -144,7 +144,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Off offset; \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (phdr[i].p_type != PT_DYNAMIC) continue; \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
 		offset = EGET(phdr[i].p_offset); \
 		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 		dyn = DYN ## B (elf->data + offset); \
