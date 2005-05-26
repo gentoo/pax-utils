@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.12 2005/05/06 02:22:12 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.13 2005/05/26 17:02:28 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -58,7 +58,7 @@ static char *get_proc_name(pid_t pid)
 	static char buf[PATH_MAX];
 	memset(&buf, 0, sizeof(buf));
 
-	snprintf(buf, sizeof(buf), PROC_DIR "/%d/stat", (int) pid);
+	snprintf(buf, sizeof(buf), PROC_DIR "/%u/stat", pid);
 	if ((fp = fopen(buf, "r")) == NULL)
 		return NULL;
 
@@ -73,13 +73,44 @@ static char *get_proc_name(pid_t pid)
 	return (buf+1);
 }
 
+int get_proc_mmaps(pid_t pid) {
+	static char s[PATH_MAX];
+	FILE *fp;
+
+	snprintf(s, sizeof(s), PROC_DIR "/%u/maps", pid);
+	
+	if ((fp = fopen(s, "r")) == NULL)
+		return -1;
+
+	while (fgets(s, sizeof(s), fp)) {
+		char *p;
+		if ((p = strchr(s, ' ')) != NULL) {
+			if (strlen(p) < 6)
+				continue;
+			++p;
+			++p;
+			if (tolower(*p) == 'w') {
+				++p;
+				if (*p == '+')
+					++p;
+				if (tolower(*p) == 'x') {
+					fclose(fp);
+					return 1;
+				}
+			}
+		}
+	}
+	fclose(fp);
+	return 0;
+}
+
 static struct passwd *get_proc_uid(pid_t pid)
 {
 	struct passwd *pwd;
 	struct stat st;
 	static char s[PATH_MAX];
 
-	snprintf(s, sizeof(s), PROC_DIR "/%d/stat", (int) pid);
+	snprintf(s, sizeof(s), PROC_DIR "/%u/stat", pid);
 
 	/* this is bullshit but getpwuid() is leaking memory
 	 * and I've wasted a few hrs 1 day tracking it down.
@@ -101,7 +132,7 @@ static char *get_proc_status(pid_t pid, char *name)
 	size_t len;
 	static char s[PATH_MAX];
 
-	snprintf(s, sizeof(s), PROC_DIR "/%d/status", (int) pid);
+	snprintf(s, sizeof(s), PROC_DIR "/%u/status", pid);
 	if ((fp = fopen(s, "r")) == NULL)
 		return NULL;
 
@@ -119,7 +150,7 @@ static char *get_proc_status(pid_t pid, char *name)
 	return NULL;
 }
 
-static char *get_pid_attr(int pid)
+static char *get_pid_attr(pid_t pid)
 {
 	FILE *fp;
 	char *p;
@@ -128,7 +159,7 @@ static char *get_pid_attr(int pid)
 
 	memset(buf, 0, sizeof(buf));
 
-	snprintf(s, sizeof(s), PROC_DIR "/%d/attr/current", pid);
+	snprintf(s, sizeof(s), PROC_DIR "/%u/attr/current", pid);
 	if ((fp = fopen(s, "r")) == NULL)
 		return NULL;
 	if (fgets(buf, sizeof(buf), fp) != NULL)
@@ -138,13 +169,13 @@ static char *get_pid_attr(int pid)
 	return buf;
 }
 
-static const char *get_pid_type(int pid)
+static const char *get_proc_type(pid_t pid)
 {
 	char fname[32];
 	elfobj *elf = NULL;
 	char *ret = NULL;
 
-	snprintf(fname, sizeof(fname), PROC_DIR "/%d/exe", pid);
+	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
 	if ((elf = readelf(fname)) == NULL)
 		return ret;
 	ret = (char *)get_elfetype(elf);
@@ -152,12 +183,12 @@ static const char *get_pid_type(int pid)
 	return ret;
 }
 
-static void pspax()
+static void pspax(void)
 {
 	register DIR *dir;
 	register struct dirent *de;
 	pid_t pid;
-	int have_attr;
+	int have_attr, wx;
 	struct passwd *uid;
 	struct stat st;
 	const char *pax, *type, *name, *caps, *attr;
@@ -181,8 +212,8 @@ static void pspax()
 		have_attr = 0;
 
 	if (show_banner)
-		printf("%-8s %-6s %-6s %-10s %-16s %-4s %-4s\n",
-		       "USER", "PID", "PAX", "ELF_TYPE", "NAME", "CAPS", "ATTR");
+		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s\n",
+		       "USER", "PID", "PAX", "MMAP", "ELF_TYPE", "NAME", "CAPS", "ATTR");
 
 	while ((de = readdir(dir))) {
 		errno = 0;
@@ -200,15 +231,17 @@ static void pspax()
 
 			uid = get_proc_uid(pid);
 			pax = get_proc_status(pid, "PAX");
-			type = get_pid_type(pid);
+			wx  = get_proc_mmaps(pid);
+			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 
 			if (show_all || type)
-				printf("%-8s %-6d %-6s %-10s %-16s %-4s %s\n",
+				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s\n",
 				       uid  ? uid->pw_name : "--------",
 				       pid,
 				       pax  ? pax  : "---",
+				       (wx == 0) ? "w|x" : (wx == -1) ? "---" : "w^x",
 				       type ? type : "-------",
 				       name ? name : "-----",
 				       caps ? caps : " = ",
