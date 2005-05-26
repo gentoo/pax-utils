@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.13 2005/05/26 17:02:28 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.14 2005/05/26 17:08:16 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -241,7 +241,7 @@ static void pspax(void)
 				       uid  ? uid->pw_name : "--------",
 				       pid,
 				       pax  ? pax  : "---",
-				       (wx == 0) ? "w|x" : (wx == -1) ? "---" : "w^x",
+				       (wx == 1) ? "w|x" : (wx == -1) ? "---" : "w^x",
 				       type ? type : "-------",
 				       name ? name : "-----",
 				       caps ? caps : " = ",
