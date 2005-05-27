@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.1 2005/05/27 02:58:11 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.2 2005/05/27 22:15:16 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -19,6 +19,14 @@
 # define bswap_16 bswap16
 # define bswap_32 bswap32
 # define bswap_64 bswap64
+#endif
+
+#if !defined(ELF_DATA)
+# if BYTE_ORDER == LITTLE_ENDIAN
+#  define ELF_DATA ELFDATA2LSB
+# else
+#  define ELF_DATA ELFDATA2MSB
+# endif
 #endif
 
 /*
