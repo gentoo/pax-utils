@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.59 2005/05/25 21:58:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.60 2005/05/27 02:58:39 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <libgen.h>
+#include <limits.h>
 #define __USE_GNU
 #include <string.h>
 #include <errno.h>
@@ -35,7 +37,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.59 2005/05/25 21:58:03 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.60 2005/05/27 02:58:39 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -47,7 +49,7 @@ static void scanelf_ldpath();
 static void scanelf_envpath();
 static void usage(int status);
 static void parseargs(int argc, char *argv[]);
-static char *xstrdup(char *s);
+static char *xstrdup(const char *s);
 static void *xmalloc(size_t size);
 static void xstrcat(char **dst, const char *src, size_t *curr_len);
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
@@ -186,7 +188,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 		Elf ## B ## _Off offset; \
-		Elf ## B ## _Sxword word; \
+		Elf ## B ## _Xword word; \
 		/* Scan all the program headers */ \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			/* Just scan dynamic headers */ \
@@ -355,6 +357,9 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 	strtab_void = elf_findsecbyname(elf, ".strtab");
 
 	if (symtab_void && strtab_void) {
+		char *base, *basemem;
+		basemem = xstrdup(filename);
+		base = basename(basemem);
 #define FIND_SYM(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
@@ -368,7 +373,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 				if (*find_sym == '*') { \
 					printf("%s(%s) %5lX %15s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
-					       (char *)basename(filename), \
+					       base, \
 					       (long)sym->st_size, \
 					       (char *)get_elfstttype(sym->st_info), \
 					       symname); \
@@ -381,6 +386,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 		} }
 		FIND_SYM(32)
 		FIND_SYM(64)
+		free(basemem);
 	}
 	if (*find_sym != '*' && *found_sym)
 		return find_sym;
@@ -877,7 +883,7 @@ static void parseargs(int argc, char *argv[])
 
 
 /* utility funcs */
-static char *xstrdup(char *s)
+static char *xstrdup(const char *s)
 {
 	char *ret = strdup(s);
 	if (!ret) err("Could not strdup(): %s", strerror(errno));
