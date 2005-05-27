@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.23 2005/05/24 22:01:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.24 2005/05/27 02:13:23 solar Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -7,8 +7,8 @@
 #define _PAX_ELF_H
 
 #include <sys/mman.h>
-#ifdef __linux__
 # include <elf.h>
+#ifdef __linux__
 # include <asm/elf.h>
 # include <byteswap.h>
 #else

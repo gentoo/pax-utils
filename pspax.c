@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.14 2005/05/26 17:08:16 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.15 2005/05/27 02:13:23 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -55,40 +55,45 @@ static char show_banner = 1;
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
-	static char buf[PATH_MAX];
-	memset(&buf, 0, sizeof(buf));
+	static char str[PATH_MAX];
+	memset(&str, 0, sizeof(str));
 
-	snprintf(buf, sizeof(buf), PROC_DIR "/%u/stat", pid);
-	if ((fp = fopen(buf, "r")) == NULL)
+	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
+	if ((fp = fopen(str, "r")) == NULL)
 		return NULL;
 
-	memset(&buf, 0, sizeof(buf));
+	memset(&str, 0, sizeof(str));
 
-	fscanf(fp, "%*d %s.16", buf);
-	if (*buf) {
-		buf[strlen(buf) - 1] = '\0';
-		buf[16] = 0;
+	fscanf(fp, "%*d %s.16", str);
+	if (*str) {
+		str[strlen(str) - 1] = '\0';
+		str[16] = 0;
 	}
 	fclose(fp);
-	return (buf+1);
+	return (str+1);
 }
 
-int get_proc_mmaps(pid_t pid) {
-	static char s[PATH_MAX];
+int get_proc_maps(pid_t pid) {
+	static char str[PATH_MAX];
 	FILE *fp;
 
-	snprintf(s, sizeof(s), PROC_DIR "/%u/maps", pid);
+	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
 	
-	if ((fp = fopen(s, "r")) == NULL)
+	if ((fp = fopen(str, "r")) == NULL)
 		return -1;
 
-	while (fgets(s, sizeof(s), fp)) {
+	while (fgets(str, sizeof(str), fp)) {
 		char *p;
-		if ((p = strchr(s, ' ')) != NULL) {
+		if ((p = strchr(str, ' ')) != NULL) {
 			if (strlen(p) < 6)
 				continue;
-			++p;
-			++p;
+			/* 0x0-0x0 rwxp fffff000 00:00 0 */
+			/* 0x0-0x0 R+W+XP fffff000 00:00 0 */
+			++p; // ' '
+			++p; // r
+			if (*p == '+')
+				++p;
+			/* FIXME: all of wx, w+, +x, ++ indicate w|x */
 			if (tolower(*p) == 'w') {
 				++p;
 				if (*p == '+')
@@ -106,11 +111,11 @@ int get_proc_mmaps(pid_t pid) {
 
 static struct passwd *get_proc_uid(pid_t pid)
 {
-	struct passwd *pwd;
 	struct stat st;
-	static char s[PATH_MAX];
+	struct passwd *pwd;
+	static char str[PATH_MAX];
 
-	snprintf(s, sizeof(s), PROC_DIR "/%u/stat", pid);
+	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
 
 	/* this is bullshit but getpwuid() is leaking memory
 	 * and I've wasted a few hrs 1 day tracking it down.
@@ -120,7 +125,7 @@ static struct passwd *get_proc_uid(pid_t pid)
 	 * time again the next time I forget.
 	 * and till such time as getpwuid()/nis/nss/pam or whatever does not suck.
 	 */
-	if ((stat(s, &st)) != (-1))
+	if ((stat(str, &st)) != (-1))
 		if ((pwd = getpwuid(st.st_uid)) != NULL)
 			return pwd;
 	return NULL;
@@ -130,19 +135,19 @@ static char *get_proc_status(pid_t pid, char *name)
 {
 	FILE *fp;
 	size_t len;
-	static char s[PATH_MAX];
+	static char str[PATH_MAX];
 
-	snprintf(s, sizeof(s), PROC_DIR "/%u/status", pid);
-	if ((fp = fopen(s, "r")) == NULL)
+	snprintf(str, sizeof(str), PROC_DIR "/%u/status", pid);
+	if ((fp = fopen(str, "r")) == NULL)
 		return NULL;
 
 	len = strlen(name);
-	while (fgets(s, sizeof(s), fp)) {
-		if (strncasecmp(s, name, len) == 0) {
-			if (s[len] == ':') {
+	while (fgets(str, sizeof(str), fp)) {
+		if (strncasecmp(str, name, len) == 0) {
+			if (str[len] == ':') {
 				fclose(fp);
-				s[strlen(s) - 1] = 0;
-				return (s + len + 2);
+				str[strlen(str) - 1] = 0;
+				return (str + len + 2);
 			}
 		}
 	}
@@ -154,13 +159,13 @@ static char *get_pid_attr(pid_t pid)
 {
 	FILE *fp;
 	char *p;
-	char s[32];
+	char str[32];
 	static char buf[BUFSIZ];
 
 	memset(buf, 0, sizeof(buf));
 
-	snprintf(s, sizeof(s), PROC_DIR "/%u/attr/current", pid);
-	if ((fp = fopen(s, "r")) == NULL)
+	snprintf(str, sizeof(str), PROC_DIR "/%u/attr/current", pid);
+	if ((fp = fopen(str, "r")) == NULL)
 		return NULL;
 	if (fgets(buf, sizeof(buf), fp) != NULL)
 		if ((p = strchr(buf, '\n')) != NULL)
@@ -195,6 +200,7 @@ static void pspax(void)
 #ifdef WANT_SYSCAP
 	ssize_t length;
 	cap_t cap_d;
+
 	cap_d = cap_init();
 #endif
 
@@ -213,7 +219,7 @@ static void pspax(void)
 
 	if (show_banner)
 		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s\n",
-		       "USER", "PID", "PAX", "MMAP", "ELF_TYPE", "NAME", "CAPS", "ATTR");
+		       "USER", "PID", "PAX", "MAPS", "ELF_TYPE", "NAME", "CAPS", "ATTR");
 
 	while ((de = readdir(dir))) {
 		errno = 0;
@@ -231,7 +237,7 @@ static void pspax(void)
 
 			uid = get_proc_uid(pid);
 			pax = get_proc_status(pid, "PAX");
-			wx  = get_proc_mmaps(pid);
+			wx  = get_proc_maps(pid);
 			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
@@ -248,7 +254,7 @@ static void pspax(void)
 				       attr ? attr : "-");
 #ifdef WANT_SYSCAP
 			if (caps)
-				cap_free(caps);
+				cap_free((void *)caps);
 #endif
 		}
 	}
