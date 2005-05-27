@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.15 2005/05/27 02:13:23 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.16 2005/05/27 02:57:09 vapier Exp $";
 #define argv0 "pspax"
 
 
@@ -55,7 +55,7 @@ static char show_banner = 1;
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
-	static char str[PATH_MAX];
+	static char str[_POSIX_PATH_MAX];
 	memset(&str, 0, sizeof(str));
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
@@ -74,7 +74,7 @@ static char *get_proc_name(pid_t pid)
 }
 
 int get_proc_maps(pid_t pid) {
-	static char str[PATH_MAX];
+	static char str[_POSIX_PATH_MAX];
 	FILE *fp;
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
@@ -113,7 +113,7 @@ static struct passwd *get_proc_uid(pid_t pid)
 {
 	struct stat st;
 	struct passwd *pwd;
-	static char str[PATH_MAX];
+	static char str[_POSIX_PATH_MAX];
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
 
@@ -135,7 +135,7 @@ static char *get_proc_status(pid_t pid, char *name)
 {
 	FILE *fp;
 	size_t len;
-	static char str[PATH_MAX];
+	static char str[_POSIX_PATH_MAX];
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/status", pid);
 	if ((fp = fopen(str, "r")) == NULL)
