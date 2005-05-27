@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <limits.h>
 #include <libgen.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.16 2005/05/27 02:57:09 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.17 2005/05/27 22:15:03 vapier Exp $";
 #define argv0 "pspax"
 
 
