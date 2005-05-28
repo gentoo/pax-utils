@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.22 2005/05/27 02:53:14 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.23 2005/05/28 22:09:36 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 ####################################################################
 
 ####################################################
-CFLAGS	:= -Wall -O2
+CFLAGS	:= -Wall -Wformat=2 -O2
 #CFLAGS += -DEBUG -g
 #LDFLAGS :=-pie
 DESTDIR	=

@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.60 2005/05/27 02:58:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.61 2005/05/28 22:09:36 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,10 +34,9 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <assert.h>
-
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.60 2005/05/27 02:58:39 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.61 2005/05/28 22:09:36 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -75,21 +74,54 @@ static char *find_sym = NULL, *versioned_symname = NULL;
 static char *out_format = NULL;
 
 
-
 /* sub-funcs for scanelf_file() */
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
 	static char *paxflags;
+	static char ret[7];
+	unsigned long i, shown;
+
 
 	if (!show_pax) return NULL;
 
-	paxflags = pax_short_hf_flags(PAX_FLAGS(elf));
-	if (!be_quiet || (be_quiet && strncmp(paxflags, "PeMRxS", 6))) {
-		*found_pax = 1;
-		return paxflags;
+	shown = 0;
+	memset(&ret, 0, sizeof(ret));
+
+	if (elf->phdr) {
+#define SHOW_PAX(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != PT_PAX_FLAGS) \
+			continue; \
+		if (be_quiet && (EGET(phdr[i].p_flags) == 10240)) \
+			continue; \
+		memcpy(ret, pax_short_pf_flags(EGET(phdr[i].p_flags)), 6); \
+		*found_pax = 1; \
+		++shown; \
+		break; \
+	} \
+	}
+	SHOW_PAX(32)
+	SHOW_PAX(64)
 	}
 
-	return NULL;
+	/* fall back to EI_PAX if no PT_PAX was found */
+	if (!*ret) {
+		paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
+		if (!be_quiet || (be_quiet && EI_PAX_FLAGS(elf))) {
+			*found_pax = 1;
+			return paxflags;
+		}
+		strncpy(ret, paxflags, sizeof(ret));
+		// ++shown;
+	}
+
+	if (be_quiet && !shown)
+		return NULL;
+	return ret;
+
 }
 static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro)
 {
@@ -782,7 +814,8 @@ static void parseargs(int argc, char *argv[])
 		}
 
 		case 'F': {
-			out_format = xstrdup(optarg);
+			if (!out_format)
+				out_format = xstrdup(optarg);
 			break;
 		}
 
@@ -927,5 +960,8 @@ int main(int argc, char *argv[])
 		usage(EXIT_FAILURE);
 	parseargs(argc, argv);
 	fclose(stdout);
+#ifdef __BOUNDS_CHECKING_ON
+	warn("The calls to add/delete heap should be off by 1 due  to the out_buffer not being freed in scanelf_file()");
+#endif
 	return EXIT_SUCCESS;
 }

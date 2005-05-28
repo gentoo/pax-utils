@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.21 2005/05/25 21:58:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.22 2005/05/28 22:09:36 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-
 #include "paxelf.h"
 
 #define argv0 "paxelf"
@@ -385,6 +384,7 @@ elfobj *readelf(const char *filename)
 	}
 	READELF_HEADER(32)
 	READELF_HEADER(64)
+	/* { char *p; strncpy(elf->basename, (p = strrchr(filename, '/')) == NULL ? "?" : p+1 , sizeof(elf->basename)); } */
 
 	return elf;
 
@@ -405,10 +405,6 @@ void unreadelf(elfobj *elf)
 	free(elf);
 }
 
-/* the display logic is:
- * lower case: explicitly disabled
- * upper case: explicitly enabled
- * - : default */
 char *pax_short_hf_flags(unsigned long flags)
 {
 	static char buffer[7];
@@ -423,23 +419,35 @@ char *pax_short_hf_flags(unsigned long flags)
 
 	return buffer;
 }
+
+/* the display logic is:
+ * lower case: explicitly disabled
+ * upper case: explicitly enabled
+ * - : default */
 char *pax_short_pf_flags(unsigned long flags)
 {
-	static char buffer[13];
+	static char buffer[7];
 
+	/* PT_PAX_FLAGS are tristate */
 	buffer[0] = (flags & PF_PAGEEXEC ? 'P' : '-');
-	buffer[1] = (flags & PF_NOPAGEEXEC ? 'p' : '-');
-	buffer[2] = (flags & PF_SEGMEXEC ? 'S' : '-');
-	buffer[3] = (flags & PF_NOSEGMEXEC ? 's' : '-');
-	buffer[4] = (flags & PF_MPROTECT ? 'M' : '-');
-	buffer[5] = (flags & PF_NOMPROTECT ? 'm' : '-');
-	buffer[6] = (flags & PF_RANDEXEC ? 'X' : '-');
-	buffer[7] = (flags & PF_NORANDEXEC ? 'x' : '-');
-	buffer[8] = (flags & PF_EMUTRAMP ? 'E' : '-');
-	buffer[9] = (flags & PF_NOEMUTRAMP ? 'e' : '-');
-	buffer[10] = (flags & PF_RANDMMAP ? 'R' : '-');
-	buffer[11] = (flags & PF_NORANDMMAP ? 'r' : '-');
-	buffer[12] = 0;
+	buffer[0] = (flags & PF_NOPAGEEXEC ? 'p' : buffer[0]);
+
+	buffer[1] = (flags & PF_SEGMEXEC ? 'S' : '-');
+	buffer[1] = (flags & PF_NOSEGMEXEC ? 's' : buffer[1]);
+
+	buffer[2] = (flags & PF_MPROTECT ? 'M' : '-');
+	buffer[2] = (flags & PF_NOMPROTECT ? 'm' : buffer[2]);
+
+	buffer[3] = (flags & PF_RANDEXEC ? 'X' : '-');
+	buffer[3] = (flags & PF_NORANDEXEC ? 'x' : buffer[3]);
+
+	buffer[4] = (flags & PF_EMUTRAMP ? 'E' : '-');
+	buffer[4] = (flags & PF_NOEMUTRAMP ? 'e' : buffer[5]);
+
+	buffer[5] = (flags & PF_RANDMMAP ? 'R' : '-');
+	buffer[5] = (flags & PF_NORANDMMAP ? 'r' : buffer[5]);
+
+	buffer[6] = 0;
 
 	return buffer;
 }

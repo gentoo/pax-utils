@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.25 2005/05/27 02:58:11 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.26 2005/05/28 22:09:36 solar Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -44,6 +44,7 @@ typedef struct {
 	char elf_class;
 	off_t len;
 	int fd;
+	/* char basename[32]; */
 } elfobj;
 #define EHDR32(ptr) ((Elf32_Ehdr *)(ptr))
 #define EHDR64(ptr) ((Elf64_Ehdr *)(ptr))
@@ -89,15 +90,15 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 #define HF_PAX_SEGMEXEC		32	/* 0: Segmentation based non-exec pages */
 
 #define EI_PAX			14	/* Index in e_ident[] where to read flags */
-#define __PAX_FLAGS(B, elf) \
+#define __EI_PAX_FLAGS(B, elf) \
 	((EHDR ## B (elf->ehdr)->e_ident[EI_PAX + 1] << 8) + EHDR ## B (elf->ehdr)->e_ident[EI_PAX])
-#define PAX_FLAGS(elf) \
+#define EI_PAX_FLAGS(elf) \
 	(__extension__ ({ \
 		unsigned long __res; \
 		if (elf->elf_class == ELFCLASS32) \
-			__res = __PAX_FLAGS(32, elf); \
+			__res = __EI_PAX_FLAGS(32, elf); \
 		else \
-			__res = __PAX_FLAGS(64, elf); \
+			__res = __EI_PAX_FLAGS(64, elf); \
 		__res; \
 	}))
 
