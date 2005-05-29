@@ -1,7 +1,7 @@
 /*
- * Copyright 1999-2005 Gentoo Foundation
+ * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.6 2005/05/10 22:53:31 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.7 2005/05/29 18:44:48 solar Exp $
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.6 2005/05/10 22:53:31 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.7 2005/05/29 18:44:48 solar Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */

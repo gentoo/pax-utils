@@ -1,8 +1,7 @@
 /*
- * Copyright 2003 Ned Ludd <solar@gentoo.org>
- * Copyright 1999-2005 Gentoo Foundation
+ * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.22 2005/05/28 22:09:36 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.23 2005/05/29 18:44:48 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -20,12 +19,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
  ********************************************************************
- *
- * This program was written for the hcc suite by (solar|pappy)@g.o.
- * visit http://www.gentoo.org/proj/en/hardened/etdyn-ssp.xml for more
- * information on the Gentoo Hardened gcc suite
- * Also of interest is the pax site http://pax.grsecurity.net/
- * but you should know about that already.
  */
 
 #include <stdio.h>
@@ -442,12 +435,18 @@ char *pax_short_pf_flags(unsigned long flags)
 	buffer[3] = (flags & PF_NORANDEXEC ? 'x' : buffer[3]);
 
 	buffer[4] = (flags & PF_EMUTRAMP ? 'E' : '-');
-	buffer[4] = (flags & PF_NOEMUTRAMP ? 'e' : buffer[5]);
+	buffer[4] = (flags & PF_NOEMUTRAMP ? 'e' : buffer[4]);
 
 	buffer[5] = (flags & PF_RANDMMAP ? 'R' : '-');
 	buffer[5] = (flags & PF_NORANDMMAP ? 'r' : buffer[5]);
 
 	buffer[6] = 0;
+
+  
+	if (((flags & PF_PAGEEXEC) && (flags & PF_NOPAGEEXEC)) || ((flags & PF_SEGMEXEC) && (flags & PF_NOSEGMEXEC))
+		|| ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)) || ((flags & PF_RANDEXEC) && (flags & PF_NORANDEXEC))
+		|| ((flags & PF_EMUTRAMP) && (flags &  PF_NOEMUTRAMP)) || ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)))
+		warn("inconsistent state detected. flags=%lu\n", flags);
 
 	return buffer;
 }
