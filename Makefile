@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.23 2005/05/28 22:09:36 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.24 2005/05/29 06:27:50 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,19 +19,19 @@
 ####################################################################
 
 ####################################################
-CFLAGS	:= -Wall -Wformat=2 -O2
-#CFLAGS += -DEBUG -g
-#LDFLAGS :=-pie
-DESTDIR	=
-PREFIX	:= $(DESTDIR)/usr
-STRIP	:= strip
-MKDIR	:= mkdir -p
-CP	:= cp
+CFLAGS    := -Wall -Wformat=2 -O2
+#CFLAGS   += -DEBUG -g
+#LDFLAGS  :=-pie
+DESTDIR    =
+PREFIX    := $(DESTDIR)/usr
+STRIP     := strip
+MKDIR     := mkdir -p
+CP        := cp
 #####################################################
-TARGETS	= scanelf pspax dumpelf
-OBJS	= ${TARGETS:%=%.o} paxelf.o
-MPAGES	= ${TARGETS:%=man/%.1}
-SOURCES	= ${OBJS:%.o=%.c}
+TARGETS    = scanelf pspax dumpelf
+OBJS       = ${TARGETS:%=%.o} paxelf.o
+MPAGES     = ${TARGETS:%=man/%.1}
+SOURCES    = ${OBJS:%.o=%.c}
 
 all: $(OBJS) $(TARGETS)
 	@:
@@ -39,7 +39,7 @@ all: $(OBJS) $(TARGETS)
 debug: all
 	@-/sbin/chpax  -permsx $(TARGETS)
 	@-/sbin/paxctl -permsx $(TARGETS)
-	
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<
 
@@ -57,7 +57,7 @@ clean:
 
 distclean: clean
 	-rm -f *~ core
-	
+
 install: all
 	-$(STRIP) $(TARGETS)
 	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
