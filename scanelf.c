@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.63 2005/05/29 18:44:48 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.64 2005/05/29 19:42:09 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.63 2005/05/29 18:44:48 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.64 2005/05/29 19:42:09 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -791,15 +791,12 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
 		case 'f':
-			if (from_file == NULL)
-				from_file = xstrdup(optarg);
-			else
-				err("Don't specify -f twice");
+			if (from_file) err("Don't specify -f twice");
+			from_file = xstrdup(optarg);
 			break;
 		case 'o': {
 			FILE *fp = NULL;
-			fp = freopen(optarg, "w", stdout);
-			if (fp == NULL)
+			if ((fp = freopen(optarg, "w", stdout)) == NULL)
 				err("Could not open output stream '%s': %s", optarg, strerror(errno));
 			stdout = fp;
 			break;
@@ -807,8 +804,7 @@ static void parseargs(int argc, char *argv[])
 
 		case 's': {
 			size_t len;
-			if (!find_sym)
-				err("Don't specify -s twice");
+			if (find_sym) err("Don't specify -s twice");
 			find_sym = xstrdup(optarg);
 			len = strlen(find_sym) + 1;
 			versioned_symname = (char*)xmalloc(sizeof(char) * (len+1));
@@ -817,10 +813,8 @@ static void parseargs(int argc, char *argv[])
 		}
 
 		case 'F': {
-			if (!out_format)
-				out_format = xstrdup(optarg);
-			else
-				err("Don't specify -F twice");
+			if (out_format) err("Don't specify -F twice");
+			out_format = xstrdup(optarg);
 			break;
 		}
 
