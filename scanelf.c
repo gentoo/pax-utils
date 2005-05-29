@@ -2,7 +2,7 @@
  * Copyright 2003 Ned Ludd <solar@gentoo.org>
  * Copyright 1999-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.61 2005/05/28 22:09:36 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.62 2005/05/29 06:25:48 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -36,7 +36,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.61 2005/05/28 22:09:36 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.62 2005/05/29 06:25:48 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -794,6 +794,8 @@ static void parseargs(int argc, char *argv[])
 		case 'f':
 			if (from_file == NULL)
 				from_file = xstrdup(optarg);
+			else
+				err("Don't specify -f twice");
 			break;
 		case 'o': {
 			FILE *fp = NULL;
@@ -806,6 +808,8 @@ static void parseargs(int argc, char *argv[])
 
 		case 's': {
 			size_t len;
+			if (!find_sym)
+				err("Don't specify -s twice");
 			find_sym = xstrdup(optarg);
 			len = strlen(find_sym) + 1;
 			versioned_symname = (char*)xmalloc(sizeof(char) * (len+1));
@@ -816,6 +820,8 @@ static void parseargs(int argc, char *argv[])
 		case 'F': {
 			if (!out_format)
 				out_format = xstrdup(optarg);
+			else
+				err("Don't specify -F twice");
 			break;
 		}
 
