@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.64 2005/05/29 19:42:09 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.65 2005/05/30 03:23:07 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.64 2005/05/29 19:42:09 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.65 2005/05/30 03:23:07 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -798,7 +798,7 @@ static void parseargs(int argc, char *argv[])
 			FILE *fp = NULL;
 			if ((fp = freopen(optarg, "w", stdout)) == NULL)
 				err("Could not open output stream '%s': %s", optarg, strerror(errno));
-			stdout = fp;
+			SET_STDOUT(fp);
 			break;
 		}
 

@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.2 2005/05/27 22:15:16 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.3 2005/05/30 03:23:07 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -15,10 +15,48 @@
 # include <sys/endian.h>
 #endif
 
-#if defined(bswap16) && !defined(bswap_16)
-# define bswap_16 bswap16
-# define bswap_32 bswap32
-# define bswap_64 bswap64
+#if defined(__APPLE__)
+# define SET_STDOUT(fp) err("Darwin has stupid stdout handling")
+#else
+# define SET_STDOUT(fp) stdout = fp
+#endif
+
+#if !defined(bswap_16)
+# if defined(bswap16)
+#  define bswap_16 bswap16
+#  define bswap_32 bswap32
+#  define bswap_64 bswap64
+# else
+#  define bswap_16(x) \
+			((((x) & 0xff00) >> 8) | \
+			 (((x) & 0x00ff) << 8))
+#  define bswap_32(x) \
+			((((x) & 0xff000000) >> 24) | \
+			 (((x) & 0x00ff0000) >>  8) | \
+			 (((x) & 0x0000ff00) <<  8) | \
+			 (((x) & 0x000000ff) << 24))
+#  if defined(__GNUC__)
+#   define bswap_64(x) \
+			((((x) & 0xff00000000000000ull) >> 56) | \
+			 (((x) & 0x00ff000000000000ull) >> 40) | \
+			 (((x) & 0x0000ff0000000000ull) >> 24) | \
+			 (((x) & 0x000000ff00000000ull) >>  8) | \
+			 (((x) & 0x00000000ff000000ull) <<  8) | \
+			 (((x) & 0x0000000000ff0000ull) << 24) | \
+			 (((x) & 0x000000000000ff00ull) << 40) | \
+			 (((x) & 0x00000000000000ffull) << 56))
+#  else
+#   define bswap_64(x) \
+			((((x) & 0xff00000000000000) >> 56) | \
+			 (((x) & 0x00ff000000000000) >> 40) | \
+			 (((x) & 0x0000ff0000000000) >> 24) | \
+			 (((x) & 0x000000ff00000000) >>  8) | \
+			 (((x) & 0x00000000ff000000) <<  8) | \
+			 (((x) & 0x0000000000ff0000) << 24) | \
+			 (((x) & 0x000000000000ff00) << 40) | \
+			 (((x) & 0x00000000000000ff) << 56))
+#  endif
+# endif
 #endif
 
 #if !defined(ELF_DATA)
