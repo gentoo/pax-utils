@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.65 2005/05/30 03:23:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.66 2005/06/01 22:37:38 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.65 2005/05/30 03:23:07 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.66 2005/06/01 22:37:38 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -71,6 +71,7 @@ static char be_quiet = 0;
 static char be_verbose = 0;
 static char *find_sym = NULL, *versioned_symname = NULL;
 static char *out_format = NULL;
+static char *search_path = NULL;
 
 
 /* sub-funcs for scanelf_file() */
@@ -486,7 +487,9 @@ static void scanelf_file(const char *filename)
 
 			switch (out_format[++i]) {
 			case '%': break;
-			case 'F': prints("FILE "); found_file = 1; break;
+			case 'F':
+			case 'p':
+			case 'f': prints("FILE "); found_file = 1; break;
 			case 'o': prints(" TYPE   "); break;
 			case 'x': prints(" PAX   "); break;
 			case 'e': prints("STK/REL "); break;
@@ -507,6 +510,7 @@ static void scanelf_file(const char *filename)
 	/* dump all the good stuff */
 	for (i = 0; out_format[i]; ++i) {
 		const char *out;
+		const char *tmp;
 
 		/* make sure we trim leading spaces in quiet mode */
 		if (be_quiet && *out_buffer == ' ' && !out_buffer[1])
@@ -521,6 +525,25 @@ static void scanelf_file(const char *filename)
 		switch (out_format[++i]) {
 		case '%': xchrcat(&out_buffer, '%', &out_len); break;
 		case 'F': found_file = 1; xstrcat(&out_buffer, filename, &out_len); break;
+		case 'p':
+			found_file = 1;
+			tmp = filename;
+			if (search_path) {
+				ssize_t len_search = strlen(search_path);
+				ssize_t len_file = strlen(filename);
+				if (!strncmp(filename, search_path, len_search) && \
+				    len_file > len_search)
+					tmp += len_search;
+				if (*tmp == '/' && search_path[len_search-1] == '/') tmp++;
+			}
+			xstrcat(&out_buffer, tmp, &out_len);
+			break;
+		case 'f':
+			found_file = 1;
+			tmp = strrchr(filename, '/');
+			tmp = (tmp == NULL ? filename : tmp+1);
+			xstrcat(&out_buffer, tmp, &out_len);
+			break;
 		case 'o': out = get_elfetype(elf); break;
 		case 'x': out = scanelf_file_pax(elf, &found_pax); break;
 		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro); break;
@@ -612,6 +635,7 @@ static int scanelf_from_file(char *filename)
 	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
+		search_path = path;
 		scanelf_dir(path);
 	}
 	if (fp != stdin)
@@ -769,6 +793,8 @@ static void usage(int status)
 	puts(" %F Filename \t%x PaX Flags \t%e STACK/RELRO");
 	puts(" %t TEXTREL  \t%r RPATH     \t%n NEEDED");
 	puts(" %i INTERP   \t%b BIND      \t%s symbol");
+	puts(" %p filename (with search path removed)");
+	puts(" %f base filename");
 
 	exit(status);
 }
@@ -855,6 +881,8 @@ static void parseargs(int argc, char *argv[])
 			switch (out_format[++i]) {
 			case '%': break;
 			case 'F': break;
+			case 'p': break;
+			case 'f': break;
 			case 's': break;
 			case 'o': break;
 			case 'x': show_pax = 1; break;
@@ -899,8 +927,10 @@ static void parseargs(int argc, char *argv[])
 	}
 	if (optind == argc && !scan_ldpath && !scan_envpath && !from_file)
 		err("Nothing to scan !?");
-	while (optind < argc)
-		scanelf_dir(argv[optind++]);
+	while (optind < argc) {
+		search_path = argv[optind++];
+		scanelf_dir(search_path);
+	}
 
 	/* clean up */
 	if (find_sym) {
@@ -960,7 +990,7 @@ int main(int argc, char *argv[])
 	parseargs(argc, argv);
 	fclose(stdout);
 #ifdef __BOUNDS_CHECKING_ON
-	warn("The calls to add/delete heap should be off by 1 due  to the out_buffer not being freed in scanelf_file()");
+	warn("The calls to add/delete heap should be off by 1 due to the out_buffer not being freed in scanelf_file()");
 #endif
 	return EXIT_SUCCESS;
 }
