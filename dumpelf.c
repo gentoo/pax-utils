@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.9 2005/06/03 04:04:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.10 2005/06/03 23:18:27 vapier Exp $
  */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.9 2005/06/03 04:04:09 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.10 2005/06/03 23:18:27 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -105,7 +105,8 @@ static void dumpelf(const char *filename, long file_cnt)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
-		Elf ## B ## _Off offset = EGET(shdr[EGET(ehdr->e_shstrndx)].sh_offset); \
+		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
+		Elf ## B ## _Off offset = EGET(shdr[shstrndx].sh_offset); \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
 		for (i = 0; i < shnum; ++i) { \
 			if (i) printf(",\n"); \
@@ -140,10 +141,10 @@ static void dump_ehdr(elfobj *elf, void *ehdr_void)
 	       /* "\t\t/ [%i] EI_BRAND:      / 0x%02X\n" */ \
 	       "\t},\n", \
 	       EI_MAG0, (unsigned int)ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2], ehdr->e_ident[EI_MAG3], \
-	       EI_CLASS, (int)ehdr->e_ident[EI_CLASS], get_elfeitype(elf, EI_CLASS, ehdr->e_ident[EI_CLASS]), \
-	       EI_DATA, (int)ehdr->e_ident[EI_DATA], get_elfeitype(elf, EI_DATA, ehdr->e_ident[EI_DATA]), \
-	       EI_VERSION, (int)ehdr->e_ident[EI_VERSION], get_elfeitype(elf, EI_VERSION, ehdr->e_ident[EI_VERSION]), \
-	       EI_OSABI, (int)ehdr->e_ident[EI_OSABI], get_elfeitype(elf, EI_OSABI, ehdr->e_ident[EI_OSABI]), \
+	       EI_CLASS, (int)ehdr->e_ident[EI_CLASS], get_elfeitype(EI_CLASS, ehdr->e_ident[EI_CLASS]), \
+	       EI_DATA, (int)ehdr->e_ident[EI_DATA], get_elfeitype(EI_DATA, ehdr->e_ident[EI_DATA]), \
+	       EI_VERSION, (int)ehdr->e_ident[EI_VERSION], get_elfeitype(EI_VERSION, ehdr->e_ident[EI_VERSION]), \
+	       EI_OSABI, (int)ehdr->e_ident[EI_OSABI], get_elfeitype(EI_OSABI, ehdr->e_ident[EI_OSABI]), \
 	       EI_ABIVERSION, (int)ehdr->e_ident[EI_ABIVERSION], \
 	       EI_PAD, (unsigned int)ehdr->e_ident[EI_PAD], EI_NIDENT - EI_PAD \
 	       /* EI_BRAND, ehdr->e_ident[EI_BRAND] */ \
@@ -252,7 +253,7 @@ static struct option const long_opts[] = {
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
-static char *opts_help[] = {
+static const char *opts_help[] = {
 	"Be verbose (can be specified more than once)",
 	"Print this help and exit",
 	"Print version and exit",
