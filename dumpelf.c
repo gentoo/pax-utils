@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.7 2005/05/29 18:44:48 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.8 2005/06/03 03:25:38 vapier Exp $
  */
 
 #include <stdio.h>
@@ -18,14 +18,14 @@
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.7 2005/05/29 18:44:48 solar Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.8 2005/06/03 03:25:38 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
 static void dumpelf(const char *filename, long file_cnt);
 static void dump_ehdr(elfobj *elf, void *ehdr);
 static void dump_phdr(elfobj *elf, void *phdr, long phdr_cnt);
-static void dump_shdr(elfobj *elf, void *shdr, long shdr_cnt);
+static void dump_shdr(elfobj *elf, void *shdr, long shdr_cnt, char *name);
 #if 0
 static void dump_dyn(elfobj *elf, void *dyn);
 static void dump_sym(elfobj *elf, void *sym);
@@ -104,10 +104,11 @@ static void dumpelf(const char *filename, long file_cnt)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+		Elf ## B ## _Off offset = EGET(shdr[EGET(ehdr->e_shstrndx)].sh_offset); \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
 		for (i = 0; i < shnum; ++i) { \
 			if (i) printf(",\n"); \
-			dump_shdr(elf, shdr, i); \
+			dump_shdr(elf, shdr, i, (char*)(elf->data + offset + EGET(shdr->sh_name))); \
 			++shdr; \
 		} }
 		DUMP_SHDRS(32)
@@ -183,12 +184,13 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
 }
-static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt)
+static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 {
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
-	printf("/* Section Header #%li 0x%lX */\n{\n", shdr_cnt, (unsigned long)shdr_void - (unsigned long)elf->data); \
+	printf("/* Section Header #%li '%s' 0x%lX */\n{\n", \
+	       shdr_cnt, name, (unsigned long)shdr_void - (unsigned long)elf->data); \
 	printf("\t.sh_name      = %-10i ,\n", (int)EGET(shdr->sh_name)); \
 	printf("\t.sh_type      = %-10i ,\n", (int)EGET(shdr->sh_type)); \
 	printf("\t.sh_flags     = %-10li ,\n", (long)EGET(shdr->sh_flags)); \
@@ -225,15 +227,15 @@ static char *opts_help[] = {
 static void usage(int status)
 {
 	int i;
-	printf("¤ Dump internal ELF structure\n\n"
+	printf("* Dump internal ELF structure\n\n"
 	       "Usage: %s <file1> [file2 fileN ...]\n\n", argv0);
 	printf("Options:\n");
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
-			printf("  -%c, --%-13s× %s\n", long_opts[i].val, 
+			printf("  -%c, --%-13s* %s\n", long_opts[i].val, 
 			       long_opts[i].name, opts_help[i]);
 		else
-			printf("  -%c, --%-6s <arg> × %s\n", long_opts[i].val,
+			printf("  -%c, --%-6s <arg> * %s\n", long_opts[i].val,
 			       long_opts[i].name, opts_help[i]);
 	exit(status);
 }
