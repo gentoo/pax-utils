@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.8 2005/06/03 03:25:38 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.9 2005/06/03 04:04:09 vapier Exp $
  */
 
 #include <stdio.h>
@@ -15,10 +15,11 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.8 2005/06/03 03:25:38 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.9 2005/06/03 04:04:09 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -38,7 +39,7 @@ static void parseargs(int argc, char *argv[]);
 
 
 /* variables to control behavior */
- /* none yet ! */
+static char be_verbose = 0;
 
 
 
@@ -186,13 +187,16 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 }
 static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 {
+	unsigned long i;
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
+	uint32_t type = EGET(shdr->sh_type); \
+	uint ## B ## _t size = EGET(shdr->sh_size); \
 	printf("/* Section Header #%li '%s' 0x%lX */\n{\n", \
 	       shdr_cnt, name, (unsigned long)shdr_void - (unsigned long)elf->data); \
 	printf("\t.sh_name      = %-10i ,\n", (int)EGET(shdr->sh_name)); \
-	printf("\t.sh_type      = %-10i ,\n", (int)EGET(shdr->sh_type)); \
+	printf("\t.sh_type      = %-10i , /* [%s] */\n", (int)EGET(shdr->sh_type), get_elfshttype(type)); \
 	printf("\t.sh_flags     = %-10li ,\n", (long)EGET(shdr->sh_flags)); \
 	printf("\t.sh_addr      = 0x%-8lX ,\n", (unsigned long)EGET(shdr->sh_addr)); \
 	printf("\t.sh_offset    = %-10i , /* (bytes) */\n", (int)EGET(shdr->sh_offset)); \
@@ -201,6 +205,36 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	printf("\t.sh_info      = %-10i ,\n", (int)EGET(shdr->sh_info)); \
 	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
 	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
+	if (size && \
+	   ((be_verbose && type == SHT_STRTAB) || \
+	    (be_verbose > 1))) { \
+		unsigned char *data = (unsigned char*)(elf->data + EGET(shdr->sh_offset)); \
+		char bool; \
+		printf("\n\t/* section dump:\n"); \
+		if (type == SHT_STRTAB) { \
+			bool = 1; \
+			for (i = 0; i < size; ++i) { \
+				++data; \
+				if (*data) { \
+					if (bool) printf("\t * "); \
+					printf("%c", *data); \
+					bool = 0; \
+				} else if (!bool) { \
+					printf("\n"); \
+					bool = 1; \
+				} \
+			} \
+		} else { \
+			for (i = 0; i < size; ++i) { \
+				++data; \
+				if (i % 20 == 0) printf("\t * "); \
+				printf("%.2X ", *data); \
+				if (i % 20 == 19) printf("\n"); \
+			} \
+			if (i % 20) printf("\n"); \
+		} \
+		printf("\t */\n"); \
+	} \
 	printf("}"); \
 	}
 	DUMP_SHDR(32)
@@ -210,14 +244,16 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "hV"
+#define PARSE_FLAGS "vhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
+	{"verbose",   no_argument, NULL, 'v'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
 static char *opts_help[] = {
+	"Be verbose (can be specified more than once)",
 	"Print this help and exit",
 	"Print version and exit",
 	NULL
@@ -257,17 +293,14 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
 
+		case 'v': be_verbose = (be_verbose % 20) + 1; break;
+
 		case ':':
-			warn("Option missing parameter");
-			usage(EXIT_FAILURE);
-			break;
+			err("Option missing parameter");
 		case '?':
-			warn("Unknown option");
-			usage(EXIT_FAILURE);
-			break;
+			err("Unknown option");
 		default:
 			err("Unhandled option '%c'", flag);
-			break;
 		}
 	}
 
