@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.23 2005/05/29 18:44:48 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.24 2005/06/03 23:16:48 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -89,7 +89,7 @@ static pairtype elf_ei_osabi[] = {
 	QUERY(ELFOSABI_STANDALONE),
 	{ 0, 0 }
 };
-const char *get_elfeitype(elfobj *elf, int ei_type, int type)
+const char *get_elfeitype(int ei_type, int type)
 {
 	switch (ei_type) {
 		case EI_CLASS:   return find_pairtype(elf_ei_class, type);
@@ -274,6 +274,49 @@ const char *get_elfdtype(int type)
 	return find_pairtype(elf_dtypes, type);
 }
 
+/* translate elf SHT_ defines */
+static pairtype elf_shttypes[] = {
+	QUERY(SHT_NULL),
+	QUERY(SHT_PROGBITS),
+	QUERY(SHT_SYMTAB),
+	QUERY(SHT_STRTAB),
+	QUERY(SHT_RELA),
+	QUERY(SHT_HASH),
+	QUERY(SHT_DYNAMIC),
+	QUERY(SHT_NOTE),
+	QUERY(SHT_NOBITS),
+	QUERY(SHT_REL),
+	QUERY(SHT_SHLIB),
+	QUERY(SHT_DYNSYM),
+	QUERY(SHT_INIT_ARRAY),
+	QUERY(SHT_FINI_ARRAY),
+	QUERY(SHT_PREINIT_ARRAY),
+	QUERY(SHT_GROUP),
+	QUERY(SHT_SYMTAB_SHNDX),
+	QUERY(SHT_NUM),
+	QUERY(SHT_LOOS),
+	QUERY(SHT_GNU_LIBLIST),
+	QUERY(SHT_CHECKSUM),
+	QUERY(SHT_LOSUNW),
+	QUERY(SHT_SUNW_move),
+	QUERY(SHT_SUNW_COMDAT),
+	QUERY(SHT_SUNW_syminfo),
+	QUERY(SHT_GNU_verdef),
+	QUERY(SHT_GNU_verneed),
+	QUERY(SHT_GNU_versym),
+	QUERY(SHT_HISUNW),
+	QUERY(SHT_HIOS),
+	QUERY(SHT_LOPROC),
+	QUERY(SHT_HIPROC),
+	QUERY(SHT_LOUSER),
+	QUERY(SHT_HIUSER),
+	{ 0, 0 }
+};
+const char *get_elfshttype(int type)
+{
+	return find_pairtype(elf_shttypes, type);
+}
+
 /* translate elf STT_ defines */
 static pairtype elf_stttypes[] = {
 	QUERY(STT_NOTYPE),
@@ -339,10 +382,10 @@ elfobj *readelf(const char *filename)
 	if (!DO_WE_LIKE_ELF(elf->data)) { /* check class and stuff */
 		warn("we no likey %s: {%s,%s,%s,%s}",
 		     filename,
-		     get_elfeitype(elf, EI_CLASS, elf->data[EI_CLASS]),
-		     get_elfeitype(elf, EI_DATA, elf->data[EI_DATA]),
-		     get_elfeitype(elf, EI_VERSION, elf->data[EI_VERSION]),
-		     get_elfeitype(elf, EI_OSABI, elf->data[EI_OSABI]));
+		     get_elfeitype(EI_CLASS, elf->data[EI_CLASS]),
+		     get_elfeitype(EI_DATA, elf->data[EI_DATA]),
+		     get_elfeitype(EI_VERSION, elf->data[EI_VERSION]),
+		     get_elfeitype(EI_OSABI, elf->data[EI_OSABI]));
 		goto unmap_data_and_return;
 	}
 
@@ -465,7 +508,7 @@ char *gnu_short_stack_flags(unsigned long flags)
 
 void *elf_findsecbyname(elfobj *elf, const char *name)
 {
-	int i;
+	unsigned int i;
 	char *shdr_name;
 
 	if (elf->shdr == NULL) return NULL;
@@ -483,7 +526,7 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 	for (i = 0; i < shnum; ++i) { \
 		if (EGET(shdr[i].sh_offset) >= elf->len - EGET(ehdr->e_shentsize)) continue; \
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
-		if (offset >= elf->len) continue; \
+		if (offset >= (Elf ## B ## _Off)elf->len) continue; \
 		shdr_name = (char*)(elf->data + offset); \
 		if (!strcmp(shdr_name, name)) \
 			return &(shdr[i]); \

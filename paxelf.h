@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.26 2005/05/28 22:09:36 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.27 2005/06/03 23:16:48 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -63,11 +63,12 @@ extern char *pax_short_pf_flags(unsigned long flags);
 extern char *gnu_short_stack_flags(unsigned long flags);
 extern elfobj *readelf(const char *filename);
 extern void unreadelf(elfobj *elf);
-extern const char *get_elfeitype(elfobj *elf, int ei_type, int type);
+extern const char *get_elfeitype(int ei_type, int type);
 extern const char *get_elfetype(elfobj *elf);
 extern const char *get_elfemtype(int type);
 extern const char *get_elfptype(int type);
 extern const char *get_elfdtype(int type);
+extern const char *get_elfshttype(int type);
 extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 
