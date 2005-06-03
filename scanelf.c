@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.67 2005/06/03 02:56:18 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.68 2005/06/03 15:03:25 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.67 2005/06/03 02:56:18 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.68 2005/06/03 15:03:25 solar Exp $";
 #define argv0 "scanelf"
 
 
@@ -165,7 +165,7 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 }
 static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
-	static char *ret = "TEXTREL";
+	static char ret[] = "TEXTREL";
 	unsigned long i;
 
 	if (!show_textrel) return NULL;
@@ -198,7 +198,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	if (be_quiet)
 		return NULL;
 	else
-		return "   -   ";
+		return (char *)"   -   ";
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
@@ -362,7 +362,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 				{ \
 					if (be_quiet) return NULL; \
 					*found_bind = 1; \
-					return "NOW"; \
+					return (char *) "NOW"; \
 				} \
 				++dyn; \
 			} \
@@ -375,7 +375,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return NULL;
 	} else {
 		*found_bind = 1;
-		return "LAZY";
+		return (char *) "LAZY";
 	}
 }
 static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
@@ -431,7 +431,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 	if (be_quiet)
 		return NULL;
 	else
-		return " - ";
+		return (char *)" - ";
 }
 /* scan an elf file and show all the fun stuff */
 // #define prints(str) fputs(str, stdout)
@@ -751,7 +751,7 @@ static struct option const long_opts[] = {
 	{NULL,        no_argument, NULL, 0x0}
 };
 
-static char *opts_help[] = {
+static const char *opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
 	"Scan directories recursively",

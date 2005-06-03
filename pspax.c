@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.18 2005/06/03 14:46:52 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.19 2005/06/03 15:03:25 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -272,7 +272,7 @@ static struct option const long_opts[] = {
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
-static char *opts_help[] = {
+static const char *opts_help[] = {
 	"Show all processes\n",
 	"Don't display the header",
 	"Print this help and exit",
