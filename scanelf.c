@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.66 2005/06/01 22:37:38 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.67 2005/06/03 02:56:18 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.66 2005/06/01 22:37:38 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.67 2005/06/03 02:56:18 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -385,8 +385,14 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 
 	if (!find_sym) return NULL;
 
+	/* debug sections */
 	symtab_void = elf_findsecbyname(elf, ".symtab");
 	strtab_void = elf_findsecbyname(elf, ".strtab");
+	/* fall back to runtime sections */
+	if (!symtab_void || !strtab_void) {
+		symtab_void = elf_findsecbyname(elf, ".dynsym");
+		strtab_void = elf_findsecbyname(elf, ".dynstr");
+	}
 
 	if (symtab_void && strtab_void) {
 		char *base, *basemem;
