@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.68 2005/06/03 15:03:25 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.69 2005/06/03 23:18:01 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.68 2005/06/03 15:03:25 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.69 2005/06/03 23:18:01 vapier Exp $";
 #define argv0 "scanelf"
 
 
@@ -202,7 +202,6 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
-	/* TODO: when checking RPATH entries, check each subpath (between :) in ld.so.conf */
 	unsigned long i, s;
 	char *rpath, *runpath, **r;
 	void *strtbl_void;
@@ -240,16 +239,27 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 				} \
 				/* Verify the memory is somewhat sane */ \
 				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-				if (offset < elf->len) { \
+				if (offset < (Elf ## B ## _Off)elf->len) { \
 					if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
 					*r = (char*)(elf->data + offset); \
 					/* If quiet, don't output paths in ld.so.conf */ \
-					if (be_quiet) \
-						for (s = 0; ldpaths[s]; ++s) \
-							if (!strcmp(ldpaths[s], *r)) { \
-								*r = NULL; \
-								break; \
+					if (be_quiet) { \
+						size_t len; \
+						char *start, *end; \
+						for (s = 0; *r && ldpaths[s]; ++s) { \
+							/* scan each path in : delimited list */ \
+							start = *r; \
+							end = strchr(start, ':'); \
+							while ((start && ((end = strchr(start, ':')) != NULL)) || start) { \
+								len = (end ? abs(end - start) : strlen(start)); \
+								if (!strncmp(ldpaths[s], start, len) && !ldpaths[s][len]) { \
+									*r = (end ? end + 1 : NULL); \
+									break; \
+								} \
+								start = (end ? start + len + 1 : NULL); \
 							} \
+						} \
+					} \
 					if (*r) *found_rpath = 1; \
 				} \
 				++dyn; \
@@ -301,7 +311,7 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
 					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= elf->len) { \
+					if (offset >= (Elf ## B ## _Off)elf->len) { \
 						++dyn; \
 						continue; \
 					} \
@@ -474,8 +484,8 @@ static void scanelf_file(const char *filename)
 
 	if (be_verbose > 1)
 		printf("%s: scanning file {%s,%s}\n", filename,
-		       get_elfeitype(elf, EI_CLASS, elf->elf_class),
-		       get_elfeitype(elf, EI_DATA, elf->data[EI_DATA]));
+		       get_elfeitype(EI_CLASS, elf->elf_class),
+		       get_elfeitype(EI_DATA, elf->data[EI_DATA]));
 	else if (be_verbose)
 		printf("%s: scanning file\n", filename);
 
@@ -967,7 +977,7 @@ static void *xmalloc(size_t size)
 
 static void xstrcat(char **dst, const char *src, size_t *curr_len)
 {
-	long new_len;
+	size_t new_len;
 
 	new_len = strlen(*dst) + strlen(src);
 	if (*curr_len <= new_len) {
