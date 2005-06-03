@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.25 2005/05/29 06:29:48 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.26 2005/06/03 23:15:36 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -19,7 +19,12 @@
 ####################################################################
 
 ####################################################
-CFLAGS    := -Wall -Wformat=2 -O2
+WFLAGS    := -Wall -Wextra -Wunused -Wimplicit -Wshadow -Wformat=2 \
+             -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
+             -Wbad-function-cast -Wnested-externs -Wcomment -Wsequence-point \
+             -Wdeclaration-after-statement -Wchar-subscripts -Wcast-align \
+             -Winline
+CFLAGS    := -O2
 #CFLAGS   += -DEBUG -g
 #LDFLAGS  :=-pie
 DESTDIR    =
@@ -30,7 +35,7 @@ CP        := cp
 
 # Build with -Werror while emerging
 ifneq ($(S),)
-CFLAGS    += -Werror
+WFLAGS    += -Werror
 endif
 #####################################################
 TARGETS    = scanelf pspax dumpelf
@@ -46,7 +51,8 @@ debug: all
 	@-/sbin/paxctl -permsx $(TARGETS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	@echo $(CC) $(CFLAGS) -c $<
+	@$(CC) $(CFLAGS) $(WFLAGS) -c $<
 
 %: %.o paxelf.o
 	$(CC) $(CFLAGS) paxelf.o -o $@ $< $(LDFLAGS)
