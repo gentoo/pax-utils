@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.17 2005/05/27 22:15:03 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.18 2005/06/03 14:46:52 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -73,7 +73,7 @@ static char *get_proc_name(pid_t pid)
 	return (str+1);
 }
 
-int get_proc_maps(pid_t pid) {
+static int get_proc_maps(pid_t pid) {
 	static char str[_POSIX_PATH_MAX];
 	FILE *fp;
 
@@ -131,7 +131,7 @@ static struct passwd *get_proc_uid(pid_t pid)
 	return NULL;
 }
 
-static char *get_proc_status(pid_t pid, char *name)
+static char *get_proc_status(pid_t pid, const char *name)
 {
 	FILE *fp;
 	size_t len;
@@ -235,9 +235,9 @@ static void pspax(void)
 			caps = cap_to_text(cap_d, &length);
 #endif
 
-			uid = get_proc_uid(pid);
-			pax = get_proc_status(pid, "PAX");
-			wx  = get_proc_maps(pid);
+			uid  = get_proc_uid(pid);
+			pax  = get_proc_status(pid, "PAX");
+			wx   = get_proc_maps(pid);
 			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
@@ -284,7 +284,7 @@ static char *opts_help[] = {
 static void usage(int status)
 {
 	int i;
-	printf("¤ List ELF/PaX information about running processes\n\n"
+	printf("* List ELF/PaX information about running processes\n\n"
 	       "Usage: %s [options]\n\n", argv0);
 	fputs("Options:\n", stdout);
 	for (i = 0; long_opts[i].name; ++i)
