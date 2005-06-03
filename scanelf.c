@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.69 2005/06/03 23:18:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.70 2005/06/03 23:41:59 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,8 +35,10 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.69 2005/06/03 23:18:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.70 2005/06/03 23:41:59 vapier Exp $";
 #define argv0 "scanelf"
+
+#define IS_MODIFIER(c) (c == '%' || c == '#')
 
 
 
@@ -69,9 +71,11 @@ static char show_bind = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
+static char be_wewy_wewy_quiet = 0;
 static char *find_sym = NULL, *versioned_symname = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
+
 
 
 /* sub-funcs for scanelf_file() */
@@ -186,7 +190,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 				*found_textrel = 1; \
 				/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
-				return ret; \
+				return (be_wewy_wewy_quiet ? NULL : ret); \
 			} \
 			++dyn; \
 		} \
@@ -195,7 +199,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	SHOW_TEXTREL(64)
 	}
 
-	if (be_quiet)
+	if (be_quiet || be_wewy_wewy_quiet)
 		return NULL;
 	else
 		return (char *)"   -   ";
@@ -269,6 +273,8 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		SHOW_RPATH(64)
 	}
 
+	if (be_wewy_wewy_quiet) return;
+
 	if (rpath && runpath) {
 		if (!strcmp(rpath, runpath)) {
 			xstrcat(ret, runpath, ret_len);
@@ -317,7 +323,7 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 					} \
 					needed = (char*)(elf->data + offset); \
 					if (*found_needed) xchrcat(ret, ',', ret_len); \
-					xstrcat(ret, needed, ret_len); \
+					if (!be_wewy_wewy_quiet) xstrcat(ret, needed, ret_len); \
 					*found_needed = 1; \
 				} \
 				++dyn; \
@@ -340,7 +346,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		if (elf->elf_class == ELFCLASS ## B) { \
 			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 			*found_interp = 1; \
-			return elf->data + EGET(strtbl->sh_offset); \
+			return (be_wewy_wewy_quiet ? NULL : elf->data + EGET(strtbl->sh_offset)); \
 		}
 		SHOW_INTERP(32)
 		SHOW_INTERP(64)
@@ -372,7 +378,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 				{ \
 					if (be_quiet) return NULL; \
 					*found_bind = 1; \
-					return (char *) "NOW"; \
+					return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
 				} \
 				++dyn; \
 			} \
@@ -380,6 +386,8 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	}
 	SHOW_BIND(32)
 	SHOW_BIND(64)
+
+	if (be_wewy_wewy_quiet) return NULL;
 
 	if (be_quiet && !fstat(elf->fd, &s) && !(s.st_mode & S_ISUID || s.st_mode & S_ISGID)) {
 		return NULL;
@@ -436,6 +444,9 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 		FIND_SYM(64)
 		free(basemem);
 	}
+
+	if (be_wewy_wewy_quiet) return NULL;
+
 	if (*find_sym != '*' && *found_sym)
 		return find_sym;
 	if (be_quiet)
@@ -444,7 +455,6 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 		return (char *)" - ";
 }
 /* scan an elf file and show all the fun stuff */
-// #define prints(str) fputs(str, stdout)
 #define prints(str) write(fileno(stdout), str, strlen(str))
 static void scanelf_file(const char *filename)
 {
@@ -499,10 +509,11 @@ static void scanelf_file(const char *filename)
 	/* show the header */
 	if (!be_quiet && show_banner) {
 		for (i = 0; out_format[i]; ++i) {
-			if (out_format[i] != '%') continue;
+			if (!IS_MODIFIER(out_format[i])) continue;
 
 			switch (out_format[++i]) {
 			case '%': break;
+			case '#': break;
 			case 'F':
 			case 'p':
 			case 'f': prints("FILE "); found_file = 1; break;
@@ -532,16 +543,24 @@ static void scanelf_file(const char *filename)
 		if (be_quiet && *out_buffer == ' ' && !out_buffer[1])
 			*out_buffer = '\0';
 
-		if (out_format[i] != '%') {
+		if (!IS_MODIFIER(out_format[i])) {
 			xchrcat(&out_buffer, out_format[i], &out_len);
 			continue;
 		}
 
 		out = NULL;
+		be_wewy_wewy_quiet = (out_format[i] == '#');
 		switch (out_format[++i]) {
-		case '%': xchrcat(&out_buffer, '%', &out_len); break;
-		case 'F': found_file = 1; xstrcat(&out_buffer, filename, &out_len); break;
+		case '%':
+		case '#':
+			xchrcat(&out_buffer, out_format[i], &out_len); break;
+		case 'F':
+			if (be_wewy_wewy_quiet) break;
+			found_file = 1;
+			xstrcat(&out_buffer, filename, &out_len);
+			break;
 		case 'p':
+			if (be_wewy_wewy_quiet) break;
 			found_file = 1;
 			tmp = filename;
 			if (search_path) {
@@ -555,6 +574,7 @@ static void scanelf_file(const char *filename)
 			xstrcat(&out_buffer, tmp, &out_len);
 			break;
 		case 'f':
+			if (be_wewy_wewy_quiet) break;
 			found_file = 1;
 			tmp = strrchr(filename, '/');
 			tmp = (tmp == NULL ? filename : tmp+1);
@@ -806,11 +826,12 @@ static void usage(int status)
 		exit(status);
 
 	puts("\nThe format modifiers for the -F option are:");
-	puts(" %F Filename \t%x PaX Flags \t%e STACK/RELRO");
-	puts(" %t TEXTREL  \t%r RPATH     \t%n NEEDED");
-	puts(" %i INTERP   \t%b BIND      \t%s symbol");
-	puts(" %p filename (with search path removed)");
-	puts(" %f base filename");
+	puts(" F Filename \tx PaX Flags \te STACK/RELRO");
+	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
+	puts(" i INTERP   \tb BIND      \ts symbol");
+	puts(" p filename (with search path removed)");
+	puts(" f base filename");
+	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");
 
 	exit(status);
 }
@@ -892,10 +913,11 @@ static void parseargs(int argc, char *argv[])
 		show_pax = show_stack = show_textrel = show_rpath = \
 		show_needed = show_interp = show_bind = 0;
 		for (i = 0; out_format[i]; ++i) {
-			if (out_format[i] != '%') continue;
+			if (!IS_MODIFIER(out_format[i])) continue;
 
 			switch (out_format[++i]) {
 			case '%': break;
+			case '#': break;
 			case 'F': break;
 			case 'p': break;
 			case 'f': break;
