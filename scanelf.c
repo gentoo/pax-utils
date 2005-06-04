@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.70 2005/06/03 23:41:59 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.71 2005/06/04 02:50:50 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.70 2005/06/03 23:41:59 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.71 2005/06/04 02:50:50 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -127,33 +127,48 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	return ret;
 
 }
-static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro)
+static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro, char *found_load)
 {
-	static char ret[8] = "--- ---";
+	static char ret[12];
 	char *found;
-	unsigned long i, off, shown;
+	unsigned long i, off, shown, check_flags;
+	unsigned char multi_stack, multi_relro, multi_load;
 
 	if (!show_stack) return NULL;
 
+	memcpy(ret, "--- --- ---\0", 12);
+
 	shown = 0;
+	multi_stack = multi_relro = multi_load = 0;
 
 	if (elf->phdr) {
 #define SHOW_STACK(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	uint32_t flags; \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
+			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
 			found = found_stack; \
 			off = 0; \
+			check_flags = PF_X; \
 		} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
+			if (multi_relro++) warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
 			found = found_relro; \
 			off = 4; \
+			check_flags = PF_X; \
+		} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
+			if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
+			found = found_load; \
+			off = 8; \
+			check_flags = PF_W|PF_X; \
 		} else \
 			continue; \
-		if (be_quiet && !(EGET(phdr[i].p_flags) & PF_X)) \
+		flags = EGET(phdr[i].p_flags); \
+		if (be_quiet && ((flags & check_flags) != check_flags)) \
 			continue; \
-		memcpy(ret+off, gnu_short_stack_flags(EGET(phdr[i].p_flags)), 3); \
+		memcpy(ret+off, gnu_short_stack_flags(flags), 3); \
 		*found = 1; \
 		++shown; \
 	} \
@@ -459,7 +474,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 static void scanelf_file(const char *filename)
 {
 	unsigned long i;
-	char found_pax, found_stack, found_relro, found_textrel, 
+	char found_pax, found_stack, found_relro, found_load, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_bind,
 	     found_sym, found_file;
 	elfobj *elf;
@@ -482,9 +497,9 @@ static void scanelf_file(const char *filename)
 		return;
 	}
 
-	found_pax = found_stack = found_relro = found_textrel = \
-	found_rpath = found_needed = found_interp = found_bind = \
-	found_sym = found_file = 0;
+	found_pax = found_stack = found_relro = found_load = \
+	found_textrel = found_rpath = found_needed = found_interp = \
+	found_bind = found_sym = found_file = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -519,7 +534,7 @@ static void scanelf_file(const char *filename)
 			case 'f': prints("FILE "); found_file = 1; break;
 			case 'o': prints(" TYPE   "); break;
 			case 'x': prints(" PAX   "); break;
-			case 'e': prints("STK/REL "); break;
+			case 'e': prints("STK/REL/PTL "); break;
 			case 't': prints("TEXTREL "); break;
 			case 'r': prints("RPATH "); break;
 			case 'n': prints("NEEDED "); break;
@@ -582,7 +597,7 @@ static void scanelf_file(const char *filename)
 			break;
 		case 'o': out = get_elfetype(elf); break;
 		case 'x': out = scanelf_file_pax(elf, &found_pax); break;
-		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro); break;
+		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro, &found_load); break;
 		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'n': scanelf_file_needed(elf, &found_needed, &out_buffer, &out_len); break;
@@ -594,8 +609,8 @@ static void scanelf_file(const char *filename)
 	}
 
 #define FOUND_SOMETHING() \
-	(found_pax || found_stack || found_textrel || found_rpath || \
-	 found_needed || found_interp || found_bind || found_sym)
+	(found_pax || found_stack || found_relro || found_load || found_textrel || \
+	 found_rpath || found_needed || found_interp || found_bind || found_sym)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
 		xchrcat(&out_buffer, ' ', &out_len);
@@ -788,7 +803,7 @@ static const char *opts_help[] = {
 	"Don't recursively cross mount points",
 	"Don't scan symlinks\n",
 	"Print PaX markings",
-	"Print GNU_STACK markings",
+	"Print GNU_STACK/PT_LOAD markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
 	"Print NEEDED information",
