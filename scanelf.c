@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.71 2005/06/04 02:50:50 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.72 2005/06/04 06:23:06 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.71 2005/06/04 02:50:50 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.72 2005/06/04 06:23:06 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -73,6 +73,7 @@ static char be_quiet = 0;
 static char be_verbose = 0;
 static char be_wewy_wewy_quiet = 0;
 static char *find_sym = NULL, *versioned_symname = NULL;
+static char *find_lib = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
 
@@ -306,13 +307,13 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	else if (!be_quiet)
 		xstrcat(ret, "  -  ", ret_len);
 }
-static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, size_t *ret_len)
+static char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
 	unsigned long i;
 	char *needed;
 	void *strtbl_void;
 
-	if (!show_needed) return;
+	if ((op==0 && !show_needed) || (op==1 && !find_lib)) return NULL;
 
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
@@ -337,9 +338,17 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 						continue; \
 					} \
 					needed = (char*)(elf->data + offset); \
-					if (*found_needed) xchrcat(ret, ',', ret_len); \
-					if (!be_wewy_wewy_quiet) xstrcat(ret, needed, ret_len); \
-					*found_needed = 1; \
+					if (op == 0) { \
+						if (!be_wewy_wewy_quiet) { \
+							if (*found_needed) xchrcat(ret, ',', ret_len); \
+							xstrcat(ret, needed, ret_len); \
+						} \
+						*found_needed = 1; \
+					} else { \
+						if (strcmp(find_lib, needed)) return NULL; \
+						*found_lib = 1; \
+						return (be_wewy_wewy_quiet ? NULL : find_lib); \
+					} \
 				} \
 				++dyn; \
 			} \
@@ -347,6 +356,8 @@ static void scanelf_file_needed(elfobj *elf, char *found_needed, char **ret, siz
 		SHOW_NEEDED(32)
 		SHOW_NEEDED(64)
 	}
+
+	return NULL;
 }
 static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 {
@@ -411,7 +422,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return (char *) "LAZY";
 	}
 }
-static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename)
+static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
 	void *symtab_void, *strtab_void;
@@ -429,7 +440,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym, const char *filename
 
 	if (symtab_void && strtab_void) {
 		char *base, *basemem;
-		basemem = xstrdup(filename);
+		basemem = xstrdup(elf->filename);
 		base = basename(basemem);
 #define FIND_SYM(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
@@ -476,7 +487,7 @@ static void scanelf_file(const char *filename)
 	unsigned long i;
 	char found_pax, found_stack, found_relro, found_load, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_bind,
-	     found_sym, found_file;
+	     found_sym, found_lib, found_file;
 	elfobj *elf;
 	struct stat st;
 	static char *out_buffer = NULL;
@@ -499,7 +510,7 @@ static void scanelf_file(const char *filename)
 
 	found_pax = found_stack = found_relro = found_load = \
 	found_textrel = found_rpath = found_needed = found_interp = \
-	found_bind = found_sym = found_file = 0;
+	found_bind = found_sym = found_lib = found_file = 0;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL) {
@@ -541,6 +552,7 @@ static void scanelf_file(const char *filename)
 			case 'i': prints("INTERP "); break;
 			case 'b': prints("BIND "); break;
 			case 's': prints("SYM "); break;
+			case 'N': prints("LIB "); break;
 			}
 		}
 		if (!found_file) prints("FILE ");
@@ -600,17 +612,18 @@ static void scanelf_file(const char *filename)
 		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro, &found_load); break;
 		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
-		case 'n': scanelf_file_needed(elf, &found_needed, &out_buffer, &out_len); break;
+		case 'n':
+		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
 		case 'b': out = scanelf_file_bind(elf, &found_bind); break;
-		case 's': out = scanelf_file_sym(elf, &found_sym, filename); break;
+		case 's': out = scanelf_file_sym(elf, &found_sym); break;
 		}
 		if (out) xstrcat(&out_buffer, out, &out_len);
 	}
 
 #define FOUND_SOMETHING() \
 	(found_pax || found_stack || found_relro || found_load || found_textrel || \
-	 found_rpath || found_needed || found_interp || found_bind || found_sym)
+	 found_rpath || found_needed || found_interp || found_bind || found_sym || found_lib)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
 		xchrcat(&out_buffer, ' ', &out_len);
@@ -768,7 +781,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnibs:aqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnibs:N:aqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -784,6 +797,7 @@ static struct option const long_opts[] = {
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
 	{"symbol",    a_argument,  NULL, 's'},
+    {"lib",       a_argument,  NULL, 'N'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -810,6 +824,7 @@ static const char *opts_help[] = {
 	"Print INTERP information",
 	"Print BIND information",
 	"Find a specified symbol",
+	"Find a specified library",
 	"Print all scanned info (-x -e -t -r -n -i -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -844,6 +859,7 @@ static void usage(int status)
 	puts(" F Filename \tx PaX Flags \te STACK/RELRO");
 	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
 	puts(" i INTERP   \tb BIND      \ts symbol");
+	puts(" N library  \to Type");
 	puts(" p filename (with search path removed)");
 	puts(" f base filename");
 	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");
@@ -887,6 +903,11 @@ static void parseargs(int argc, char *argv[])
 			len = strlen(find_sym) + 1;
 			versioned_symname = (char*)xmalloc(sizeof(char) * (len+1));
 			sprintf(versioned_symname, "%s@", find_sym);
+			break;
+		}
+		case 'N': {
+			if (find_lib) err("Don't specify -N twice");
+			find_lib = xstrdup(optarg);
 			break;
 		}
 
@@ -937,6 +958,7 @@ static void parseargs(int argc, char *argv[])
 			case 'p': break;
 			case 'f': break;
 			case 's': break;
+			case 'N': break;
 			case 'o': break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_stack = 1; break;
@@ -964,6 +986,7 @@ static void parseargs(int argc, char *argv[])
 		if (show_interp)  xstrcat(&out_format, "%i ", &fmt_len);
 		if (show_bind)    xstrcat(&out_format, "%b ", &fmt_len);
 		if (find_sym)     xstrcat(&out_format, "%s ", &fmt_len);
+		if (find_lib)     xstrcat(&out_format, "%N ", &fmt_len);
 		if (!be_quiet)    xstrcat(&out_format, "%F ", &fmt_len);
 	}
 	if (be_verbose > 2) printf("Format: %s\n", out_format);
@@ -990,6 +1013,7 @@ static void parseargs(int argc, char *argv[])
 		free(find_sym);
 		free(versioned_symname);
 	}
+	if (find_lib) free(find_lib);
 	if (out_format) free(out_format);
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
@@ -1034,6 +1058,7 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 	my_app[1] = '\0';
 	xstrcat(dst, my_app, curr_len);
 }
+
 
 
 int main(int argc, char *argv[])
