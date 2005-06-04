@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.72 2005/06/04 06:23:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.73 2005/06/04 13:52:54 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.72 2005/06/04 06:23:06 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.73 2005/06/04 13:52:54 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -62,7 +62,7 @@ static char scan_symlink = 1;
 static char dir_recurse = 0;
 static char dir_crossmount = 1;
 static char show_pax = 0;
-static char show_stack = 0;
+static char show_phdr = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
 static char show_needed = 0;
@@ -128,14 +128,14 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	return ret;
 
 }
-static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relro, char *found_load)
+static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro, char *found_load)
 {
 	static char ret[12];
 	char *found;
 	unsigned long i, off, shown, check_flags;
 	unsigned char multi_stack, multi_relro, multi_load;
 
-	if (!show_stack) return NULL;
+	if (!show_phdr) return NULL;
 
 	memcpy(ret, "--- --- ---\0", 12);
 
@@ -143,7 +143,7 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 	multi_stack = multi_relro = multi_load = 0;
 
 	if (elf->phdr) {
-#define SHOW_STACK(B) \
+#define SHOW_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -151,7 +151,7 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
 			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
-			found = found_stack; \
+			found = found_phdr; \
 			off = 0; \
 			check_flags = PF_X; \
 		} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
@@ -174,8 +174,8 @@ static char *scanelf_file_stack(elfobj *elf, char *found_stack, char *found_relr
 		++shown; \
 	} \
 	}
-	SHOW_STACK(32)
-	SHOW_STACK(64)
+	SHOW_PHDR(32)
+	SHOW_PHDR(64)
 	}
 
 	if (be_quiet && !shown)
@@ -485,7 +485,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 static void scanelf_file(const char *filename)
 {
 	unsigned long i;
-	char found_pax, found_stack, found_relro, found_load, found_textrel, 
+	char found_pax, found_phdr, found_relro, found_load, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_bind,
 	     found_sym, found_lib, found_file;
 	elfobj *elf;
@@ -508,7 +508,7 @@ static void scanelf_file(const char *filename)
 		return;
 	}
 
-	found_pax = found_stack = found_relro = found_load = \
+	found_pax = found_phdr = found_relro = found_load = \
 	found_textrel = found_rpath = found_needed = found_interp = \
 	found_bind = found_sym = found_lib = found_file = 0;
 
@@ -609,7 +609,7 @@ static void scanelf_file(const char *filename)
 			break;
 		case 'o': out = get_elfetype(elf); break;
 		case 'x': out = scanelf_file_pax(elf, &found_pax); break;
-		case 'e': out = scanelf_file_stack(elf, &found_stack, &found_relro, &found_load); break;
+		case 'e': out = scanelf_file_phdr(elf, &found_phdr, &found_relro, &found_load); break;
 		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'n':
@@ -622,7 +622,7 @@ static void scanelf_file(const char *filename)
 	}
 
 #define FOUND_SOMETHING() \
-	(found_pax || found_stack || found_relro || found_load || found_textrel || \
+	(found_pax || found_phdr || found_relro || found_load || found_textrel || \
 	 found_rpath || found_needed || found_interp || found_bind || found_sym || found_lib)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
@@ -669,7 +669,7 @@ static void scanelf_dir(const char *path)
 			continue;
 		len = (pathlen + 1 + strlen(dentry->d_name) + 1);
 		if (len >= sizeof(buf)) {
-			warnf("Skipping '%s': len > sizeof(buf); %d > %d\n", path, (int)len, (int)sizeof(buf));
+			warnf("Skipping '%s': len > sizeof(buf); %u > %u\n", path, len, sizeof(buf));
 			continue;
 		}
 		sprintf(buf, "%s/%s", path, dentry->d_name);
@@ -797,7 +797,7 @@ static struct option const long_opts[] = {
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
 	{"symbol",    a_argument,  NULL, 's'},
-    {"lib",       a_argument,  NULL, 'N'},
+	{"lib",       a_argument,  NULL, 'N'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -924,7 +924,7 @@ static void parseargs(int argc, char *argv[])
 		case 'R': dir_recurse = 1; break;
 		case 'm': dir_crossmount = 0; break;
 		case 'x': show_pax = 1; break;
-		case 'e': show_stack = 1; break;
+		case 'e': show_phdr = 1; break;
 		case 't': show_textrel = 1; break;
 		case 'r': show_rpath = 1; break;
 		case 'n': show_needed = 1; break;
@@ -932,7 +932,7 @@ static void parseargs(int argc, char *argv[])
 		case 'b': show_bind = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_stack = show_textrel = show_rpath = \
+		case 'a': show_pax = show_phdr = show_textrel = show_rpath = \
 		          show_needed = show_interp = show_bind = 1; break;
 
 		case ':':
@@ -946,7 +946,7 @@ static void parseargs(int argc, char *argv[])
 
 	/* let the format option override all other options */
 	if (out_format) {
-		show_pax = show_stack = show_textrel = show_rpath = \
+		show_pax = show_phdr = show_textrel = show_rpath = \
 		show_needed = show_interp = show_bind = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (!IS_MODIFIER(out_format[i])) continue;
@@ -961,7 +961,7 @@ static void parseargs(int argc, char *argv[])
 			case 'N': break;
 			case 'o': break;
 			case 'x': show_pax = 1; break;
-			case 'e': show_stack = 1; break;
+			case 'e': show_phdr = 1; break;
 			case 't': show_textrel = 1; break;
 			case 'r': show_rpath = 1; break;
 			case 'n': show_needed = 1; break;
@@ -979,7 +979,7 @@ static void parseargs(int argc, char *argv[])
 		out_format = (char*)xmalloc(sizeof(char) * fmt_len);
 		if (!be_quiet)    xstrcat(&out_format, "%o ", &fmt_len);
 		if (show_pax)     xstrcat(&out_format, "%x ", &fmt_len);
-		if (show_stack)   xstrcat(&out_format, "%e ", &fmt_len);
+		if (show_phdr)   xstrcat(&out_format, "%e ", &fmt_len);
 		if (show_textrel) xstrcat(&out_format, "%t ", &fmt_len);
 		if (show_rpath)   xstrcat(&out_format, "%r ", &fmt_len);
 		if (show_needed)  xstrcat(&out_format, "%n ", &fmt_len);
