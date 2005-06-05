@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.73 2005/06/04 13:52:54 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.74 2005/06/05 09:42:06 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.73 2005/06/04 13:52:54 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.74 2005/06/05 09:42:06 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -669,7 +669,7 @@ static void scanelf_dir(const char *path)
 			continue;
 		len = (pathlen + 1 + strlen(dentry->d_name) + 1);
 		if (len >= sizeof(buf)) {
-			warnf("Skipping '%s': len > sizeof(buf); %u > %u\n", path, len, sizeof(buf));
+			warnf("Skipping '%s': len > sizeof(buf); %lu > %lu\n", path, len, sizeof(buf));
 			continue;
 		}
 		sprintf(buf, "%s/%s", path, dentry->d_name);
