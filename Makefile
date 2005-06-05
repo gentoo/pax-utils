@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.26 2005/06/03 23:15:36 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.27 2005/06/05 09:12:49 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@ WFLAGS    := -Wall -Wextra -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Winline
 CFLAGS    := -O2
 #CFLAGS   += -DEBUG -g
-#LDFLAGS  :=-pie
+#LDFLAGS  := -pie
 DESTDIR    =
 PREFIX    := $(DESTDIR)/usr
 STRIP     := strip
