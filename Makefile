@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.27 2005/06/05 09:12:49 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.28 2005/06/05 11:38:38 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -72,7 +72,7 @@ distclean: clean
 install: all
 	-$(STRIP) $(TARGETS)
 	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
-	-$(CP) $(TARGETS) $(PREFIX)/bin/
+	$(CP) $(TARGETS) $(PREFIX)/bin/
 	for mpage in $(MPAGES) ; do \
 		[ -e $$mpage ] \
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
