@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.74 2005/06/05 09:42:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.75 2005/06/06 23:32:38 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.74 2005/06/05 09:42:06 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.75 2005/06/06 23:32:38 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -266,18 +266,23 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 					if (be_quiet) { \
 						size_t len; \
 						char *start, *end; \
-						for (s = 0; *r && ldpaths[s]; ++s) { \
-							/* scan each path in : delimited list */ \
-							start = *r; \
+						/* note that we only 'chop' off leading known paths. */ \
+						/* since *r is read-only memory, we can only move the ptr forward. */ \
+						start = *r; \
+						/* scan each path in : delimited list */ \
+						while (start) { \
 							end = strchr(start, ':'); \
-							while ((start && ((end = strchr(start, ':')) != NULL)) || start) { \
-								len = (end ? abs(end - start) : strlen(start)); \
+							len = (end ? abs(end - start) : strlen(start)); \
+							for (s = 0; ldpaths[s]; ++s) { \
 								if (!strncmp(ldpaths[s], start, len) && !ldpaths[s][len]) { \
 									*r = (end ? end + 1 : NULL); \
 									break; \
 								} \
-								start = (end ? start + len + 1 : NULL); \
 							} \
+							if (!*r || !ldpaths[s] || !end) \
+								start = NULL; \
+							else \
+								start = start + len + 1; \
 						} \
 					} \
 					if (*r) *found_rpath = 1; \
