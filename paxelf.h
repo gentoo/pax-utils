@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.28 2005/06/04 02:48:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.29 2005/06/06 23:33:07 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -24,17 +24,6 @@ extern char do_reverse_endian;
 		} \
 		__res; \
 	}))
-/* Set a value 'Y' in the elf header to 'X', compensating for endianness. */
-#define ESET(Y,X) \
-	do if (!do_reverse_endian) { Y = (X); \
-	} else if (sizeof(Y) == 1) { Y = (X); \
-	} else if (sizeof(Y) == 2) { Y = bswap_16((uint16_t)(X)); \
-	} else if (sizeof(Y) == 4) { Y = bswap_32((uint32_t)(X)); \
-	} else if (sizeof(Y) == 8) { Y = bswap_64((uint64_t)(X)); \
-	} else { \
-		fprintf(stderr, "ESET failed ;(\n")); \
-		exit(EXIT_FAILURE); \
-	} while (0)
 
 typedef struct {
 	void *ehdr;
@@ -83,16 +72,17 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 	} while (0)
 
 /* PaX flags (to be read in elfhdr.e_flags) */
-#define HF_PAX_PAGEEXEC		1	/* 0: Paging based non-exec pages */
-#define HF_PAX_EMUTRAMP		2	/* 0: Emulate trampolines */
-#define HF_PAX_MPROTECT		4	/* 0: Restrict mprotect() */
-#define HF_PAX_RANDMMAP		8	/* 0: Randomize mmap() base */
-#define HF_PAX_RANDEXEC		16	/* 1: Randomize ET_EXEC base */
-#define HF_PAX_SEGMEXEC		32	/* 0: Segmentation based non-exec pages */
+#define HF_PAX_PAGEEXEC      1   /* 0: Paging based non-exec pages */
+#define HF_PAX_EMUTRAMP      2   /* 0: Emulate trampolines */
+#define HF_PAX_MPROTECT      4   /* 0: Restrict mprotect() */
+#define HF_PAX_RANDMMAP      8   /* 0: Randomize mmap() base */
+#define HF_PAX_RANDEXEC      16  /* 1: Randomize ET_EXEC base */
+#define HF_PAX_SEGMEXEC      32  /* 0: Segmentation based non-exec pages */
 
-#define EI_PAX			14	/* Index in e_ident[] where to read flags */
+#define EI_PAX               14  /* Index in e_ident[] where to read flags */
 #define __EI_PAX_FLAGS(B, elf) \
-	((EHDR ## B (elf->ehdr)->e_ident[EI_PAX + 1] << 8) + EHDR ## B (elf->ehdr)->e_ident[EI_PAX])
+	((EHDR ## B (elf->ehdr)->e_ident[EI_PAX + 1] << 8) + \
+	 EHDR ## B (elf->ehdr)->e_ident[EI_PAX])
 #define EI_PAX_FLAGS(elf) \
 	(__extension__ ({ \
 		unsigned long __res; \
