@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.25 2005/06/04 02:48:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.26 2005/06/08 04:16:35 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -390,6 +390,11 @@ elfobj *readelf(const char *filename)
 	}
 
 	elf->filename = filename;
+	elf->base_filename = strrchr(filename, '/');
+	if (elf->base_filename == NULL)
+		elf->base_filename = elf->filename;
+	else
+		elf->base_filename = elf->base_filename + 1;
 	elf->elf_class = elf->data[EI_CLASS];
 	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
 	elf->ehdr = (void*)elf->data;
