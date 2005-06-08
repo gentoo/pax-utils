@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.76 2005/06/08 04:24:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.77 2005/06/08 05:43:01 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.76 2005/06/08 04:24:19 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.77 2005/06/08 05:43:01 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -81,6 +81,32 @@ static char *search_path = NULL;
 
 
 /* sub-funcs for scanelf_file() */
+static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
+{
+	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
+#define GET_SYMTABS(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Shdr *symtab, *strtab, *dynsym, *dynstr; \
+		/* debug sections */ \
+		symtab = SHDR ## B (elf_findsecbyname(elf, ".symtab")); \
+		strtab = SHDR ## B (elf_findsecbyname(elf, ".strtab")); \
+		/* runtime sections */ \
+		dynsym = SHDR ## B (elf_findsecbyname(elf, ".dynsym")); \
+		dynstr = SHDR ## B (elf_findsecbyname(elf, ".dynstr")); \
+		if (symtab && dynsym) { \
+			*sym = (void*)((EGET(symtab->sh_size) > EGET(dynsym->sh_size)) ? symtab : dynsym); \
+		} else { \
+			*sym = (void*)(symtab ? symtab : dynsym); \
+		} \
+		if (strtab && dynstr) { \
+			*tab = (void*)((EGET(strtab->sh_size) > EGET(dynstr->sh_size)) ? strtab : dynstr); \
+		} else { \
+			*tab = (void*)(strtab ? strtab : dynstr); \
+		} \
+	}
+	GET_SYMTABS(32)
+	GET_SYMTABS(64)
+}
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
 	static char *paxflags;
@@ -223,28 +249,14 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 }
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels)
 {
-	/* To locate TEXTREL symbols:
-	 * for each shdr of type SHT_REL:
-	 *    for each phdr of type PT_LOAD:
-	 *       if phdr is not writable (why?)
-	 *       if shdr offset is inside of load (shdr->offset, phdr->{vaddr,memsz}
-	 *          look up shdr's symbol name
-	 */
 	unsigned long p, s, r, rmax;
-	char *symtab_void, *strtab_void;
+	void *symtab_void, *strtab_void;
 
 	if (!show_textrels) return NULL;
 
-	/* debug sections */
-	symtab_void = elf_findsecbyname(elf, ".symtab");
-	strtab_void = elf_findsecbyname(elf, ".strtab");
-	/* fall back to runtime sections */
-	if (!symtab_void || !strtab_void) {
-		symtab_void = elf_findsecbyname(elf, ".dynsym");
-		strtab_void = elf_findsecbyname(elf, ".dynstr");
-	}
+	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
-	if (elf->phdr && elf->shdr) {
+	if (symtab_void && strtab_void && elf->phdr && elf->shdr) {
 #define SHOW_TEXTRELS(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
@@ -293,13 +305,17 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels)
 				} \
 				/* make sure this relocation is inside of the .text */ \
 				if (r_offset < vaddr || r_offset >= vaddr + memsz) continue; \
-				sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 				/* locate this relocation symbol name */ \
 				sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-				sym += ELF ## B ## _R_SYM(r_info); \
+				sym_max = ELF ## B ## _R_SYM(r_info); \
+				if (sym_max * EGET(symtab->sh_entsize) < symtab->sh_size) \
+					sym += sym_max; \
+				else \
+					sym = NULL; \
+				sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 				/* show the raw details about this reloc */ \
 				printf("\tTEXTREL %s: ", elf->base_filename); \
-				if (sym->st_name) \
+				if (sym && sym->st_name) \
 					printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
 				else \
 					printf("(NULL: fake?)"); \
@@ -544,14 +560,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 
 	if (!find_sym) return NULL;
 
-	/* debug sections */
-	symtab_void = elf_findsecbyname(elf, ".symtab");
-	strtab_void = elf_findsecbyname(elf, ".strtab");
-	/* fall back to runtime sections */
-	if (!symtab_void || !strtab_void) {
-		symtab_void = elf_findsecbyname(elf, ".dynsym");
-		strtab_void = elf_findsecbyname(elf, ".dynstr");
-	}
+	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
 	if (symtab_void && strtab_void) {
 #define FIND_SYM(B) \
