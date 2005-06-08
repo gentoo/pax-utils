@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.19 2005/06/03 15:03:25 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.20 2005/06/08 04:34:59 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -219,7 +219,7 @@ static void pspax(void)
 
 	if (show_banner)
 		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s\n",
-		       "USER", "PID", "PAX", "MAPS", "ELF_TYPE", "NAME", "CAPS", "ATTR");
+		       "USER", "PID", "PAX", "MAPS", "ETYPE", "NAME", "CAPS", "ATTR");
 
 	while ((de = readdir(dir))) {
 		errno = 0;

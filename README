@@ -42,11 +42,11 @@ The format modifiers for the -F option are:
 Usage: pspax [options]
 
 Options:
-  -a, --all         × Show all processes
+  -a, --all         * Show all processes
 
-  -B, --nobanner    × Don't display the header
-  -h, --help        × Print this help and exit
-  -V, --version     × Print version and exit
+  -B, --nobanner    * Don't display the header
+  -h, --help        * Print this help and exit
+  -V, --version     * Print version and exit
 
 If pspax was compiled with CFLAGS += -DWANT_SYSCAP and LDFLAGS +=- lcap 
 it will also list runtime capabilities If extended attribute support is 
