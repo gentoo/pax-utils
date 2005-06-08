@@ -49,6 +49,13 @@ Print INTERP information
 \fB\-s, \-\-symbol <arg>\fR
 Find a specified symbol
 .TP
+\fB\-N, \-\-lib <arg>\fR
+Find a specified library
+.TP
+\fB\-T, \-\-textrels <arg>\fR
+Find a specified symbol
+Locate cause of TEXTREL
+.TP
 \fB\-a, \-\-all\fR
 Print all scanned info (-x -e -t -r -n -i -b)
 .TP
@@ -65,13 +72,20 @@ This option implies -a internally.
 Use specified format for output.
   \fB%F\fR	FILENAME
   \fB%x\fR	PaX-Flags
-  \fB%e\fR	STACK/RELRO
+  \fB%e\fR	STACK/RELRO/LOAD
   \fB%t\fR	TEXTREL
   \fB%r\fR	RPATH
   \fB%b\fR	BINDINGS
   \fB%n\fR	NEEDED
   \fB%i\fR	INTERP
   \fB%s\fR	symbol
+  \fB%N\fR	library
+  \fB%T\fR	TEXTRELs
+  \fB%o\fR	Elf Type
+  \fB%p\fR	filename (with search path removed)
+  \fB%f\fR	base filename
+.TP
+  Prefix each modifier with '%' (verbose) or '#' (silent)
 .TP
 \fB\-f, \-\-from <arg>\fR
 Read input stream from a filename
@@ -105,7 +119,7 @@ scanelf -p  # Would print everything in your normal PATH.
 .TP
 scanelf -l -p -a -R  # Would print everything in library path and PATHs recursively.
 .LP 
-scanelf -ltq # Would search every elf in your library paths for quality assurance problems with text relocations. use -p native pie systems.
+scanelf -ltq # Would search every elf in your library paths for quality assurance problems with text relocations. use -p on native pie systems.
 .TP
 Alternativly you can run it like:
 .LP 
@@ -118,7 +132,6 @@ options) and send bug reports to pax-utils <solar@gentoo.org> or
 .BR chpax (1),
 .BR paxctl (1),
 .BR pspax (1),
-.BR gradm (8),
 .BR readelf (1),
 .SH "AUTHORS"
 scanelf was written by <solar@gentoo.org> and <vapier@gentoo.org>

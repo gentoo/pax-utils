@@ -7,7 +7,7 @@ used on any distro.
 
 Usage: scanelf [options] <dir1/file1> [dir2 dirN fileN ...]
 
-Options: -[plRmyxetrnibs:aqvF:f:o:BhV]
+Options: -[plRmyxetrnibs:N:TaqvF:f:o:BhV]
   -p, --path         * Scan all directories in PATH environment
   -l, --ldpath       * Scan all directories in /etc/ld.so.conf
   -R, --recursive    * Scan directories recursively
@@ -15,13 +15,15 @@ Options: -[plRmyxetrnibs:aqvF:f:o:BhV]
   -y, --symlink      * Don't scan symlinks
 
   -x, --pax          * Print PaX markings
-  -e, --header       * Print GNU_STACK markings
+  -e, --header       * Print GNU_STACK/PT_LOAD markings
   -t, --textrel      * Print TEXTREL information
   -r, --rpath        * Print RPATH information
   -n, --needed       * Print NEEDED information
   -i, --interp       * Print INTERP information
   -b, --bind         * Print BIND information
   -s, --symbol <arg> * Find a specified symbol
+  -N, --lib    <arg> * Find a specified library
+  -T, --textrels     * Locate cause of TEXTREL
   -a, --all          * Print all scanned info (-x -e -t -r -n -i -b)
 
   -q, --quiet        * Only output 'bad' things
@@ -34,9 +36,14 @@ Options: -[plRmyxetrnibs:aqvF:f:o:BhV]
   -V, --version      * Print version and exit
 
 The format modifiers for the -F option are:
- %F Filename 	%x PaX Flags 	%e STACK/RELRO
- %t TEXTREL  	%r RPATH     	%n NEEDED
- %i INTERP   	%b BIND      	%s symbol
+ F Filename 	x PaX Flags 	e STACK/RELRO
+ t TEXTREL  	r RPATH     	n NEEDED
+ i INTERP   	b BIND      	s symbol
+ N library  	o Type      	T TEXTRELs
+ p filename (with search path removed)
+ f base filename
+
+Prefix each modifier with '%' (verbose) or '#' (silent)
 
 == pspax ==
 Usage: pspax [options]
@@ -52,8 +59,22 @@ If pspax was compiled with CFLAGS += -DWANT_SYSCAP and LDFLAGS +=- lcap
 it will also list runtime capabilities If extended attribute support is 
 enabled it will list those values as well.
 
+== dumpelf ==
+* Dump internal ELF structure
+
+Usage: dumpelf <file1> [file2 fileN ...]
+
+Options:
+  -v, --verbose      * Be verbose (can be specified more than once)
+  -h, --help         * Print this help and exit
+  -V, --version      * Print version and exit
+
+
 == INSTALL ==
 make install
 
-PaX Homepage:
-http://pax.grsecurity.net/
+You don't need PaX to use the pax-utils. Infact the only thing they 
+really have in common is that pax-utils was initially written to aid in 
+deploying PaX systems so it includes support for PT_PAX_FLAGS and the 
+deprecated but still in use EI_PAX flags. For more information about PaX 
+see the homepage at http://pax.grsecurity.net/
