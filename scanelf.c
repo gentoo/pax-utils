@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.77 2005/06/08 05:43:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.78 2005/06/08 22:23:16 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.77 2005/06/08 05:43:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.78 2005/06/08 22:23:16 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -287,7 +287,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels)
 			if (EGET(phdr[p].p_flags) & PF_W) continue; \
 			vaddr = EGET(phdr[p].p_vaddr); \
 			memsz = EGET(phdr[p].p_memsz); \
-			*found_textrels = 1; \
 			/* now see if any of the relocs are in the PT_LOAD */ \
 			for (r = 0; r < rmax; ++r) { \
 				unsigned long sym_max; \
@@ -305,6 +304,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels)
 				} \
 				/* make sure this relocation is inside of the .text */ \
 				if (r_offset < vaddr || r_offset >= vaddr + memsz) continue; \
+				*found_textrels = 1; \
 				/* locate this relocation symbol name */ \
 				sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
 				sym_max = ELF ## B ## _R_SYM(r_info); \
