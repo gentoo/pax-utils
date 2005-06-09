@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.78 2005/06/08 22:23:16 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.79 2005/06/09 23:53:58 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.78 2005/06/08 22:23:16 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.79 2005/06/09 23:53:58 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -215,7 +215,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	static char ret[] = "TEXTREL";
 	unsigned long i;
 
-	if (!show_textrel) return NULL;
+	if (!show_textrel && !show_textrels) return NULL;
 
 	if (elf->phdr) {
 #define SHOW_TEXTREL(B) \
@@ -247,12 +247,16 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	else
 		return (char *)"   -   ";
 }
-static char *scanelf_file_textrels(elfobj *elf, char *found_textrels)
+static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
 	unsigned long p, s, r, rmax;
 	void *symtab_void, *strtab_void;
 
 	if (!show_textrels) return NULL;
+
+	/* don't search for TEXTREL's if the ELF doesn't have any */
+	if (!*found_textrel) scanelf_file_textrel(elf, found_textrel);
+	if (!*found_textrel) return NULL;
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
@@ -733,7 +737,7 @@ static void scanelf_file(const char *filename)
 		case 'x': out = scanelf_file_pax(elf, &found_pax); break;
 		case 'e': out = scanelf_file_phdr(elf, &found_phdr, &found_relro, &found_load); break;
 		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
-		case 'T': out = scanelf_file_textrels(elf, &found_textrels); break;
+		case 'T': out = scanelf_file_textrels(elf, &found_textrels, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'n':
 		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
@@ -754,8 +758,10 @@ static void scanelf_file(const char *filename)
 		xchrcat(&out_buffer, ' ', &out_len);
 		xstrcat(&out_buffer, filename, &out_len);
 	}
-	if (!be_quiet || (be_quiet && FOUND_SOMETHING()))
+	if (!be_quiet || (be_quiet && FOUND_SOMETHING())) {
 		puts(out_buffer);
+		fflush(stdout);
+	}
 
 	unreadelf(elf);
 }
