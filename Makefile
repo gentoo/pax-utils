@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.29 2005/06/08 03:02:49 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.30 2005/06/09 14:57:33 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,13 +17,18 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 # MA 02111-1307, USA.
 ####################################################################
+check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+	then echo "$(1)"; else echo "$(2)"; fi)
 
 ####################################################
-WFLAGS    := -Wall -Wextra -Wunused -Wimplicit -Wshadow -Wformat=2 \
+WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Wsequence-point \
-             -Wdeclaration-after-statement -Wchar-subscripts -Wcast-align \
+             -Wchar-subscripts -Wcast-align \
              -Winline
+# =gcc-3.3 does not support these options.
+WFLAGS	   += $(call check_gcc, -Wdeclaration-after-statement -Wextra)
+
 CFLAGS    := -O2 -pipe
 #CFLAGS   += -DEBUG -g
 #LDFLAGS  := -pie
@@ -35,7 +40,7 @@ CP        := cp
 
 # Build with -Werror while emerging
 ifneq ($(S),)
-WFLAGS    += -Werror
+WFLAGS    += -Werror 
 endif
 #####################################################
 TARGETS    = scanelf pspax dumpelf
@@ -71,8 +76,9 @@ distclean: clean
 
 install: all
 	-$(STRIP) $(TARGETS)
-	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
+	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/ $(PREFIX)/share/doc/
 	$(CP) $(TARGETS) $(PREFIX)/bin/
+	$(CP) README BUGS TODO $(PREFIX)/share/doc/
 	for mpage in $(MPAGES) ; do \
 		[ -e $$mpage ] \
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
