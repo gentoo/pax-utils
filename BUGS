@@ -1,8 +1,11 @@
 KNOWN BUGS
 ----------
 
-scanelf -tTq ; -T always always triggers a found with quite mode.
+none
 
 REPORTING BUGS
 --------------
-mail us.
+
+e-mail us:
+solar@gentoo.org
+vapier@gentoo.org
