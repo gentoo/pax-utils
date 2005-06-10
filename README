@@ -46,6 +46,7 @@ The format modifiers for the -F option are:
 Prefix each modifier with '%' (verbose) or '#' (silent)
 
 == pspax ==
+* List ELF/PaX information about running processes
 Usage: pspax [options]
 
 Options:
