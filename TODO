@@ -1,3 +1,16 @@
 REQUESTS
 ----------
 <psm> feature request for pax-utils, find cause of GNU_STACK = RWX, especially if PAX_FLAGS = E (nested function ,,,)
+
+
+
+
+Fix these warnings when building on ia64:
+scanelf.c: In function `scanelf_file_textrel':
+scanelf.c:241: warning: cast increases required alignment of target type
+scanelf.c:242: warning: cast increases required alignment of target type
+due to:
+	dyn = DYN ## B (elf->data + offset); \
+	rel = REL ## B (elf->data + EGET(shdr[s].sh_offset)); \
+	rela = RELA ## B (elf->data + EGET(shdr[s].sh_offset)); \
+	sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
