@@ -1,2 +1,6 @@
+.cvsignore
+dumpelf
+pspax
+scanelf
 *.x
 pax-utils-*.tar.bz2 
