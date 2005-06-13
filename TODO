@@ -5,7 +5,7 @@ REQUESTS
 
 
 
-Fix these warnings when building on ia64:
+Fix these warnings when building on ia64/sparc:
 scanelf.c: In function `scanelf_file_textrel':
 scanelf.c:241: warning: cast increases required alignment of target type
 scanelf.c:242: warning: cast increases required alignment of target type
