@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.30 2005/06/09 14:57:33 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.31 2005/06/13 03:09:51 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -38,6 +38,10 @@ STRIP     := strip
 MKDIR     := mkdir -p
 CP        := cp
 
+ifdef PV
+HFLAGS    += -DVERSION=\"$(PV)\"
+endif
+
 # Build with -Werror while emerging
 ifneq ($(S),)
 WFLAGS    += -Werror 
@@ -57,7 +61,7 @@ debug: all
 
 %.o: %.c
 	@echo $(CC) $(CFLAGS) -c $<
-	@$(CC) $(CFLAGS) $(WFLAGS) -c $<
+	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<
 
 %: %.o paxelf.o
 	$(CC) $(CFLAGS) paxelf.o -o $@ $< $(LDFLAGS)

@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.30 2005/06/08 04:16:35 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.31 2005/06/13 03:09:51 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -7,6 +7,10 @@
 #define _PAX_ELF_H
 
 #include "porting.h"
+
+#ifndef VERSION
+# define VERSION "cvs"
+#endif
 
 extern char do_reverse_endian;
 /* Get a value 'X' in the elf header, compensating for endianness. */

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.79 2005/06/09 23:53:58 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.80 2005/06/13 03:09:51 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.79 2005/06/09 23:53:58 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.80 2005/06/13 03:09:51 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -1012,9 +1012,9 @@ static void parseargs(int argc, char *argv[])
 		switch (i) {
 
 		case 'V':
-			printf("%s compiled %s\n%s\n"
-			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n",
-			       __FILE__, __DATE__, rcsid, argv0);
+			printf("pax-utils-%s: %s compiled %s\n%s\n"
+			       "%s written for Gentoo by <solar and vapier @ gentoo.org>\n",
+			       VERSION, __FILE__, __DATE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;

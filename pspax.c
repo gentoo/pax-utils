@@ -41,7 +41,7 @@
 
 #define PROC_DIR "/proc"
 
-static const char *rcsid = "$Id: pspax.c,v 1.20 2005/06/08 04:34:59 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.21 2005/06/13 03:09:51 vapier Exp $";
 #define argv0 "pspax"
 
 
@@ -308,9 +308,9 @@ static void parseargs(int argc, char *argv[])
 		switch (flag) {
 
 		case 'V':                        /* version info */
-			printf("%s compiled %s\n%s\n"
-			       "%s written for Gentoo Linux by <solar and vapier @ gentoo.org>\n",
-			       __FILE__, __DATE__, rcsid, argv0);
+			printf("pax-utils-%s: %s compiled %s\n%s\n"
+			       "%s written for Gentoo by <solar and vapier @ gentoo.org>\n",
+			       VERSION, __FILE__, __DATE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
