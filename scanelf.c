@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.80 2005/06/13 03:09:51 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.81 2005/06/13 03:35:41 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.80 2005/06/13 03:09:51 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.81 2005/06/13 03:35:41 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -480,9 +480,10 @@ static char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *foun
 						} \
 						*found_needed = 1; \
 					} else { \
-						if (strcmp(find_lib, needed)) return NULL; \
-						*found_lib = 1; \
-						return (be_wewy_wewy_quiet ? NULL : find_lib); \
+						if (!strcmp(find_lib, needed)) { \
+							*found_lib = 1; \
+							return (be_wewy_wewy_quiet ? NULL : find_lib); \
+						} \
 					} \
 				} \
 				++dyn; \
