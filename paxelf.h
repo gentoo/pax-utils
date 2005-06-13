@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.31 2005/06/13 03:09:51 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.32 2005/06/13 23:44:30 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -74,11 +74,13 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 #define warn(fmt, args...) \
 	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
 #define warnf(fmt, args...) warn("%s(): " fmt, __FUNCTION__, ## args)
-#define err(fmt, args...) \
+#define _err(wfunc, fmt, args...) \
 	do { \
-	warn(fmt, ## args); \
+	wfunc(fmt, ## args); \
 	exit(EXIT_FAILURE); \
 	} while (0)
+#define err(fmt, args...) _err(warn, fmt, ## args)
+#define errf(fmt, args...) _err(warnf, fmt, ## args)
 
 /* PaX flags (to be read in elfhdr.e_flags) */
 #define HF_PAX_PAGEEXEC      1   /* 0: Paging based non-exec pages */
