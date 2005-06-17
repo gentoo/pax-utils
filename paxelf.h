@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.32 2005/06/13 23:44:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.33 2005/06/17 01:43:29 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -71,9 +71,14 @@ extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 
 /* helper functions for showing errors */
+#define color 1
+#define COLOR(c,b) (color ? "\e[" c ";" b "m" : "")
+#define NORM      COLOR("00", "00")
+#define RED       COLOR("31", "01")
+#define YELLOW    COLOR("33", "01")
 #define warn(fmt, args...) \
-	fprintf(stderr, "%s: " fmt "\n", argv0, ## args)
-#define warnf(fmt, args...) warn("%s(): " fmt, __FUNCTION__, ## args)
+	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM, ## args)
+#define warnf(fmt, args...) warn("%s%s%s(): " fmt, YELLOW, __FUNCTION__, NORM, ## args)
 #define _err(wfunc, fmt, args...) \
 	do { \
 	wfunc(fmt, ## args); \
