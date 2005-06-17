@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.26 2005/06/08 04:16:35 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.27 2005/06/17 01:39:43 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -516,6 +516,7 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 {
 	unsigned int i;
 	char *shdr_name;
+	void *ret = NULL;
 
 	if (elf->shdr == NULL) return NULL;
 
@@ -534,11 +535,13 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 		if (offset >= (Elf ## B ## _Off)elf->len) continue; \
 		shdr_name = (char*)(elf->data + offset); \
-		if (!strcmp(shdr_name, name)) \
-			return &(shdr[i]); \
+		if (!strcmp(shdr_name, name)) { \
+			if (ret) warnf("Multiple '%s' sections !?", name); \
+			ret = (void*)&(shdr[i]); \
+		} \
 	} }
 	FINDSEC(32)
 	FINDSEC(64)
 
-	return NULL;
+	return ret;
 }
