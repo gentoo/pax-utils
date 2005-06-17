@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.31 2005/06/13 03:09:51 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.32 2005/06/17 01:38:40 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
 # =gcc-3.3 does not support these options.
 WFLAGS	   += $(call check_gcc, -Wdeclaration-after-statement -Wextra)
 
-CFLAGS    := -O2 -pipe
+CFLAGS    ?= -O2 -pipe
 #CFLAGS   += -DEBUG -g
 #LDFLAGS  := -pie
 DESTDIR    =
