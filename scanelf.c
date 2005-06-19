@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.81 2005/06/13 03:35:41 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.82 2005/06/19 05:39:31 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.81 2005/06/13 03:35:41 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.82 2005/06/19 05:39:31 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -113,7 +113,6 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	static char ret[7];
 	unsigned long i, shown;
 
-
 	if (!show_pax) return NULL;
 
 	shown = 0;
@@ -147,7 +146,6 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 			return paxflags;
 		}
 		strncpy(ret, paxflags, sizeof(ret));
-		// ++shown;
 	}
 
 	if (be_quiet && !shown)
@@ -249,8 +247,8 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 }
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
-	unsigned long p, s, r, rmax;
-	void *symtab_void, *strtab_void;
+	unsigned long s, r, rmax;
+	void *symtab_void, *strtab_void, *text_void;
 
 	if (!show_textrels) return NULL;
 
@@ -259,15 +257,18 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	if (!*found_textrel) return NULL;
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	text_void = elf_findsecbyname(elf, ".text");
 
-	if (symtab_void && strtab_void && elf->phdr && elf->shdr) {
+	if (symtab_void && strtab_void && text_void && elf->shdr) {
 #define SHOW_TEXTRELS(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	Elf ## B ## _Shdr *text = SHDR ## B (text_void); \
+	Elf ## B ## _Addr vaddr = EGET(text->sh_addr); \
+	uint ## B ## _t memsz = EGET(text->sh_size); \
 	Elf ## B ## _Rel *rel; \
 	Elf ## B ## _Rela *rela; \
 	/* search the section headers for relocations */ \
@@ -283,70 +284,65 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			rmax = EGET(shdr[s].sh_size) / sizeof(*rela); \
 		} else \
 			continue; \
-		/* search the program headers for PT_LOAD headers */ \
-		for (p = 0; p < EGET(ehdr->e_phnum); ++p) { \
-			Elf ## B ## _Addr vaddr; \
-			uint ## B ## _t memsz; \
-			if (EGET(phdr[p].p_type) != PT_LOAD) continue; \
-			if (EGET(phdr[p].p_flags) & PF_W) continue; \
-			vaddr = EGET(phdr[p].p_vaddr); \
-			memsz = EGET(phdr[p].p_memsz); \
-			/* now see if any of the relocs are in the PT_LOAD */ \
-			for (r = 0; r < rmax; ++r) { \
-				unsigned long sym_max; \
-				Elf ## B ## _Addr offset_tmp; \
-				Elf ## B ## _Sym *func; \
-				Elf ## B ## _Sym *sym; \
-				Elf ## B ## _Addr r_offset; \
-				uint ## B ## _t r_info; \
-				if (sh_type == SHT_REL) { \
-					r_offset = EGET(rel[r].r_offset); \
-					r_info = EGET(rel[r].r_info); \
-				} else { \
-					r_offset = EGET(rela[r].r_offset); \
-					r_info = EGET(rela[r].r_info); \
-				} \
-				/* make sure this relocation is inside of the .text */ \
-				if (r_offset < vaddr || r_offset >= vaddr + memsz) continue; \
-				*found_textrels = 1; \
-				/* locate this relocation symbol name */ \
-				sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-				sym_max = ELF ## B ## _R_SYM(r_info); \
-				if (sym_max * EGET(symtab->sh_entsize) < symtab->sh_size) \
-					sym += sym_max; \
-				else \
-					sym = NULL; \
-				sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
-				/* show the raw details about this reloc */ \
-				printf("\tTEXTREL %s: ", elf->base_filename); \
-				if (sym && sym->st_name) \
-					printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
-				else \
-					printf("(NULL: fake?)"); \
-				printf(" [0x%lX]", (unsigned long)r_offset); \
-				/* now try to find the closest symbol that this rel is probably in */ \
-				sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-				func = NULL; \
-				offset_tmp = 0; \
-				while (sym_max--) { \
-					if (EGET(sym->st_value) < r_offset && EGET(sym->st_value) > offset_tmp) { \
-						func = sym; \
-						offset_tmp = EGET(sym->st_value); \
-					} \
-					++sym; \
-				} \
-				printf(" in "); \
-				if (func && func->st_name) \
-					printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(func->st_name))); \
-				else \
-					printf("(NULL: fake?)"); \
-				printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
+		/* now see if any of the relocs are in the .text */ \
+		for (r = 0; r < rmax; ++r) { \
+			unsigned long sym_max; \
+			Elf ## B ## _Addr offset_tmp; \
+			Elf ## B ## _Sym *func; \
+			Elf ## B ## _Sym *sym; \
+			Elf ## B ## _Addr r_offset; \
+			uint ## B ## _t r_info; \
+			if (sh_type == SHT_REL) { \
+				r_offset = EGET(rel[r].r_offset); \
+				r_info = EGET(rel[r].r_info); \
+			} else { \
+				r_offset = EGET(rela[r].r_offset); \
+				r_info = EGET(rela[r].r_info); \
 			} \
+			/* make sure this relocation is inside of the .text */ \
+			if (r_offset < vaddr || r_offset >= vaddr + memsz) { \
+				if (be_verbose <= 2) continue; \
+			} else \
+				*found_textrels = 1; \
+			/* locate this relocation symbol name */ \
+			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+			sym_max = ELF ## B ## _R_SYM(r_info); \
+			if (sym_max * EGET(symtab->sh_entsize) < symtab->sh_size) \
+				sym += sym_max; \
+			else \
+				sym = NULL; \
+			sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
+			/* show the raw details about this reloc */ \
+			printf("\tTEXTREL %s: ", elf->base_filename); \
+			if (sym && sym->st_name) \
+				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
+			else \
+				printf("(NULL: fake?)"); \
+			printf(" [0x%lX]", (unsigned long)r_offset); \
+			/* now try to find the closest symbol that this rel is probably in */ \
+			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+			func = NULL; \
+			offset_tmp = 0; \
+			while (sym_max--) { \
+				if (EGET(sym->st_value) < r_offset && EGET(sym->st_value) > offset_tmp) { \
+					func = sym; \
+					offset_tmp = EGET(sym->st_value); \
+				} \
+				++sym; \
+			} \
+			printf(" in "); \
+			if (func && func->st_name) \
+				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(func->st_name))); \
+			else \
+				printf("(NULL: fake?)"); \
+			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
 		} \
 	} }
 	SHOW_TEXTRELS(32)
 	SHOW_TEXTRELS(64)
 	}
+	if (!*found_textrels)
+		warnf("ELF %s has TEXTREL markings but doesnt appear to have any real TEXTREL's !?", elf->filename);
 
 	return NULL;
 }
@@ -960,7 +956,7 @@ static const char *opts_help[] = {
 	"Find a specified symbol",
 	"Find a specified library",
 	"Locate cause of TEXTREL",
-	"Print all scanned info (-x -e -t -r -n -i -b)\n",
+	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
@@ -1068,8 +1064,7 @@ static void parseargs(int argc, char *argv[])
 		case 'T': show_textrels = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_phdr = show_textrel = show_rpath = \
-		          show_needed = show_interp = show_bind = 1; break;
+		case 'a': show_pax = show_phdr = show_textrel = show_rpath = show_bind = 1; break;
 
 		case ':':
 			err("Option missing parameter\n");
