@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.82 2005/06/19 05:39:31 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.83 2005/06/22 17:43:12 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.82 2005/06/19 05:39:31 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.83 2005/06/22 17:43:12 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -346,6 +346,27 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 
 	return NULL;
 }
+
+static void rpath_security_checks(elfobj *, char *);
+static void rpath_security_checks(elfobj *elf, char *item) {
+	struct stat st;
+	switch(*item) {
+		case 0:
+			warnf("Security problem NULL RPATH in %s", elf->filename);
+			break;
+		case '/': break;
+		case '$':
+			if (fstat(elf->fd, &st) != (-1))
+				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
+					warnf("Security problem with RPATH='%s' in %s with mode set of %o", 
+						item, elf->filename, st.st_mode & 07777);
+			break;
+		default:
+			warnf("Maybe? sec problem with RPATH='%s' in %s", item, elf->filename);
+			break;
+	}
+}
+
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	unsigned long i, s;
@@ -397,6 +418,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 						start = *r; \
 						/* scan each path in : delimited list */ \
 						while (start) { \
+							rpath_security_checks(elf, start); \
 							end = strchr(start, ':'); \
 							len = (end ? abs(end - start) : strlen(start)); \
 							for (s = 0; ldpaths[s]; ++s) { \
