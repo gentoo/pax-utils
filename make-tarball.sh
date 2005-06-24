@@ -6,6 +6,7 @@ if [[ $# -ne 1 ]] ; then
 fi
 
 ver="$1"
+[[ "$ver" == "snap" ]] && ver=$(date -u +%Y%m%d)
 bn="$(basename $(pwd))-${ver}"
 [[ -d "${bn}" ]] && rm -r "${bn}"
 mkdir "${bn}" || exit 1
