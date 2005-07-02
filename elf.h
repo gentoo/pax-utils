@@ -192,14 +192,14 @@ typedef struct
 #define EM_RCE		39		/* Motorola RCE */
 #define EM_ARM		40		/* ARM */
 #define EM_FAKE_ALPHA	41		/* Digital Alpha */
-#define EM_SH		42		/* Renesas SH */
+#define EM_SH		42		/* Hitachi SH */
 #define EM_SPARCV9	43		/* SPARC v9 64-bit */
 #define EM_TRICORE	44		/* Siemens Tricore */
 #define EM_ARC		45		/* Argonaut RISC Core */
-#define EM_H8_300	46		/* Renesas H8/300 */
-#define EM_H8_300H	47		/* Renesas H8/300H */
-#define EM_H8S		48		/* Renesas H8S */
-#define EM_H8_500	49		/* Renesas H8/500 */
+#define EM_H8_300	46		/* Hitachi H8/300 */
+#define EM_H8_300H	47		/* Hitachi H8/300H */
+#define EM_H8S		48		/* Hitachi H8S */
+#define EM_H8_500	49		/* Hitachi H8/500 */
 #define EM_IA_64	50		/* Intel Merced */
 #define EM_MIPS_X	51		/* Stanford MIPS-X */
 #define EM_COLDFIRE	52		/* Motorola Coldfire */
@@ -237,7 +237,7 @@ typedef struct
 #define EM_D10V		85		/* Mitsubishi D10V */
 #define EM_D30V		86		/* Mitsubishi D30V */
 #define EM_V850		87		/* NEC v850 */
-#define EM_M32R		88		/* Renesas M32R */
+#define EM_M32R		88		/* Mitsubishi M32R */
 #define EM_MN10300	89		/* Matsushita MN10300 */
 #define EM_MN10200	90		/* Matsushita MN10200 */
 #define EM_PJ		91		/* picoJava */
@@ -1862,6 +1862,9 @@ typedef Elf32_Addr Elf32_Conflict;
 #define LITUSE_ALPHA_TLS_GD	4
 #define LITUSE_ALPHA_TLS_LDM	5
 
+/* Legal values for d_tag of Elf64_Dyn.  */
+#define DT_ALPHA_PLTRO		0x70000000
+#define DT_ALPHA_NUM		1
 
 /* PowerPC specific declarations */
 
@@ -1972,10 +1975,19 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_PPC_DIAB_RELSDA_HI	184	/* like EMB_RELSDA, but high 16 bit */
 #define R_PPC_DIAB_RELSDA_HA	185	/* like EMB_RELSDA, adjusted high 16 */
 
+/* GNU relocs used in PIC code sequences.  */
+#define R_PPC_REL16		249	/* word32   (sym-.) */
+#define R_PPC_REL16_LO		250	/* half16   (sym-.)@l */
+#define R_PPC_REL16_HI		251	/* half16   (sym-.)@h */
+#define R_PPC_REL16_HA		252	/* half16   (sym-.)@ha */
+
 /* This is a phony reloc to handle any old fashioned TOC16 references
    that may still be in object files.  */
 #define R_PPC_TOC16		255
 
+/* PowerPC specific values for the Dyn d_tag field.  */
+#define DT_PPC_GOT		(DT_LOPROC + 0)
+#define DT_PPC_NUM		1
 
 /* PowerPC64 relocations defined by the ABIs */
 #define R_PPC64_NONE		R_PPC_NONE
