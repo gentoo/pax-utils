@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.32 2005/06/17 01:38:40 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.33 2005/07/03 16:17:23 solar Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -24,10 +24,8 @@ check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; 
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Wsequence-point \
-             -Wchar-subscripts -Wcast-align \
-             -Winline
-# =gcc-3.3 does not support these options.
-WFLAGS	   += $(call check_gcc, -Wdeclaration-after-statement -Wextra)
+             -Wchar-subscripts -Wcast-align -Winline \
+             $(call check_gcc, -Wdeclaration-after-statement -Wextra)
 
 CFLAGS    ?= -O2 -pipe
 #CFLAGS   += -DEBUG -g

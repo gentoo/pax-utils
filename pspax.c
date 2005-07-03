@@ -40,17 +40,16 @@
 #endif
 
 #define PROC_DIR "/proc"
-
-static const char *rcsid = "$Id: pspax.c,v 1.21 2005/06/13 03:09:51 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.22 2005/07/03 16:17:23 solar Exp $";
 #define argv0 "pspax"
 
 
 
 /* variables to control behavior */
 static char show_all = 0;
+static char verbose = 0;
 static char show_banner = 1;
-
-
+static char show_phdr = 0;
 
 static char *get_proc_name(pid_t pid)
 {
@@ -102,6 +101,40 @@ static int get_proc_maps(pid_t pid) {
 					fclose(fp);
 					return 1;
 				}
+			}
+		}
+	}
+	fclose(fp);
+	return 0;
+}
+
+static int print_executable_mappings(pid_t pid) {
+	static char str[_POSIX_PATH_MAX];
+	FILE *fp;
+
+	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
+	
+	if ((fp = fopen(str, "r")) == NULL)
+		return -1;
+
+	while (fgets(str, sizeof(str), fp)) {
+		char *p;
+		if ((p = strchr(str, ' ')) != NULL) {
+			if (strlen(p) < 6)
+				continue;
+			/* 0x0-0x0 rwxp fffff000 00:00 0 */
+			/* 0x0-0x0 R+W+XP fffff000 00:00 0 */
+			++p; // ' '
+			++p; // r
+			if (*p == '+')
+				++p;
+			/* FIXME: all of wx, w+, +x, ++ indicate w|x */
+			if (tolower(*p) == 'w') {
+				++p;
+				if (*p == '+')
+					++p;
+				if (tolower(*p) == 'x')
+					printf(" %s", str);
 			}
 		}
 	}
@@ -188,7 +221,59 @@ static const char *get_proc_type(pid_t pid)
 	return ret;
 }
 
-static void pspax(void)
+
+static char *scanelf_file_phdr(elfobj *elf)
+{
+	static char ret[8];
+	unsigned long i, off;
+	unsigned char multi_stack, multi_load;
+
+	memcpy(ret, "--- ---\0", 8);
+
+	multi_stack = multi_load = 0;
+
+	if (elf->phdr) {
+	uint32_t flags;
+#define SHOW_PHDR(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
+			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
+			off = 0; \
+		} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
+			if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
+			off = 4; \
+		} else \
+			continue; \
+		flags = EGET(phdr[i].p_flags); \
+		memcpy(ret+off, gnu_short_stack_flags(flags), 3); \
+	} \
+	}
+	SHOW_PHDR(32)
+	SHOW_PHDR(64)
+	}
+
+	return ret;
+}
+/* we scan the elf file two times when the -e flag is given. But we don't need -e very often so big deal */
+static const char *get_proc_phdr(pid_t pid)
+{
+	char fname[32];
+	elfobj *elf = NULL;
+	char *ret = NULL;
+
+	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
+	if ((elf = readelf(fname)) == NULL)
+		return ret;
+	ret = (char *) scanelf_file_phdr(elf);
+	unreadelf(elf);
+	return ret;
+}
+
+
+static void pspax(pid_t ppid)
 {
 	register DIR *dir;
 	register struct dirent *de;
@@ -218,15 +303,15 @@ static void pspax(void)
 		have_attr = 0;
 
 	if (show_banner)
-		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s\n",
-		       "USER", "PID", "PAX", "MAPS", "ETYPE", "NAME", "CAPS", "ATTR");
+		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s %s\n",
+		       "USER", "PID", "PAX", "MAPS", "ETYPE", "NAME", "CAPS", "ATTR", show_phdr ? "STACK LOAD" : "");
 
 	while ((de = readdir(dir))) {
 		errno = 0;
 		stat(de->d_name, &st);
 		if ((errno != ENOENT) && (errno != EACCES)) {
 			pid = (pid_t) atoi((char *) basename((char *) de->d_name));
-			if (!pid)
+			if (((ppid > 0) && (pid != ppid)) || (!pid))
 				continue;
 
 #ifdef WANT_SYSCAP
@@ -242,8 +327,8 @@ static void pspax(void)
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 
-			if (show_all || type)
-				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s\n",
+			if (show_all || type) {
+				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s\n",
 				       uid  ? uid->pw_name : "--------",
 				       pid,
 				       pax  ? pax  : "---",
@@ -251,7 +336,10 @@ static void pspax(void)
 				       type ? type : "-------",
 				       name ? name : "-----",
 				       caps ? caps : " = ",
-				       attr ? attr : "-");
+				       attr ? attr : "-", show_phdr ? get_proc_phdr(pid) : "");
+				if (verbose && wx)
+					print_executable_mappings(pid);
+			}
 #ifdef WANT_SYSCAP
 			if (caps)
 				cap_free((void *)caps);
@@ -264,16 +352,23 @@ static void pspax(void)
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aBhV"
+#define PARSE_FLAGS "aep:vBhV"
+#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
+	{"header",    no_argument, NULL, 'e'},
+	{"pid",        a_argument, NULL, 'p'},
+	{"verbose",   no_argument, NULL, 'v'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
 static const char *opts_help[] = {
-	"Show all processes\n",
+	"Show all processes",
+	"Print GNU_STACK/PT_LOAD markings",
+	"Process ID/pid #",
+	"Be verbose about executable mappings",
 	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
@@ -299,10 +394,10 @@ static void usage(int status)
 }
 
 /* parse command line arguments and preform needed actions */
-static void parseargs(int argc, char *argv[])
+static pid_t parseargs(int argc, char *argv[])
 {
 	int flag;
-
+	pid_t pid = 0;
 	opterr = 0;
 	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
 		switch (flag) {
@@ -317,6 +412,9 @@ static void parseargs(int argc, char *argv[])
 
 		case 'B': show_banner = 0; break;
 		case 'a': show_all = 1; break;
+		case 'e': show_phdr = 1; break;
+		case 'p': pid = atoi(optarg); break;
+		case 'v': verbose++; break;
 
 		case ':':
 			warn("Option missing parameter");
@@ -331,13 +429,13 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 	}
+	return pid;
 }
 
 
 
 int main(int argc, char *argv[])
 {
-	parseargs(argc, argv);
-	pspax();
+	pspax(parseargs(argc, argv));
 	return EXIT_SUCCESS;
 }
