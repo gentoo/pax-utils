@@ -17,6 +17,15 @@ pspax is a user-space utility that scans the proc directory and list ELF types, 
 \fB\-a, \-\-all\fR
 * Show all processes
 .TP
+\fB\-e, \-\-hader\fR
+* Print GNU_STACK/PT_LOAD markings
+.TP
+\fB\-p, \-\-pid\fR
+* Process ID/pid #
+.TP
+\fB\-v, \-\-verbose\fR
+* Be verbose about executable mappings
+.TP
 \fB\-B, \-\-nobanner\fR
 * Don't display the header
 .TP
@@ -33,6 +42,7 @@ pspax is a user-space utility that scans the proc directory and list ELF types, 
 \fI/proc/%d/stat\fP
 \fI/proc/%d/status\fP
 \fI/proc/%d/attr/current\fP
+\fI/proc/%d/maps\fP
 .SH "ENVIRONMENT VARIABLES"
 .TP 
 \fBPATH\fP
