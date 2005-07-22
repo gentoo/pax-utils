@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.83 2005/06/22 17:43:12 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.84 2005/07/22 00:10:51 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.83 2005/06/22 17:43:12 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.84 2005/07/22 00:10:51 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -68,6 +68,7 @@ static char show_rpath = 0;
 static char show_needed = 0;
 static char show_interp = 0;
 static char show_bind = 0;
+static char show_soname = 0;
 static char show_textrels = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
@@ -350,13 +351,13 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 static void rpath_security_checks(elfobj *, char *);
 static void rpath_security_checks(elfobj *elf, char *item) {
 	struct stat st;
-	switch(*item) {
+	switch (*item) {
 		case 0:
 			warnf("Security problem NULL RPATH in %s", elf->filename);
 			break;
 		case '/': break;
 		case '$':
-			if (fstat(elf->fd, &st) != (-1))
+			if (fstat(elf->fd, &st) != -1)
 				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
 					warnf("Security problem with RPATH='%s' in %s with mode set of %o", 
 						item, elf->filename, st.st_mode & 07777);
@@ -366,7 +367,6 @@ static void rpath_security_checks(elfobj *elf, char *item) {
 			break;
 	}
 }
-
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	unsigned long i, s;
@@ -460,7 +460,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	else if (!be_quiet)
 		xstrcat(ret, "  -  ", ret_len);
 }
-static char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
+static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
 	unsigned long i;
 	char *needed;
@@ -509,6 +509,10 @@ static char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *foun
 		} }
 		SHOW_NEEDED(32)
 		SHOW_NEEDED(64)
+#if 0
+		if (op == 0 && !*found_needed)
+			warn("ELF lacks DT_NEEDED sections: %s", elf->filename);
+#endif
 	}
 
 	return NULL;
@@ -576,6 +580,52 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return (char *) "LAZY";
 	}
 }
+static char *scanelf_file_soname(elfobj *elf, char *found_soname)
+{
+	unsigned long i;
+	char *soname;
+	void *strtbl_void;
+
+	if (!show_soname) return NULL;
+
+	strtbl_void = elf_findsecbyname(elf, ".dynstr");
+
+	if (elf->phdr && strtbl_void) {
+#define SHOW_SONAME(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Dyn *dyn; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		Elf ## B ## _Off offset; \
+		/* only look for soname in shared objects */ \
+		if (ehdr->e_type != ET_DYN) \
+			return NULL; \
+		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			offset = EGET(phdr[i].p_offset); \
+			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			dyn = DYN ## B (elf->data + offset); \
+			while (EGET(dyn->d_tag) != DT_NULL) { \
+				if (EGET(dyn->d_tag) == DT_SONAME) { \
+					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+					if (offset >= (Elf ## B ## _Off)elf->len) { \
+						++dyn; \
+						continue; \
+					} \
+					soname = (char*)(elf->data + offset); \
+					*found_soname = 1; \
+					return (be_wewy_wewy_quiet ? NULL : soname); \
+				} \
+				++dyn; \
+			} \
+		} }
+		SHOW_SONAME(32)
+		SHOW_SONAME(64)
+	}
+
+	return NULL;
+}
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
@@ -629,7 +679,7 @@ static void scanelf_file(const char *filename)
 {
 	unsigned long i;
 	char found_pax, found_phdr, found_relro, found_load, found_textrel, 
-	     found_rpath, found_needed, found_interp, found_bind,
+	     found_rpath, found_needed, found_interp, found_bind, found_soname, 
 	     found_sym, found_lib, found_file, found_textrels;
 	elfobj *elf;
 	struct stat st;
@@ -652,7 +702,7 @@ static void scanelf_file(const char *filename)
 	}
 
 	found_pax = found_phdr = found_relro = found_load = found_textrel = \
-	found_rpath = found_needed = found_interp = found_bind = \
+	found_rpath = found_needed = found_interp = found_bind = found_soname = \
 	found_sym = found_lib = found_file = found_textrels = 0;
 
 	/* verify this is real ELF */
@@ -694,6 +744,7 @@ static void scanelf_file(const char *filename)
 			case 'n': prints("NEEDED "); break;
 			case 'i': prints("INTERP "); break;
 			case 'b': prints("BIND "); break;
+			case 'S': prints("SONAME "); break;
 			case 's': prints("SYM "); break;
 			case 'N': prints("LIB "); break;
 			case 'T': prints("TEXTRELS "); break;
@@ -762,6 +813,7 @@ static void scanelf_file(const char *filename)
 		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
 		case 'b': out = scanelf_file_bind(elf, &found_bind); break;
+		case 'S': out = scanelf_file_soname(elf, &found_soname); break;
 		case 's': out = scanelf_file_sym(elf, &found_sym); break;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
@@ -771,7 +823,7 @@ static void scanelf_file(const char *filename)
 #define FOUND_SOMETHING() \
 	(found_pax || found_phdr || found_relro || found_load || found_textrel || \
 	 found_rpath || found_needed || found_interp || found_bind || \
-	 found_sym || found_lib || found_textrels)
+	 found_soname || found_sym || found_lib || found_textrels)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
 		xchrcat(&out_buffer, ' ', &out_len);
@@ -932,7 +984,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnibs:N:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnibSs:N:TaqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -947,6 +999,7 @@ static struct option const long_opts[] = {
 	{"needed",    no_argument, NULL, 'n'},
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
+	{"soname",    no_argument, NULL, 'S'},
 	{"symbol",     a_argument, NULL, 's'},
 	{"lib",        a_argument, NULL, 'N'},
 	{"textrels",  no_argument, NULL, 'T'},
@@ -975,6 +1028,7 @@ static const char *opts_help[] = {
 	"Print NEEDED information",
 	"Print INTERP information",
 	"Print BIND information",
+	"Print SONAME information",
 	"Find a specified symbol",
 	"Find a specified library",
 	"Locate cause of TEXTREL",
@@ -1083,6 +1137,7 @@ static void parseargs(int argc, char *argv[])
 		case 'n': show_needed = 1; break;
 		case 'i': show_interp = 1; break;
 		case 'b': show_bind = 1; break;
+		case 'S': show_soname = 1; break;
 		case 'T': show_textrels = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
@@ -1100,7 +1155,8 @@ static void parseargs(int argc, char *argv[])
 	/* let the format option override all other options */
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
-		show_needed = show_interp = show_bind = show_textrels = 0;
+		show_needed = show_interp = show_bind = show_soname = \
+		show_textrels = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (!IS_MODIFIER(out_format[i])) continue;
 
@@ -1120,6 +1176,7 @@ static void parseargs(int argc, char *argv[])
 			case 'n': show_needed = 1; break;
 			case 'i': show_interp = 1; break;
 			case 'b': show_bind = 1; break;
+			case 'S': show_soname = 1; break;
 			case 'T': show_textrels = 1; break;
 			default:
 				err("Invalid format specifier '%c' (byte %i)", 
@@ -1139,6 +1196,7 @@ static void parseargs(int argc, char *argv[])
 		if (show_needed)   xstrcat(&out_format, "%n ", &fmt_len);
 		if (show_interp)   xstrcat(&out_format, "%i ", &fmt_len);
 		if (show_bind)     xstrcat(&out_format, "%b ", &fmt_len);
+		if (show_soname)   xstrcat(&out_format, "%S ", &fmt_len);
 		if (show_textrels) xstrcat(&out_format, "%T ", &fmt_len);
 		if (find_sym)      xstrcat(&out_format, "%s ", &fmt_len);
 		if (find_lib)      xstrcat(&out_format, "%N ", &fmt_len);
