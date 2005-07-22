@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.33 2005/07/03 16:17:23 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.34 2005/07/22 00:04:32 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -62,7 +62,7 @@ debug: all
 	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<
 
 %: %.o paxelf.o
-	$(CC) $(CFLAGS) paxelf.o -o $@ $< $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) paxelf.o -o $@ $<
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
