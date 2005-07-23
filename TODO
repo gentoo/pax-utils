@@ -1,4 +1,4 @@
-Fix these warnings when building on ia64/sparc:
+Fix these warnings when building on arm/hppa/ia64/sparc:
 scanelf.c: In function `scanelf_file_textrel':
 scanelf.c:241: warning: cast increases required alignment of target type
 scanelf.c:242: warning: cast increases required alignment of target type
@@ -7,6 +7,3 @@ due to:
 	rel = REL ## B (elf->data + EGET(shdr[s].sh_offset)); \
 	rela = RELA ## B (elf->data + EGET(shdr[s].sh_offset)); \
 	sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-
-
-Fix warn/warnf/etc macros ## args does not work with gcc-2.9x
