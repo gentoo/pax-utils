@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.34 2005/07/22 00:04:32 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.35 2005/07/23 04:57:00 vapier Exp $
 ####################################################################
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,15 +17,18 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 # MA 02111-1307, USA.
 ####################################################################
+
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
 	then echo "$(1)"; else echo "$(2)"; fi)
 
 ####################################################
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
-             -Wbad-function-cast -Wnested-externs -Wcomment -Wsequence-point \
-             -Wchar-subscripts -Wcast-align -Winline \
-             $(call check_gcc, -Wdeclaration-after-statement -Wextra)
+             -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
+             -Wchar-subscripts -Wcast-align -Wno-format-nonliteral \
+             $(call check_gcc, -Wdeclaration-after-statement) \
+             $(call check-gcc, -Wsequence-point) \
+             $(call check-gcc, -Wextra)
 
 CFLAGS    ?= -O2 -pipe
 #CFLAGS   += -DEBUG -g
