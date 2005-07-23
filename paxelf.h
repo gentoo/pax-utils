@@ -1,5 +1,5 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.33 2005/06/17 01:43:29 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.34 2005/07/23 04:57:57 vapier Exp $
  * Make sure all of the common elf stuff is setup as we expect
  */
 
@@ -76,9 +76,11 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 #define NORM      COLOR("00", "00")
 #define RED       COLOR("31", "01")
 #define YELLOW    COLOR("33", "01")
+
+/* we need the space before the last comma or we trigger a bug in gcc-2 :( */
 #define warn(fmt, args...) \
-	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM, ## args)
-#define warnf(fmt, args...) warn("%s%s%s(): " fmt, YELLOW, __FUNCTION__, NORM, ## args)
+	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM , ## args) 
+#define warnf(fmt, args...) warn("%s%s%s(): " fmt, YELLOW, __FUNCTION__, NORM , ## args)
 #define _err(wfunc, fmt, args...) \
 	do { \
 	wfunc(fmt, ## args); \
