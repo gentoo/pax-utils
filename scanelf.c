@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.84 2005/07/22 00:10:51 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.85 2005/07/25 23:31:32 vapier Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.84 2005/07/22 00:10:51 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.85 2005/07/25 23:31:32 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -509,10 +509,8 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 		} }
 		SHOW_NEEDED(32)
 		SHOW_NEEDED(64)
-#if 0
-		if (op == 0 && !*found_needed)
+		if (op == 0 && !*found_needed && be_verbose)
 			warn("ELF lacks DT_NEEDED sections: %s", elf->filename);
-#endif
 	}
 
 	return NULL;
