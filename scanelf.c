@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.85 2005/07/25 23:31:32 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.86 2005/09/24 16:17:53 solar Exp $
  *
  ********************************************************************
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.85 2005/07/25 23:31:32 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.86 2005/09/24 16:17:53 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -78,7 +78,7 @@ static char *find_sym = NULL, *versioned_symname = NULL;
 static char *find_lib = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
-
+static char gmatch = 0;
 
 
 /* sub-funcs for scanelf_file() */
@@ -498,9 +498,9 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						} \
 						*found_needed = 1; \
 					} else { \
-						if (!strcmp(find_lib, needed)) { \
+						if (!strncmp(find_lib, needed, strlen( !gmatch ? needed : find_lib))) { \
 							*found_lib = 1; \
-							return (be_wewy_wewy_quiet ? NULL : find_lib); \
+							return (be_wewy_wewy_quiet ? NULL : needed); \
 						} \
 					} \
 				} \
@@ -982,7 +982,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnibSs:N:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnibSs:gN:TaqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1000,6 +1000,7 @@ static struct option const long_opts[] = {
 	{"soname",    no_argument, NULL, 'S'},
 	{"symbol",     a_argument, NULL, 's'},
 	{"lib",        a_argument, NULL, 'N'},
+	{"gmatch",    no_argument, NULL, 'g'},
 	{"textrels",  no_argument, NULL, 'T'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
@@ -1029,6 +1030,7 @@ static const char *opts_help[] = {
 	"Print SONAME information",
 	"Find a specified symbol",
 	"Find a specified library",
+	"Use strncmp to match libraries. (use with -N)",
 	"Locate cause of TEXTREL",
 	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
@@ -1122,6 +1124,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 
+		case 'g': gmatch = 1;
 		case 'y': scan_symlink = 0; break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
