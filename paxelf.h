@@ -1,5 +1,11 @@
 /*
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.34 2005/07/23 04:57:57 vapier Exp $
+ * Copyright 2005 Gentoo Foundation
+ * Distributed under the terms of the GNU General Public License v2
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.35 2005/09/30 03:30:19 vapier Exp $
+ *
+ * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
+ *
  * Make sure all of the common elf stuff is setup as we expect
  */
 
