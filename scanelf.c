@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.87 2005/09/30 03:30:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.88 2005/09/30 03:30:54 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -22,7 +22,7 @@
 #include <assert.h>
 #include "paxelf.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.87 2005/09/30 03:30:19 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.88 2005/09/30 03:30:54 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -301,11 +301,11 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				sym = NULL; \
 			sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 			/* show the raw details about this reloc */ \
-			printf("\tTEXTREL %s: ", elf->base_filename); \
+			printf("  %s: ", elf->base_filename); \
 			if (sym && sym->st_name) \
 				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
 			else \
-				printf("(NULL: fake?)"); \
+				printf("(memory/fake?)"); \
 			printf(" [0x%lX]", (unsigned long)r_offset); \
 			/* now try to find the closest symbol that this rel is probably in */ \
 			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
@@ -1054,8 +1054,9 @@ static void usage(int status)
 	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
 	puts(" i INTERP   \tb BIND      \ts symbol");
 	puts(" N library  \to Type      \tT TEXTRELs");
+	puts(" S SONAME");
 	puts(" p filename (with search path removed)");
-	puts(" f base filename");
+	puts(" f filename (short name/basename)");
 	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");
 
 	exit(status);
