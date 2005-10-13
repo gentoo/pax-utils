@@ -1,27 +1,12 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.38 2005/08/21 02:08:59 vapier Exp $
-####################################################################
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-# MA 02111-1307, USA.
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.39 2005/10/13 01:53:55 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
 	then echo "$(1)"; else echo "$(2)"; fi)
 
-####################################################
+####################################################################
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
@@ -43,11 +28,15 @@ ifdef PV
 HFLAGS    += -DVERSION=\"$(PV)\"
 endif
 
-#####################################################
-TARGETS    = scanelf pspax dumpelf
-OBJS       = ${TARGETS:%=%.o} paxelf.o
-MPAGES     = ${TARGETS:%=man/%.1}
-SOURCES    = ${OBJS:%.o=%.c}
+####################################################################
+ELF_TARGETS  = scanelf pspax dumpelf
+ELF_OBJS     = $(ELF_TARGETS:%=%.o) paxelf.o
+#MACH_TARGETS = scanmacho
+#MACH_OBJS    = $(MACH_TARGETS:%=%.o) paxmacho.o
+OBJS         = $(ELF_OBJS) $(MACH_OBJS) paxinc.o
+TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
+MPAGES       = $(TARGETS:%=man/%.1)
+SOURCES      = $(OBJS:%.o=%.c)
 
 all: $(OBJS) $(TARGETS)
 	@:
@@ -62,8 +51,11 @@ ifeq ($(subst s,,$(MAKEFLAGS)),$(MAKEFLAGS))
 endif
 	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<
 
-%: %.o paxelf.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxelf.o -o $@ $<
+$(ELF_TARGETS): $(ELF_OBJS) paxinc.o
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $<
+
+$(MACH_TARGETS): $(MACH_OBJS) paxinc.o
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $<
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<

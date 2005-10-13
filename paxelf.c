@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.28 2005/09/30 03:30:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.29 2005/10/13 01:53:55 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -13,11 +13,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include "paxelf.h"
+#include "paxinc.h"
 
 #define argv0 "paxelf"
-
-char do_reverse_endian;
 
 /*
  * Setup a bunch of helper functions to translate

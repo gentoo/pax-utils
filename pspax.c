@@ -32,7 +32,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 
-#include "paxelf.h"
+#include "paxinc.h"
 
 #ifdef WANT_SYSCAP
 #undef _POSIX_SOURCE
@@ -40,7 +40,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.22 2005/07/03 16:17:23 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.23 2005/10/13 01:53:55 vapier Exp $";
 #define argv0 "pspax"
 
 

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.88 2005/09/30 03:30:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.89 2005/10/13 01:53:55 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -20,9 +20,9 @@
 #include <dirent.h>
 #include <getopt.h>
 #include <assert.h>
-#include "paxelf.h"
+#include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.88 2005/09/30 03:30:54 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.89 2005/10/13 01:53:55 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -339,10 +339,13 @@ static void rpath_security_checks(elfobj *, char *);
 static void rpath_security_checks(elfobj *elf, char *item) {
 	struct stat st;
 	switch (*item) {
-		case 0:
+		case '/': break;
+		case '.':
+			warnf("Security problem with relative RPATH '%s' in %s", item, elf->filename);
+			break;
+		case '\0':
 			warnf("Security problem NULL RPATH in %s", elf->filename);
 			break;
-		case '/': break;
 		case '$':
 			if (fstat(elf->fd, &st) != -1)
 				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
