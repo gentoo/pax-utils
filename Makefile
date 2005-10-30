@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.40 2005/10/30 06:04:53 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.41 2005/10/30 13:09:42 solar Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -74,7 +74,7 @@ install: all
 	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
 	$(CP) $(TARGETS) $(PREFIX)/bin/
 ifeq ($(S),)
-	$(PREFIX)/share/doc/pax-utils/
+	-$(MKDIR) $(PREFIX)/share/doc/pax-utils/
 	$(CP) README BUGS TODO $(PREFIX)/share/doc/pax-utils/
 endif
 	for mpage in $(MPAGES) ; do \
@@ -90,8 +90,8 @@ dist:
 	$(MAKE) -s distclean
 	rm -rf ../pax-utils-$(PV)*
 	mkdir ../pax-utils-$(PV)
-	cp -R * ../pax-utils-$(PV)/
-	rm -rf ../pax-utils-$(PV)/CVS ../pax-utils-$(PV)/*/CVS
+	cp -R * .depend ../pax-utils-$(PV)/
+	rm -rf ../pax-utils-$(PV)/CVS ../pax-utils-$(PV)/*/CVS ../pax-utils-$(PV)/make-tarball.sh
 	tar jcf ../pax-utils-$(PV).tar.bz2 -C .. pax-utils-$(PV)
 	rm -rf ../pax-utils-$(PV)
 	du -b ../pax-utils-$(PV).tar.bz2
