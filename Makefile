@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.39 2005/10/13 01:53:55 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.40 2005/10/30 06:04:53 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -52,10 +52,10 @@ endif
 	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<
 
 $(ELF_TARGETS): $(ELF_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o
 
 $(MACH_TARGETS): $(MACH_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
@@ -81,5 +81,19 @@ endif
 		[ -e $$mpage ] \
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
 	done
+
+dist:
+	@if [ "$(PV)" = "" ] ; then \
+		echo "Please run 'make dist PV=<ver>'" ; \
+		exit 1 ; \
+	fi
+	$(MAKE) -s distclean
+	rm -rf ../pax-utils-$(PV)*
+	mkdir ../pax-utils-$(PV)
+	cp -R * ../pax-utils-$(PV)/
+	rm -rf ../pax-utils-$(PV)/CVS ../pax-utils-$(PV)/*/CVS
+	tar jcf ../pax-utils-$(PV).tar.bz2 -C .. pax-utils-$(PV)
+	rm -rf ../pax-utils-$(PV)
+	du -b ../pax-utils-$(PV).tar.bz2
 
 -include .depend
