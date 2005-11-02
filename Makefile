@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.41 2005/10/30 13:09:42 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.42 2005/11/02 04:23:21 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -31,12 +31,17 @@ endif
 ####################################################################
 ELF_TARGETS  = scanelf pspax dumpelf
 ELF_OBJS     = $(ELF_TARGETS:%=%.o) paxelf.o
-#MACH_TARGETS = scanmacho
-#MACH_OBJS    = $(MACH_TARGETS:%=%.o) paxmacho.o
+MACH_TARGETS = scanmacho
+MACH_OBJS    = $(MACH_TARGETS:%=%.o) paxmacho.o
 OBJS         = $(ELF_OBJS) $(MACH_OBJS) paxinc.o
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
 MPAGES       = $(TARGETS:%=man/%.1)
 SOURCES      = $(OBJS:%.o=%.c)
+
+ifneq ($(MACH),1)
+MACH_TARGETS = 
+MACH_OBJS    = 
+endif
 
 all: $(OBJS) $(TARGETS)
 	@:
@@ -46,7 +51,7 @@ debug: all
 	@-/sbin/paxctl -permsx $(TARGETS)
 
 %.o: %.c
-ifeq ($(subst s,,$(MAKEFLAGS)),$(MAKEFLAGS))
+ifeq ($(findstring s,$(MAKEFLAGS)),)
 	@echo $(CC) $(CFLAGS) -c $<
 endif
 	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<

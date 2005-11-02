@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.1 2005/10/13 01:53:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.2 2005/11/02 04:23:21 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -23,10 +23,8 @@
 #include "paxelf.h"
 
 /* MACH-O sucks */
-/*
 #include "macho.h"
 #include "paxmacho.h"
-*/
 
 extern char do_reverse_endian;
 
