@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.13 2005/10/13 01:53:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.14 2005/12/04 01:37:39 solar Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -22,7 +22,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.13 2005/10/13 01:53:55 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.14 2005/12/04 01:37:39 solar Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -210,12 +210,13 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
 	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
 	if (size && \
-	   ((be_verbose && type == SHT_STRTAB) || \
+	   ((be_verbose && (type == SHT_STRTAB || (type == SHT_PROGBITS  && \
+		(strcmp(name, ".comment") == 0 || strcmp(name, ".interp") == 0) ))) || \
 	    (be_verbose > 1))) { \
 		unsigned char *data = (unsigned char*)(elf->data + EGET(shdr->sh_offset)); \
 		char bool; \
 		printf("\n\t/* section dump:\n"); \
-		if (type == SHT_STRTAB) { \
+		if (type == SHT_STRTAB || type == SHT_PROGBITS) { \
 			bool = 1; \
 			for (i = 0; i < size; ++i) { \
 				++data; \
