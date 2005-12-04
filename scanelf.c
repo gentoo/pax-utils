@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.89 2005/10/13 01:53:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.90 2005/12/04 18:12:44 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -22,7 +22,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.89 2005/10/13 01:53:55 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.90 2005/12/04 18:12:44 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -97,7 +97,6 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
 }
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
-	static char *paxflags;
 	static char ret[7];
 	unsigned long i, shown;
 
@@ -128,19 +127,21 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 
 	/* fall back to EI_PAX if no PT_PAX was found */
 	if (!*ret) {
+		static char *paxflags;
 		paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
 		if (!be_quiet || (be_quiet && EI_PAX_FLAGS(elf))) {
 			*found_pax = 1;
-			return paxflags;
+			return (be_wewy_wewy_quiet ? NULL : paxflags);
 		}
 		strncpy(ret, paxflags, sizeof(ret));
 	}
 
-	if (be_quiet && !shown)
+	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
-	return ret;
-
+	else
+		return ret;
 }
+
 static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro, char *found_load)
 {
 	static char ret[12];
@@ -191,14 +192,14 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	SHOW_PHDR(64)
 	}
 
-	if (be_quiet && !shown)
+	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
 	else
 		return ret;
 }
-static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
+static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
-	static char ret[] = "TEXTREL";
+	static const char *ret = "TEXTREL";
 	unsigned long i;
 
 	if (!show_textrel && !show_textrels) return NULL;
@@ -231,7 +232,7 @@ static char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	if (be_quiet || be_wewy_wewy_quiet)
 		return NULL;
 	else
-		return (char *)"   -   ";
+		return "   -   ";
 }
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
