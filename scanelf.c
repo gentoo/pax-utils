@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.90 2005/12/04 18:12:44 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.91 2005/12/07 01:04:52 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -22,7 +22,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.90 2005/12/04 18:12:44 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.91 2005/12/07 01:04:52 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -146,7 +146,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 {
 	static char ret[12];
 	char *found;
-	unsigned long i, off, shown, check_flags;
+	unsigned long i, shown;
 	unsigned char multi_stack, multi_relro, multi_load;
 
 	if (!show_phdr) return NULL;
@@ -156,41 +156,69 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	shown = 0;
 	multi_stack = multi_relro = multi_load = 0;
 
-	if (elf->phdr) {
 #define SHOW_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-	uint32_t flags; \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
-			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
-			found = found_phdr; \
-			off = 0; \
-			check_flags = PF_X; \
-		} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
-			if (multi_relro++) warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
-			found = found_relro; \
-			off = 4; \
-			check_flags = PF_X; \
-		} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-			if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
-			found = found_load; \
-			off = 8; \
-			check_flags = PF_W|PF_X; \
-		} else \
-			continue; \
-		flags = EGET(phdr[i].p_flags); \
-		if (be_quiet && ((flags & check_flags) != check_flags)) \
-			continue; \
-		memcpy(ret+off, gnu_short_stack_flags(flags), 3); \
-		*found = 1; \
-		++shown; \
+	Elf ## B ## _Off offset; \
+	uint32_t flags, check_flags; \
+	if (elf->phdr != NULL) { \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+			if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
+				if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
+				found = found_phdr; \
+				offset = 0; \
+				check_flags = PF_X; \
+			} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
+				if (multi_relro++) warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
+				found = found_relro; \
+				offset = 4; \
+				check_flags = PF_X; \
+			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
+				if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
+				found = found_load; \
+				offset = 8; \
+				check_flags = PF_W|PF_X; \
+			} else \
+				continue; \
+			flags = EGET(phdr[i].p_flags); \
+			if (be_quiet && ((flags & check_flags) != check_flags)) \
+				continue; \
+			memcpy(ret+offset, gnu_short_stack_flags(flags), 3); \
+			*found = 1; \
+			++shown; \
+		} \
+	} else if (elf->shdr != NULL) { \
+		/* no program headers which means this is prob an object file */ \
+		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
+		check_flags = SHF_WRITE|SHF_EXECINSTR; \
+		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
+			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
+			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
+			if (!strcmp((char*)(elf->data + offset), ".note.GNU-stack")) { \
+				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
+				flags = EGET(shdr[i].sh_flags); \
+				if (be_quiet && ((flags & check_flags) != check_flags)) \
+					continue; \
+				++*found_phdr; \
+				shown = 1; \
+				if (flags & SHF_WRITE)     ret[0] = 'W'; \
+				if (flags & SHF_ALLOC)     ret[1] = 'A'; \
+				if (flags & SHF_EXECINSTR) ret[2] = 'X'; \
+				if (flags & 0xFFFFFFF8)    warn("Invalid section flags for GNU-stack"); \
+				break; \
+			} \
+		} \
+		if (!multi_stack) { \
+			*found_phdr = 1; \
+			shown = 1; \
+			memcpy(ret, "!WX", 3); \
+		} \
 	} \
 	}
 	SHOW_PHDR(32)
 	SHOW_PHDR(64)
-	}
 
 	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
