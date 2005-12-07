@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.29 2005/10/13 01:53:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.30 2005/12/07 01:04:05 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -388,25 +388,31 @@ elfobj *readelf(const char *filename)
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Off size; \
 		/* verify program header */ \
-		elf->phdr = elf->data + EGET(ehdr->e_phoff); \
-		size = EGET(ehdr->e_phnum) * EGET(ehdr->e_phentsize); \
-		if (elf->phdr < elf->ehdr || /* check overflow */ \
-		    elf->phdr + size < elf->phdr || /* before start of mem */ \
-		    elf->phdr + size > elf->ehdr + elf->len) /* before end of mem */ \
-		{ \
-			warn("%s: Invalid program header info", filename); \
+		if (EGET(ehdr->e_phnum) > 0) { \
+			elf->phdr = elf->data + EGET(ehdr->e_phoff); \
+			size = EGET(ehdr->e_phnum) * EGET(ehdr->e_phentsize); \
+			if (elf->phdr < elf->ehdr || /* check overflow */ \
+			    elf->phdr + size < elf->phdr || /* before start of mem */ \
+			    elf->phdr + size > elf->ehdr + elf->len) /* before end of mem */ \
+			{ \
+				warn("%s: Invalid program header info", filename); \
+				elf->phdr = NULL; \
+			} \
+		} else \
 			elf->phdr = NULL; \
-		} \
 		/* verify section header */ \
-		elf->shdr = elf->data + EGET(ehdr->e_shoff); \
-		size = EGET(ehdr->e_shnum) * EGET(ehdr->e_shentsize); \
-		if (elf->shdr < elf->ehdr || /* check overflow */ \
-		    elf->shdr + size < elf->shdr || /* before start of mem */ \
-		    elf->shdr + size > elf->ehdr + elf->len) /* before end of mem */ \
-		{ \
-			warn("%s: Invalid section header info", filename); \
+		if (EGET(ehdr->e_shnum) > 0) { \
+			elf->shdr = elf->data + EGET(ehdr->e_shoff); \
+			size = EGET(ehdr->e_shnum) * EGET(ehdr->e_shentsize); \
+			if (elf->shdr < elf->ehdr || /* check overflow */ \
+			    elf->shdr + size < elf->shdr || /* before start of mem */ \
+			    elf->shdr + size > elf->ehdr + elf->len) /* before end of mem */ \
+			{ \
+				warn("%s: Invalid section header info", filename); \
+				elf->shdr = NULL; \
+			} \
+		} else \
 			elf->shdr = NULL; \
-		} \
 	}
 	READELF_HEADER(32)
 	READELF_HEADER(64)
