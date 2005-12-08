@@ -1,4 +1,5 @@
-scanelf.o: scanelf.c paxelf.h
-pspax.o: pspax.c paxelf.h
-dumpelf.o: dumpelf.c paxelf.h
-paxelf.o: paxelf.c paxelf.h
+scanelf.o: scanelf.c paxinc.h porting.h elf.h paxelf.h macho.h paxmacho.h
+pspax.o: pspax.c paxinc.h porting.h elf.h paxelf.h macho.h paxmacho.h
+dumpelf.o: dumpelf.c paxinc.h porting.h elf.h paxelf.h macho.h paxmacho.h
+paxelf.o: paxelf.c paxinc.h porting.h elf.h paxelf.h macho.h paxmacho.h
+paxinc.o: paxinc.c paxinc.h porting.h elf.h paxelf.h macho.h paxmacho.h
