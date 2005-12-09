@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.14 2005/12/04 01:37:39 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.15 2005/12/09 01:42:19 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#define __USE_GNU
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -22,7 +21,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.14 2005/12/04 01:37:39 solar Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.15 2005/12/09 01:42:19 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -209,15 +208,22 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	printf("\t.sh_info      = %-10i ,\n", (int)EGET(shdr->sh_info)); \
 	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
 	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
-	if (size && \
-	   ((be_verbose && (type == SHT_STRTAB || (type == SHT_PROGBITS  && \
-		(strcmp(name, ".comment") == 0 || strcmp(name, ".interp") == 0) ))) || \
-	    (be_verbose > 1))) { \
+	if (size && be_verbose) { \
 		unsigned char *data = (unsigned char*)(elf->data + EGET(shdr->sh_offset)); \
-		char bool; \
-		printf("\n\t/* section dump:\n"); \
-		if (type == SHT_STRTAB || type == SHT_PROGBITS) { \
+		switch (type) { \
+		case SHT_PROGBITS: { \
+			if (strcmp(name, ".interp") == 0) { \
+				printf("\n\t/* ELF interpreter: %s */\n", data); \
+				break; \
+			} \
+			if (strcmp(name, ".comment") != 0) \
+				break; \
+		} \
+		case SHT_STRTAB: { \
+			char bool; \
+			printf("\n\t/* section dump:\n"); \
 			bool = 1; \
+			if (type == SHT_PROGBITS) --data; \
 			for (i = 0; i < size; ++i) { \
 				++data; \
 				if (*data) { \
@@ -229,7 +235,30 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 					bool = 1; \
 				} \
 			} \
-		} else { \
+			printf("\t */\n"); \
+			break; \
+		} \
+		case SHT_DYNSYM: { \
+			Elf##B##_Sym *sym = (Elf##B##_Sym*)data; \
+			printf("\n\t/* section dump:\n"); \
+			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
+				printf("\t * Elf%i_Sym sym%li = {\n", B, (long)i); \
+				printf("\t * \t.st_name  = %i,\n", (unsigned int)EGET(sym->st_name)); \
+				printf("\t * \t.st_value = 0x%lX,\n", (unsigned long)EGET(sym->st_value)); \
+				printf("\t * \t.st_size  = %li, (bytes)\n", (unsigned long)EGET(sym->st_size)); \
+				printf("\t * \t.st_info  = %i,\n", (unsigned int)EGET(sym->st_info)); \
+				printf("\t * \t.st_other = %i,\n", (unsigned int)EGET(sym->st_other)); \
+				printf("\t * \t.st_shndx = %li\n", (unsigned long)EGET(sym->st_shndx)); \
+				printf("\t * };\n"); \
+				++sym; \
+			} \
+			printf("\t */\n"); \
+			break; \
+		} \
+		default: { \
+			if (be_verbose <= 1) \
+				break; \
+			printf("\n\t/* section dump:\n"); \
 			for (i = 0; i < size; ++i) { \
 				++data; \
 				if (i % 20 == 0) printf("\t * "); \
@@ -237,8 +266,9 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 				if (i % 20 == 19) printf("\n"); \
 			} \
 			if (i % 20) printf("\n"); \
+			printf("\t */\n"); \
 		} \
-		printf("\t */\n"); \
+		} \
 	} \
 	printf("}"); \
 	}
