@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.91 2005/12/07 01:04:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.92 2005/12/09 01:41:32 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <libgen.h>
 #include <limits.h>
-#define __USE_GNU
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -22,7 +21,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.91 2005/12/07 01:04:52 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.92 2005/12/09 01:41:32 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
