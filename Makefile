@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.42 2005/11/02 04:23:21 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.43 2005/12/09 01:39:43 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -74,8 +74,12 @@ clean:
 distclean: clean
 	-rm -f *~ core
 
+strip: all
+	$(STRIP) $(TARGETS)
+strip-more:
+	$(STRIP) --strip-unneeded $(TARGETS)
+
 install: all
-	-$(STRIP) $(TARGETS)
 	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
 	$(CP) $(TARGETS) $(PREFIX)/bin/
 ifeq ($(S),)
