@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.92 2005/12/09 01:41:32 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.93 2005/12/10 04:07:55 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -21,7 +21,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.92 2005/12/09 01:41:32 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.93 2005/12/10 04:07:55 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -1123,23 +1123,21 @@ static void parseargs(int argc, char *argv[])
 		}
 
 		case 's': {
-			size_t len;
-			if (find_sym) err("Don't specify -s twice");
-			find_sym = xstrdup(optarg);
-			len = strlen(find_sym) + 1;
-			versioned_symname = (char*)xmalloc(sizeof(char) * (len+1));
+			if (find_sym) warn("You prob don't want to specify -s twice");
+			find_sym = optarg;
+			versioned_symname = (char*)xmalloc(sizeof(char) * (strlen(find_sym)+1+1));
 			sprintf(versioned_symname, "%s@", find_sym);
 			break;
 		}
 		case 'N': {
-			if (find_lib) err("Don't specify -N twice");
-			find_lib = xstrdup(optarg);
+			if (find_lib) warn("You prob don't want to specify -N twice");
+			find_lib = optarg;
 			break;
 		}
 
 		case 'F': {
-			if (out_format) err("Don't specify -F twice");
-			out_format = xstrdup(optarg);
+			if (out_format) warn("You prob don't want to specify -F twice");
+			out_format = optarg;
 			break;
 		}
 
@@ -1242,12 +1240,7 @@ static void parseargs(int argc, char *argv[])
 	}
 
 	/* clean up */
-	if (find_sym) {
-		free(find_sym);
-		free(versioned_symname);
-	}
-	if (find_lib) free(find_lib);
-	if (out_format) free(out_format);
+	if (versioned_symname) free(versioned_symname);
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
 }
