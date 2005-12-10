@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.94 2005/12/10 04:10:26 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.95 2005/12/10 06:08:22 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -21,7 +21,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.94 2005/12/10 04:10:26 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.95 2005/12/10 06:08:22 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -37,7 +37,8 @@ static void usage(int status);
 static void parseargs(int argc, char *argv[]);
 static char *xstrdup(const char *s);
 static void *xmalloc(size_t size);
-static void xstrcat(char **dst, const char *src, size_t *curr_len);
+static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
+#define xstrcat(dst,src,curr_len) xstrncat(dst,src,curr_len,0)
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
 
 /* variables to control behavior */
@@ -645,9 +646,11 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
+	char *ret;
 	void *symtab_void, *strtab_void;
 
 	if (!find_sym) return NULL;
+	ret = find_sym;
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
@@ -667,12 +670,25 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \
 					       (unsigned long)sym->st_size, \
-					       (char *)get_elfstttype(sym->st_info), \
+					       get_elfstttype(sym->st_info), \
 					       symname); \
 					*found_sym = 1; \
-				} else if ((strcmp(find_sym, symname) == 0) || \
-				           (strcmp(symname, versioned_symname) == 0)) \
-					(*found_sym)++; \
+				} else { \
+					char *this_sym, *next_sym; \
+					this_sym = find_sym; \
+					do { \
+						next_sym = strchr(this_sym, ','); \
+						if (next_sym == NULL) \
+							next_sym = this_sym + strlen(this_sym); \
+						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
+						    (strcmp(symname, versioned_symname) == 0)) { \
+							ret = this_sym; \
+							(*found_sym)++; \
+							goto break_out; \
+						} \
+						this_sym = next_sym + 1; \
+					} while (*next_sym != '\0'); \
+				} \
 			} \
 			++sym; \
 		} }
@@ -680,10 +696,11 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		FIND_SYM(64)
 	}
 
+break_out:
 	if (be_wewy_wewy_quiet) return NULL;
 
 	if (*find_sym != '*' && *found_sym)
-		return find_sym;
+		return ret;
 	if (be_quiet)
 		return NULL;
 	else
@@ -833,7 +850,13 @@ static void scanelf_file(const char *filename)
 		case 's': out = scanelf_file_sym(elf, &found_sym); break;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
-		if (out) xstrcat(&out_buffer, out, &out_len);
+		if (out) {
+			/* hack for comma delimited output like `scanelf -s sym1,sym2,sym3` */
+			if (out_format[i] == 's' && (tmp=strchr(out,',')) != NULL)
+				xstrncat(&out_buffer, out, &out_len, (tmp-out));
+			else
+				xstrcat(&out_buffer, out, &out_len);
+		}
 	}
 
 #define FOUND_SOMETHING() \
@@ -1254,15 +1277,13 @@ static char *xstrdup(const char *s)
 	if (!ret) err("Could not strdup(): %s", strerror(errno));
 	return ret;
 }
-
 static void *xmalloc(size_t size)
 {
 	void *ret = malloc(size);
 	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
 	return ret;
 }
-
-static void xstrcat(char **dst, const char *src, size_t *curr_len)
+static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
 {
 	size_t new_len;
 
@@ -1271,12 +1292,14 @@ static void xstrcat(char **dst, const char *src, size_t *curr_len)
 		*curr_len = new_len + (*curr_len / 2);
 		*dst = realloc(*dst, *curr_len);
 		if (!*dst)
-			err("could not realloc %li bytes", (unsigned long)*curr_len);
+			err("could not realloc() %li bytes", (unsigned long)*curr_len);
 	}
 
-	strcat(*dst, src);
+	if (n)
+		strncat(*dst, src, n);
+	else
+		strcat(*dst, src);
 }
-
 static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 {
 	static char my_app[2];
