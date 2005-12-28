@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.95 2005/12/10 06:08:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.96 2005/12/28 22:26:47 solar Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -16,12 +16,14 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <getopt.h>
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.95 2005/12/10 06:08:22 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.96 2005/12/28 22:26:47 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -66,7 +68,11 @@ static char *find_lib = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
 static char gmatch = 0;
+static char printcache = 0;
 
+
+caddr_t ldcache = 0;
+size_t ldcache_size = 0;
 
 /* sub-funcs for scanelf_file() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
@@ -479,11 +485,76 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	else if (!be_quiet)
 		xstrcat(ret, "  -  ", ret_len);
 }
+
+#define LDSO_CACHE_MAGIC "ld.so-"
+#define LDSO_CACHE_MAGIC_LEN (sizeof LDSO_CACHE_MAGIC -1)
+#define LDSO_CACHE_VER "1.7.0"
+#define LDSO_CACHE_VER_LEN (sizeof LDSO_CACHE_VER -1)
+
+static char *lookup_cache_lib(char *);
+static char *lookup_cache_lib(char *fname)
+{
+	int fd = 0;
+	char *strs;
+	static char buf[_POSIX_PATH_MAX] = "";
+	const char *cachefile = "/etc/ld.so.cache";
+	struct stat st;
+
+	typedef struct {
+		char magic[LDSO_CACHE_MAGIC_LEN];
+		char version[LDSO_CACHE_VER_LEN];
+		int nlibs;
+	} header_t;
+
+	typedef struct {
+		int flags;
+		int sooffset;
+		int liboffset;
+	} libentry_t;
+
+	header_t *header;
+	libentry_t *libent;
+
+	if (fname == NULL)
+		return NULL;
+
+	if (ldcache == 0) {
+		if (stat(cachefile, &st) || (fd = open(cachefile, O_RDONLY)) < 0)
+			return NULL;
+		/* save the cache size for latter unmapping */
+		ldcache_size = st.st_size;
+
+		if ((ldcache = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == (caddr_t) -1)
+			return NULL;
+
+		close(fd);
+
+		if (memcmp(((header_t *) ldcache)->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN))
+			return NULL;
+
+		if (memcmp (((header_t *) ldcache)->version, LDSO_CACHE_VER, LDSO_CACHE_VER_LEN))
+			return NULL;
+	}
+
+	header = (header_t *) ldcache;
+	libent = (libentry_t *) (ldcache + sizeof(header_t));
+	strs = (char *) &libent[header->nlibs];
+
+	for (fd = 0; fd < header->nlibs; fd++) {
+		if (strcmp(fname, strs + libent[fd].sooffset) != 0)
+			continue;
+		strncpy(buf, strs + libent[fd].liboffset, sizeof(buf));
+	}
+	return buf;
+}
+
+
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
 	unsigned long i;
 	char *needed;
 	void *strtbl_void;
+	char *p;
 
 	if ((op==0 && !show_needed) || (op==1 && !find_lib)) return NULL;
 
@@ -513,6 +584,9 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 					if (op == 0) { \
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
+							if (printcache) \
+								if ((p = lookup_cache_lib(needed)) != NULL) \
+									needed = p; \
 							xstrcat(ret, needed, ret_len); \
 						} \
 						*found_needed = 1; \
@@ -1021,9 +1095,8 @@ static void scanelf_envpath()
 }
 
 
-
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnibSs:gN:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyxetrnLibSs:gN:TaqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1036,6 +1109,7 @@ static struct option const long_opts[] = {
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
 	{"needed",    no_argument, NULL, 'n'},
+	{"ldcache",   no_argument, NULL, 'L'},
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
 	{"soname",    no_argument, NULL, 'S'},
@@ -1066,6 +1140,7 @@ static const char *opts_help[] = {
 	"Print TEXTREL information",
 	"Print RPATH information",
 	"Print NEEDED information",
+	"Resolve NEEDED information (use with -n)",
 	"Print INTERP information",
 	"Print BIND information",
 	"Print SONAME information",
@@ -1164,7 +1239,8 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 
-		case 'g': gmatch = 1;
+		case 'g': gmatch = 1; /* break; any reason we dont breal; here ? */
+		case 'L': printcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
@@ -1266,6 +1342,9 @@ static void parseargs(int argc, char *argv[])
 	if (versioned_symname) free(versioned_symname);
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
+
+	if (ldcache != 0)
+		munmap(ldcache, ldcache_size);
 }
 
 
