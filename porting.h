@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.5 2005/12/29 12:28:50 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.6 2005/12/29 12:40:51 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -66,6 +66,9 @@
 #endif
 
 #if !defined(ELF_DATA)
+# if !defined(BYTE_ORDER)
+#  error "no idea what sort of byte order this host is"
+# endif
 # if BYTE_ORDER == LITTLE_ENDIAN
 #  define ELF_DATA ELFDATA2LSB
 # else
