@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.96 2005/12/28 22:26:47 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.97 2005/12/29 14:03:25 vapier Exp $
  *
  * Copyright 2003-2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -23,7 +23,7 @@
 #include <assert.h>
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.96 2005/12/28 22:26:47 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.97 2005/12/29 14:03:25 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -490,9 +490,23 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 #define LDSO_CACHE_MAGIC_LEN (sizeof LDSO_CACHE_MAGIC -1)
 #define LDSO_CACHE_VER "1.7.0"
 #define LDSO_CACHE_VER_LEN (sizeof LDSO_CACHE_VER -1)
+#define FLAG_ANY            -1
+#define FLAG_TYPE_MASK      0x00ff
+#define FLAG_LIBC4          0x0000
+#define FLAG_ELF            0x0001
+#define FLAG_ELF_LIBC5      0x0002
+#define FLAG_ELF_LIBC6      0x0003
+#define FLAG_REQUIRED_MASK  0xff00
+#define FLAG_SPARC_LIB64    0x0100
+#define FLAG_IA64_LIB64     0x0200
+#define FLAG_X8664_LIB64    0x0300
+#define FLAG_S390_LIB64     0x0400
+#define FLAG_POWERPC_LIB64  0x0500
+#define FLAG_MIPS64_LIBN32  0x0600
+#define FLAG_MIPS64_LIBN64  0x0700
 
-static char *lookup_cache_lib(char *);
-static char *lookup_cache_lib(char *fname)
+static char *lookup_cache_lib(elfobj *, char *);
+static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	int fd = 0;
 	char *strs;
@@ -505,33 +519,33 @@ static char *lookup_cache_lib(char *fname)
 		char version[LDSO_CACHE_VER_LEN];
 		int nlibs;
 	} header_t;
+	header_t *header;
 
 	typedef struct {
 		int flags;
 		int sooffset;
 		int liboffset;
 	} libentry_t;
-
-	header_t *header;
 	libentry_t *libent;
 
 	if (fname == NULL)
 		return NULL;
 
 	if (ldcache == 0) {
-		if (stat(cachefile, &st) || (fd = open(cachefile, O_RDONLY)) < 0)
+		if (stat(cachefile, &st) || (fd = open(cachefile, O_RDONLY)) == -1)
 			return NULL;
-		/* save the cache size for latter unmapping */
-		ldcache_size = st.st_size;
 
-		if ((ldcache = mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == (caddr_t) -1)
-			return NULL;
+		/* cache these values so we only map/unmap the cache file once */
+		ldcache_size = st.st_size;
+		ldcache = mmap(0, ldcache_size, PROT_READ, MAP_SHARED, fd, 0);
 
 		close(fd);
 
-		if (memcmp(((header_t *) ldcache)->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN))
+		if (ldcache == (caddr_t)-1)
 			return NULL;
 
+		if (memcmp(((header_t *) ldcache)->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN))
+			return NULL;
 		if (memcmp (((header_t *) ldcache)->version, LDSO_CACHE_VER, LDSO_CACHE_VER_LEN))
 			return NULL;
 	}
@@ -541,6 +555,14 @@ static char *lookup_cache_lib(char *fname)
 	strs = (char *) &libent[header->nlibs];
 
 	for (fd = 0; fd < header->nlibs; fd++) {
+		/* this should be more fine grained, but for now we assume that
+		 * diff arches will not be cached together.  and we ignore the
+		 * the different multilib mips cases. */
+		if (elf->elf_class == ELFCLASS64 && !(libent[fd].flags & FLAG_REQUIRED_MASK))
+			continue;
+		if (elf->elf_class == ELFCLASS32 && (libent[fd].flags & FLAG_REQUIRED_MASK))
+			continue;
+
 		if (strcmp(fname, strs + libent[fd].sooffset) != 0)
 			continue;
 		strncpy(buf, strs + libent[fd].liboffset, sizeof(buf));
@@ -585,7 +607,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
 							if (printcache) \
-								if ((p = lookup_cache_lib(needed)) != NULL) \
+								if ((p = lookup_cache_lib(elf, needed)) != NULL) \
 									needed = p; \
 							xstrcat(ret, needed, ret_len); \
 						} \
