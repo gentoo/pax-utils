@@ -7,7 +7,7 @@ used on any distro.
 
 Usage: scanelf [options] <dir1/file1> [dir2 dirN fileN ...]
 
-Options: -[plRmyxetrnibs:N:TaqvF:f:o:BhV]
+Options: -[plRmyxetrnLibSs:gN:TaqvF:f:o:BhV]
   -p, --path         * Scan all directories in PATH environment
   -l, --ldpath       * Scan all directories in /etc/ld.so.conf
   -R, --recursive    * Scan directories recursively
@@ -19,12 +19,15 @@ Options: -[plRmyxetrnibs:N:TaqvF:f:o:BhV]
   -t, --textrel      * Print TEXTREL information
   -r, --rpath        * Print RPATH information
   -n, --needed       * Print NEEDED information
+  -L, --ldcache      * Resolve NEEDED information (use with -n)
   -i, --interp       * Print INTERP information
   -b, --bind         * Print BIND information
+  -S, --soname       * Print SONAME information
   -s, --symbol <arg> * Find a specified symbol
   -N, --lib    <arg> * Find a specified library
+  -g, --gmatch       * Use strncmp to match libraries. (use with -N)
   -T, --textrels     * Locate cause of TEXTREL
-  -a, --all          * Print all scanned info (-x -e -t -r -n -i -b)
+  -a, --all          * Print all scanned info (-x -e -t -r -b)
 
   -q, --quiet        * Only output 'bad' things
   -v, --verbose      * Be verbose (can be specified more than once)
@@ -40,9 +43,9 @@ The format modifiers for the -F option are:
  t TEXTREL  	r RPATH     	n NEEDED
  i INTERP   	b BIND      	s symbol
  N library  	o Type      	T TEXTRELs
+ S SONAME
  p filename (with search path removed)
- f base filename
-
+ f filename (short name/basename)
 Prefix each modifier with '%' (verbose) or '#' (silent)
 
 == pspax ==
