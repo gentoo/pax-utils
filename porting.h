@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.6 2005/12/29 12:40:51 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.7 2005/12/29 12:56:41 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,8 +15,8 @@
 #include <sys/mman.h>
 #include "elf.h"
 #if defined(__linux__)
+# include <endian.h>
 # include <byteswap.h>
-# include <asm/elf.h>
 #elif defined(__FreeBSD__)
 # include <sys/endian.h>
 #endif
@@ -66,10 +66,19 @@
 #endif
 
 #if !defined(ELF_DATA)
-# if !defined(BYTE_ORDER)
-#  error "no idea what sort of byte order this host is"
+# undef __PAX_UTILS_BO
+# if defined(BYTE_ORDER)
+#  define __PAX_UTILS_BO BYTE_ORDER
+# elif defined(__BYTE_ORDER)
+#  define __PAX_UTILS_BO __BYTE_ORDER
+# elif defined(WORDS_LITTLENDIAN)
+#  define __PAX_UTILS_BO LITTLE_ENDIAN
+# elif defined(WORDS_BIGENDIAN)
+#  define __PAX_UTILS_BO BIG_ENDIAN
+# else
+#  error "no idea what the native byte order is"
 # endif
-# if BYTE_ORDER == LITTLE_ENDIAN
+# if __PAX_UTILS_BO == LITTLE_ENDIAN
 #  define ELF_DATA ELFDATA2LSB
 # else
 #  define ELF_DATA ELFDATA2MSB
