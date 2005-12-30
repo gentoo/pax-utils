@@ -1,7 +1,7 @@
 /*
  * Copyright 2005 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.7 2005/12/29 12:56:41 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.8 2005/12/30 22:39:40 vapier Exp $
  *
  * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
@@ -21,8 +21,8 @@
 # include <sys/endian.h>
 #endif
 
-#if defined(__APPLE__) || defined(__NetBSD__)
-# define SET_STDOUT(fp) err("Darwin/NetBSD has stupid stdout handling")
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+# define SET_STDOUT(fp) err("Darwin/NetBSD/OpenBSD has stupid stdout handling")
 #else
 # define SET_STDOUT(fp) stdout = fp
 #endif
