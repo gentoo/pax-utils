@@ -1,27 +1,15 @@
 /*
- * Copyright 2005 Gentoo Foundation
+ * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.15 2005/12/09 01:42:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.16 2006/01/05 03:12:07 vapier Exp $
  *
- * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <getopt.h>
-#include <assert.h>
-#include <ctype.h>
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.15 2005/12/09 01:42:19 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.16 2006/01/05 03:12:07 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */

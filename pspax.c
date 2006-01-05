@@ -13,25 +13,6 @@
  *
  */
 
-#include <sys/types.h>
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <libgen.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <ctype.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <pwd.h>
-
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <getopt.h>
-
 #include "paxinc.h"
 
 #ifdef WANT_SYSCAP
@@ -40,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.23 2005/10/13 01:53:55 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.24 2006/01/05 03:12:07 vapier Exp $";
 #define argv0 "pspax"
 
 

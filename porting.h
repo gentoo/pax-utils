@@ -1,16 +1,32 @@
 /*
- * Copyright 2005 Gentoo Foundation
+ * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.8 2005/12/30 22:39:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.9 2006/01/05 03:12:07 vapier Exp $
  *
- * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
  *
  * Make sure all of the common elf stuff is setup as we expect
  */
 
 #ifndef _PORTING_H
 #define _PORTING_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <getopt.h>
+#include <libgen.h>
+#include <ctype.h>
+#include <pwd.h>
 
 #include <sys/mman.h>
 #include "elf.h"

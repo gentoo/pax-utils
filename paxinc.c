@@ -1,18 +1,14 @@
 /*
- * Copyright 2003-2005 Gentoo Foundation
+ * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.1 2005/10/13 01:53:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.2 2006/01/05 03:12:07 vapier Exp $
  *
- * Copyright 2005 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-#include <stdio.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+/* stick common symbols here that are needed by paxinc.h */
+
 #include "paxinc.h"
 
 #define argv0 "paxinc"
