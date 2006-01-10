@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.31 2006/01/05 03:12:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.32 2006/01/10 01:32:32 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -446,40 +446,33 @@ char *pax_short_hf_flags(unsigned long flags)
 	return buffer;
 }
 
-/* the display logic is:
+/* PT_PAX_FLAGS are tristate ...
+ * the display logic is:
  * lower case: explicitly disabled
  * upper case: explicitly enabled
- * - : default */
+ *      -    : default */
 char *pax_short_pf_flags(unsigned long flags)
 {
 	static char buffer[7];
 
-	/* PT_PAX_FLAGS are tristate */
-	buffer[0] = (flags & PF_PAGEEXEC ? 'P' : '-');
-	buffer[0] = (flags & PF_NOPAGEEXEC ? 'p' : buffer[0]);
+#define PAX_STATE(pf_on, pf_off, disp_on, disp_off) \
+	(flags & pf_on ? disp_on : (flags & pf_off ? disp_off : '-'))
 
-	buffer[1] = (flags & PF_SEGMEXEC ? 'S' : '-');
-	buffer[1] = (flags & PF_NOSEGMEXEC ? 's' : buffer[1]);
-
-	buffer[2] = (flags & PF_MPROTECT ? 'M' : '-');
-	buffer[2] = (flags & PF_NOMPROTECT ? 'm' : buffer[2]);
-
-	buffer[3] = (flags & PF_RANDEXEC ? 'X' : '-');
-	buffer[3] = (flags & PF_NORANDEXEC ? 'x' : buffer[3]);
-
-	buffer[4] = (flags & PF_EMUTRAMP ? 'E' : '-');
-	buffer[4] = (flags & PF_NOEMUTRAMP ? 'e' : buffer[4]);
-
-	buffer[5] = (flags & PF_RANDMMAP ? 'R' : '-');
-	buffer[5] = (flags & PF_NORANDMMAP ? 'r' : buffer[5]);
-
+	buffer[0] = PAX_STATE(PF_PAGEEXEC, PF_NOPAGEEXEC, 'P', 'p');
+	buffer[1] = PAX_STATE(PF_SEGMEXEC, PF_NOSEGMEXEC, 'S', 's');
+	buffer[2] = PAX_STATE(PF_MPROTECT, PF_NOMPROTECT, 'M', 'm');
+	buffer[3] = PAX_STATE(PF_RANDEXEC, PF_NORANDEXEC, 'X', 'x');
+	buffer[4] = PAX_STATE(PF_EMUTRAMP, PF_NOEMUTRAMP, 'E', 'e');
+	buffer[5] = PAX_STATE(PF_RANDMMAP, PF_NORANDMMAP, 'R', 'r');
 	buffer[6] = 0;
 
-  
-	if (((flags & PF_PAGEEXEC) && (flags & PF_NOPAGEEXEC)) || ((flags & PF_SEGMEXEC) && (flags & PF_NOSEGMEXEC))
-		|| ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)) || ((flags & PF_RANDEXEC) && (flags & PF_NORANDEXEC))
-		|| ((flags & PF_EMUTRAMP) && (flags &  PF_NOEMUTRAMP)) || ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)))
-		warn("inconsistent state detected. flags=%lu\n", flags);
+	if (((flags & PF_PAGEEXEC) && (flags & PF_NOPAGEEXEC)) || \
+	    ((flags & PF_SEGMEXEC) && (flags & PF_NOSEGMEXEC)) || \
+	    ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)) || \
+	    ((flags & PF_RANDEXEC) && (flags & PF_NORANDEXEC)) || \
+	    ((flags & PF_EMUTRAMP) && (flags & PF_NOEMUTRAMP)) || \
+	    ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)))
+		warn("inconsistent state detected.  flags=%lX\n", flags);
 
 	return buffer;
 }
