@@ -21,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.24 2006/01/05 03:12:07 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.25 2006/01/10 01:35:06 vapier Exp $";
 #define argv0 "pspax"
 
 
@@ -53,7 +53,8 @@ static char *get_proc_name(pid_t pid)
 	return (str+1);
 }
 
-static int get_proc_maps(pid_t pid) {
+static int get_proc_maps(pid_t pid)
+{
 	static char str[_POSIX_PATH_MAX];
 	FILE *fp;
 
@@ -89,7 +90,8 @@ static int get_proc_maps(pid_t pid) {
 	return 0;
 }
 
-static int print_executable_mappings(pid_t pid) {
+static int print_executable_mappings(pid_t pid)
+{
 	static char str[_POSIX_PATH_MAX];
 	FILE *fp;
 
@@ -206,12 +208,13 @@ static const char *get_proc_type(pid_t pid)
 static char *scanelf_file_phdr(elfobj *elf)
 {
 	static char ret[8];
-	unsigned long i, off;
-	unsigned char multi_stack, multi_load;
+	unsigned long i, off, multi_stack, multi_load;
+	int max_pt_load;
 
 	memcpy(ret, "--- ---\0", 8);
 
 	multi_stack = multi_load = 0;
+	max_pt_load = elf_max_pt_load(elf);
 
 	if (elf->phdr) {
 	uint32_t flags;
@@ -224,7 +227,7 @@ static char *scanelf_file_phdr(elfobj *elf)
 			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
 			off = 0; \
 		} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-			if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
+			if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 			off = 4; \
 		} else \
 			continue; \

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.98 2006/01/05 03:12:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.99 2006/01/10 01:35:06 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.98 2006/01/05 03:12:07 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.99 2006/01/10 01:35:06 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -138,8 +138,8 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 {
 	static char ret[12];
 	char *found;
-	unsigned long i, shown;
-	unsigned char multi_stack, multi_relro, multi_load;
+	unsigned long i, shown, multi_stack, multi_relro, multi_load;
+	int max_pt_load;
 
 	if (!show_phdr) return NULL;
 
@@ -147,6 +147,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 
 	shown = 0;
 	multi_stack = multi_relro = multi_load = 0;
+	max_pt_load = elf_max_pt_load(elf);
 
 #define SHOW_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -167,7 +168,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				offset = 4; \
 				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-				if (multi_load++ > 2) warnf("%s: more than 2 PT_LOAD's !?", elf->filename); \
+				if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 				found = found_load; \
 				offset = 8; \
 				check_flags = PF_W|PF_X; \
