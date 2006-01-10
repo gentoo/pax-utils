@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.99 2006/01/10 01:35:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.100 2006/01/10 01:38:17 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.99 2006/01/10 01:35:06 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.100 2006/01/10 01:38:17 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -358,13 +358,15 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 }
 
 static void rpath_security_checks(elfobj *, char *);
-static void rpath_security_checks(elfobj *elf, char *item) {
+static void rpath_security_checks(elfobj *elf, char *item)
+{
 	struct stat st;
 	switch (*item) {
 		case '/': break;
 		case '.':
 			warnf("Security problem with relative RPATH '%s' in %s", item, elf->filename);
 			break;
+		case ':':
 		case '\0':
 			warnf("Security problem NULL RPATH in %s", elf->filename);
 			break;
@@ -439,8 +441,8 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 									break; \
 								} \
 							} \
-							if (!*r || !ldpaths[s] || !end) \
-								start = NULL; \
+							if (!*r || !end) \
+								break; \
 							else \
 								start = start + len + 1; \
 						} \
@@ -1218,8 +1220,8 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
 		case 'f':
-			if (from_file) err("Don't specify -f twice");
-			from_file = xstrdup(optarg);
+			if (from_file) warn("You prob don't want to specify -f twice");
+			from_file = optarg;
 			break;
 		case 'o': {
 			FILE *fp = NULL;
@@ -1337,7 +1339,6 @@ static void parseargs(int argc, char *argv[])
 	if (scan_envpath) scanelf_envpath();
 	if (from_file) {
 		scanelf_from_file(from_file);
-		free(from_file);
 		from_file = *argv;
 	}
 	if (optind == argc && !scan_ldpath && !scan_envpath && !from_file)
