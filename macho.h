@@ -7,8 +7,6 @@
 #ifndef _MACHO_LOADER_H_
 #define _MACHO_LOADER_H_
 
-#include <stdint.h>
-
 typedef uint32_t cpu_type_t;
 typedef uint32_t cpu_subtype_t;
 

@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.9 2006/01/05 03:12:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.10 2006/01/10 01:31:17 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -38,7 +39,7 @@
 #endif
 
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
-# define SET_STDOUT(fp) err("Darwin/NetBSD/OpenBSD has stupid stdout handling")
+# define SET_STDOUT(fp) err("Darwin/NetBSD/OpenBSD have stupid stdout handling")
 #else
 # define SET_STDOUT(fp) stdout = fp
 #endif
