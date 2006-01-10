@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.3 2006/01/05 03:12:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.4 2006/01/10 01:40:15 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -37,12 +37,20 @@ extern char do_reverse_endian;
 		} else if (sizeof(X) == 2) { __res = bswap_16((X)); \
 		} else if (sizeof(X) == 4) { __res = bswap_32((X)); \
 		} else if (sizeof(X) == 8) { __res = bswap_64((X)); \
-		} else { \
-			fprintf(stderr, "EGET failed ;(\n"); \
-			exit(EXIT_FAILURE); \
-		} \
+		} else { errf("EGET failed ;( (sizeof(X) == %i)", (int)sizeof(X)); } \
 		__res; \
 	}))
+
+/* Set a value 'Y' to 'X', compensating for endianness. */
+#define ESET(Y,X) \
+	do { \
+		if (!do_reverse_endian) { Y = (X); \
+		} else if (sizeof(Y) == 1) { Y = (X); \
+		} else if (sizeof(Y) == 2) { Y = bswap_16((uint16_t)(X)); \
+		} else if (sizeof(Y) == 4) { Y = bswap_32((uint32_t)(X)); \
+		} else if (sizeof(Y) == 8) { Y = bswap_64((uint64_t)(X)); \
+		} else { errf("ESET failed ;( (size(Y) == %i)", (int)sizeof(Y)); } \
+	} while (0)
 
 /* helper functions for showing errors */
 #define color 1

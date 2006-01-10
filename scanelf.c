@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.100 2006/01/10 01:38:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.101 2006/01/10 01:40:15 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.100 2006/01/10 01:38:17 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.101 2006/01/10 01:40:15 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -53,6 +53,7 @@ static char *find_sym = NULL, *versioned_symname = NULL;
 static char *find_lib = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
+static char fix_elf = 0;
 static char gmatch = 0;
 static char printcache = 0;
 
@@ -177,6 +178,11 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 			flags = EGET(phdr[i].p_flags); \
 			if (be_quiet && ((flags & check_flags) != check_flags)) \
 				continue; \
+			if (fix_elf && ((flags & PF_X) != flags)) { \
+				ESET(phdr[i].p_flags, flags & (PF_X ^ (size_t)-1)); \
+				ret[3] = ret[7] = '!'; \
+				flags = EGET(phdr[i].p_flags); \
+			} \
 			memcpy(ret+offset, gnu_short_stack_flags(flags), 3); \
 			*found = 1; \
 			++shown; \
@@ -447,7 +453,42 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 								start = start + len + 1; \
 						} \
 					} \
-					if (*r) *found_rpath = 1; \
+					if (*r) { \
+						*found_rpath = 1; \
+						if (fix_elf > 2 || *r == '\0') { \
+							/* just nuke it */ \
+							nuke_it##B: \
+							ESET(dyn->d_tag, DT_DEBUG); \
+						} else if (fix_elf) { \
+							/* try to clean "bad" paths */ \
+							size_t len, tmpdir_len; \
+							char *start, *end; \
+							const char *tmpdir; \
+							start = *r; \
+							tmpdir = (getenv("TMPDIR") ? : "."); \
+							tmpdir_len = strlen(tmpdir); \
+							while (1) { \
+								end = strchr(start, ':'); \
+								if (start == end) { \
+									eat_this_path##B: \
+									len = strlen(end); \
+									memmove(start, end+1, len); \
+									start[len-1] = '\0'; \
+									end = start - 1; \
+								} else if (tmpdir && !strncmp(start, tmpdir, tmpdir_len)) { \
+									if (!end) { \
+										if (start == *r) \
+											goto nuke_it##B; \
+										*--start = '\0'; \
+									} else \
+										goto eat_this_path##B; \
+								} \
+								if (!end) \
+									break; \
+								start = end + 1; \
+							} \
+						} \
+					} \
 				} \
 				++dyn; \
 			} \
@@ -824,7 +865,7 @@ static void scanelf_file(const char *filename)
 	found_sym = found_lib = found_file = found_textrels = 0;
 
 	/* verify this is real ELF */
-	if ((elf = readelf(filename)) == NULL) {
+	if ((elf = _readelf(filename, !fix_elf)) == NULL) {
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
 		return;
 	}
@@ -1107,7 +1148,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyxetrnLibSs:gN:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyXxetrnLibSs:gN:TaqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1115,6 +1156,7 @@ static struct option const long_opts[] = {
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
 	{"symlink",   no_argument, NULL, 'y'},
+	{"fix",       no_argument, NULL, 'X'},
 	{"pax",       no_argument, NULL, 'x'},
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
@@ -1145,7 +1187,8 @@ static const char *opts_help[] = {
 	"Scan all directories in /etc/ld.so.conf",
 	"Scan directories recursively",
 	"Don't recursively cross mount points",
-	"Don't scan symlinks\n",
+	"Don't scan symlinks",
+	"Try and 'fix' bad things (use with -r/-e)\n",
 	"Print PaX markings",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Print TEXTREL information",
@@ -1258,6 +1301,7 @@ static void parseargs(int argc, char *argv[])
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
 		case 'm': dir_crossmount = 0; break;
+		case 'X': ++fix_elf; break;
 		case 'x': show_pax = 1; break;
 		case 'e': show_phdr = 1; break;
 		case 't': show_textrel = 1; break;

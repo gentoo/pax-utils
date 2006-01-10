@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.33 2006/01/10 01:35:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.34 2006/01/10 01:40:15 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -326,7 +326,7 @@ const char *get_elfstttype(int type)
 	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
 	 (buff[EI_VERSION] == EV_CURRENT))
-elfobj *readelf(const char *filename)
+elfobj *_readelf(const char *filename, int read_only)
 {
 	struct stat st;
 	int fd;
@@ -335,7 +335,7 @@ elfobj *readelf(const char *filename)
 	if (stat(filename, &st) == -1)
 		return NULL;
 
-	if ((fd = open(filename, O_RDONLY)) == -1)
+	if ((fd = open(filename, (read_only ? O_RDONLY : O_RDWR))) == -1)
 		return NULL;
 
 	/* make sure we have enough bytes to scan e_ident */
@@ -349,7 +349,7 @@ elfobj *readelf(const char *filename)
 
 	elf->fd = fd;
 	elf->len = st.st_size;
-	elf->data = (char*)mmap(0, elf->len, PROT_READ, MAP_PRIVATE, fd, 0);
+	elf->data = (char*)mmap(0, elf->len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
 	if (elf->data == (char*)MAP_FAILED) {
 		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)elf->len);
 		goto free_elf_and_return;
@@ -422,6 +422,7 @@ close_fd_and_return:
 	close(fd);
 	return NULL;
 }
+elfobj *readelf(const char *filename) { return _readelf(filename, 1); }
 
 /* undo the readelf() stuff */
 void unreadelf(elfobj *elf)
