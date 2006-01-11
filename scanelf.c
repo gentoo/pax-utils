@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.102 2006/01/11 01:12:12 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.103 2006/01/11 23:46:21 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.102 2006/01/11 01:12:12 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.103 2006/01/11 23:46:21 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -429,6 +429,9 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 				if (offset < (Elf ## B ## _Off)elf->len) { \
 					if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
 					*r = (char*)(elf->data + offset); \
+					/* cache the length in case we need to nuke this section later on */ \
+					if (fix_elf) \
+						offset = strlen(*r); \
 					/* If quiet, don't output paths in ld.so.conf */ \
 					if (be_quiet) { \
 						size_t len; \
@@ -461,8 +464,10 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 						if (fix_elf > 2 || **r == '\0') { \
 							/* just nuke it */ \
 							nuke_it##B: \
+							memset(*r, 0x00, offset); \
 							*r = NULL; \
 							ESET(dyn->d_tag, DT_DEBUG); \
+							ESET(dyn->d_un.d_ptr, 0); \
 						} else if (fix_elf) { \
 							/* try to clean "bad" paths */ \
 							size_t len, tmpdir_len; \
