@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.101 2006/01/10 01:40:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.102 2006/01/11 01:12:12 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.101 2006/01/10 01:40:15 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.102 2006/01/11 01:12:12 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -55,7 +55,7 @@ static char *out_format = NULL;
 static char *search_path = NULL;
 static char fix_elf = 0;
 static char gmatch = 0;
-static char printcache = 0;
+static char use_ldcache = 0;
 
 
 caddr_t ldcache = 0;
@@ -363,27 +363,27 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	return NULL;
 }
 
-static void rpath_security_checks(elfobj *, char *);
-static void rpath_security_checks(elfobj *elf, char *item)
+static void rpath_security_checks(elfobj *, char *, const char *);
+static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 {
 	struct stat st;
 	switch (*item) {
 		case '/': break;
 		case '.':
-			warnf("Security problem with relative RPATH '%s' in %s", item, elf->filename);
+			warnf("Security problem with relative %s '%s' in %s", dt_type, item, elf->filename);
 			break;
 		case ':':
 		case '\0':
-			warnf("Security problem NULL RPATH in %s", elf->filename);
+			warnf("Security problem NULL %s in %s", dt_type, elf->filename);
 			break;
 		case '$':
 			if (fstat(elf->fd, &st) != -1)
 				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
-					warnf("Security problem with RPATH='%s' in %s with mode set of %o", 
-						item, elf->filename, st.st_mode & 07777);
+					warnf("Security problem with %s='%s' in %s with mode set of %o", 
+					      dt_type, item, elf->filename, st.st_mode & 07777);
 			break;
 		default:
-			warnf("Maybe? sec problem with RPATH='%s' in %s", item, elf->filename);
+			warnf("Maybe? sec problem with %s='%s' in %s", dt_type, item, elf->filename);
 			break;
 	}
 }
@@ -438,15 +438,19 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 						start = *r; \
 						/* scan each path in : delimited list */ \
 						while (start) { \
-							rpath_security_checks(elf, start); \
+							rpath_security_checks(elf, start, get_elfdtype(word)); \
 							end = strchr(start, ':'); \
 							len = (end ? abs(end - start) : strlen(start)); \
-							for (s = 0; ldpaths[s]; ++s) { \
-								if (!strncmp(ldpaths[s], start, len) && !ldpaths[s][len]) { \
-									*r = (end ? end + 1 : NULL); \
-									break; \
-								} \
-							} \
+							if (use_ldcache) \
+								for (s = 0; ldpaths[s]; ++s) \
+									if (!strncmp(ldpaths[s], start, len) && !ldpaths[s][len]) { \
+										*r = end; \
+										/* corner case ... if RPATH reads "/usr/lib:", we want \
+										 * to show ':' rather than '' */ \
+										if (end && end[1] != '\0') \
+											(*r)++; \
+										break; \
+									} \
 							if (!*r || !end) \
 								break; \
 							else \
@@ -454,10 +458,10 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 						} \
 					} \
 					if (*r) { \
-						*found_rpath = 1; \
-						if (fix_elf > 2 || *r == '\0') { \
+						if (fix_elf > 2 || **r == '\0') { \
 							/* just nuke it */ \
 							nuke_it##B: \
+							*r = NULL; \
 							ESET(dyn->d_tag, DT_DEBUG); \
 						} else if (fix_elf) { \
 							/* try to clean "bad" paths */ \
@@ -487,7 +491,11 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 									break; \
 								start = end + 1; \
 							} \
+							if (**r == '\0') \
+								goto nuke_it##B; \
 						} \
+						if (*r) \
+							*found_rpath = 1; \
 					} \
 				} \
 				++dyn; \
@@ -636,7 +644,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 					if (op == 0) { \
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
-							if (printcache) \
+							if (use_ldcache) \
 								if ((p = lookup_cache_lib(elf, needed)) != NULL) \
 									needed = p; \
 							xstrcat(ret, needed, ret_len); \
@@ -1194,7 +1202,7 @@ static const char *opts_help[] = {
 	"Print TEXTREL information",
 	"Print RPATH information",
 	"Print NEEDED information",
-	"Resolve NEEDED information (use with -n)",
+	"Utilize ld.so.cache information (use with -r/-n)",
 	"Print INTERP information",
 	"Print BIND information",
 	"Print SONAME information",
@@ -1294,7 +1302,7 @@ static void parseargs(int argc, char *argv[])
 		}
 
 		case 'g': gmatch = 1; /* break; any reason we dont breal; here ? */
-		case 'L': printcache = 1; break;
+		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
@@ -1377,7 +1385,7 @@ static void parseargs(int argc, char *argv[])
 	if (be_verbose > 2) printf("Format: %s\n", out_format);
 
 	/* now lets actually do the scanning */
-	if (scan_ldpath || (show_rpath && be_quiet))
+	if (scan_ldpath || use_ldcache)
 		load_ld_so_conf();
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
