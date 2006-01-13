@@ -21,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.25 2006/01/10 01:35:06 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.26 2006/01/13 11:31:55 vapier Exp $";
 #define argv0 "pspax"
 
 
@@ -35,7 +35,7 @@ static char show_phdr = 0;
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
-	static char str[_POSIX_PATH_MAX];
+	static char str[__PAX_UTILS_PATH_MAX];
 	memset(&str, 0, sizeof(str));
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
@@ -55,7 +55,7 @@ static char *get_proc_name(pid_t pid)
 
 static int get_proc_maps(pid_t pid)
 {
-	static char str[_POSIX_PATH_MAX];
+	static char str[__PAX_UTILS_PATH_MAX];
 	FILE *fp;
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
@@ -92,7 +92,7 @@ static int get_proc_maps(pid_t pid)
 
 static int print_executable_mappings(pid_t pid)
 {
-	static char str[_POSIX_PATH_MAX];
+	static char str[__PAX_UTILS_PATH_MAX];
 	FILE *fp;
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
@@ -129,7 +129,7 @@ static struct passwd *get_proc_uid(pid_t pid)
 {
 	struct stat st;
 	struct passwd *pwd;
-	static char str[_POSIX_PATH_MAX];
+	static char str[__PAX_UTILS_PATH_MAX];
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
 
@@ -151,7 +151,7 @@ static char *get_proc_status(pid_t pid, const char *name)
 {
 	FILE *fp;
 	size_t len;
-	static char str[_POSIX_PATH_MAX];
+	static char str[__PAX_UTILS_PATH_MAX];
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/status", pid);
 	if ((fp = fopen(str, "r")) == NULL)

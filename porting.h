@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.10 2006/01/10 01:31:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.11 2006/01/13 11:31:55 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -80,6 +80,14 @@
 			 (((x) & 0x00000000000000ff) << 56))
 #  endif
 # endif
+#endif
+
+#if !defined(_POSIX_PATH_MAX) && !defined(PATH_MAX)
+# define __PAX_UTILS_PATH_MAX 8192
+#elif _POSIX_PATH_MAX > PATH_MAX
+# define __PAX_UTILS_PATH_MAX _POSIX_PATH_MAX
+#else
+# define __PAX_UTILS_PATH_MAX PATH_MAX
 #endif
 
 #if !defined(ELF_DATA)

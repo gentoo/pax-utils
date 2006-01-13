@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.103 2006/01/11 23:46:21 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.104 2006/01/13 11:31:55 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.103 2006/01/11 23:46:21 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.104 2006/01/13 11:31:55 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -553,7 +553,7 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	int fd = 0;
 	char *strs;
-	static char buf[_POSIX_PATH_MAX] = "";
+	static char buf[__PAX_UTILS_PATH_MAX] = "";
 	const char *cachefile = "/etc/ld.so.cache";
 	struct stat st;
 
@@ -879,6 +879,8 @@ static void scanelf_file(const char *filename)
 
 	/* verify this is real ELF */
 	if ((elf = _readelf(filename, !fix_elf)) == NULL) {
+		/* if it isn't an ELF, maybe it's an .a archive */
+		archive_handle *ar = ar_open(filename);
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
 		return;
 	}
@@ -1021,7 +1023,7 @@ static void scanelf_dir(const char *path)
 	register DIR *dir;
 	register struct dirent *dentry;
 	struct stat st_top, st;
-	char buf[_POSIX_PATH_MAX];
+	char buf[__PAX_UTILS_PATH_MAX];
 	size_t pathlen = 0, len = 0;
 
 	/* make sure path exists */
@@ -1070,14 +1072,14 @@ static int scanelf_from_file(char *filename)
 {
 	FILE *fp = NULL;
 	char *p;
-	char path[_POSIX_PATH_MAX];
+	char path[__PAX_UTILS_PATH_MAX];
 
 	if (((strcmp(filename, "-")) == 0) && (ttyname(0) == NULL))
 		fp = stdin;
 	else if ((fp = fopen(filename, "r")) == NULL)
 		return 1;
 
-	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
+	while ((fgets(path, __PAX_UTILS_PATH_MAX, fp)) != NULL) {
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
 		search_path = path;
@@ -1092,13 +1094,13 @@ static void load_ld_so_conf()
 {
 	FILE *fp = NULL;
 	char *p;
-	char path[_POSIX_PATH_MAX];
+	char path[__PAX_UTILS_PATH_MAX];
 	int i = 0;
 
 	if ((fp = fopen("/etc/ld.so.conf", "r")) == NULL)
 		return;
 
-	while ((fgets(path, _POSIX_PATH_MAX, fp)) != NULL) {
+	while ((fgets(path, __PAX_UTILS_PATH_MAX, fp)) != NULL) {
 		if (*path != '/')
 			continue;
 
