@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.4 2006/01/10 01:40:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.5 2006/01/13 12:12:52 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -27,6 +27,39 @@
 #include "paxmacho.h"
 
 extern char do_reverse_endian;
+
+#ifdef IN_paxinc
+typedef struct {
+	int fd;
+	const char *filename;
+} archive_handle;
+#else
+typedef void archive_handle;
+#endif
+typedef struct {
+	char name[__PAX_UTILS_PATH_MAX];
+	time_t date;
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
+	off_t size;
+#ifdef IN_paxinc
+	union {
+		char raw[60];
+		struct {
+			char name[16];
+			char date[12];
+			char uid[6];
+			char gid[6];
+			char mode[8];
+			char size[10];
+			char magic[2];
+		} formated;
+	} buf;
+#endif
+} archive_member;
+archive_handle *ar_open(const char *filename);
+archive_member *ar_next(archive_handle *);
 
 /* Get a value 'X', compensating for endianness. */
 #define EGET(X) \

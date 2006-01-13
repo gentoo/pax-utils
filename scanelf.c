@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.104 2006/01/13 11:31:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.105 2006/01/13 12:12:52 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.104 2006/01/13 11:31:55 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.105 2006/01/13 12:12:52 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -17,6 +17,8 @@ static const char *rcsid = "$Id: scanelf.c,v 1.104 2006/01/13 11:31:55 vapier Ex
 
 
 /* prototypes */
+static int scanelf_elf(const char *filename);
+static int scanelf_archive(const char *filename);
 static void scanelf_file(const char *filename);
 static void scanelf_dir(const char *path);
 static void scanelf_ldpath();
@@ -34,6 +36,7 @@ static char *ldpaths[256];
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
 static char scan_symlink = 1;
+static char scan_archives = 0;
 static char dir_recurse = 0;
 static char dir_crossmount = 1;
 static char show_pax = 0;
@@ -847,31 +850,15 @@ break_out:
 }
 /* scan an elf file and show all the fun stuff */
 #define prints(str) write(fileno(stdout), str, strlen(str))
-static void scanelf_file(const char *filename)
+static int scanelf_elf(const char *filename)
 {
 	unsigned long i;
 	char found_pax, found_phdr, found_relro, found_load, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_bind, found_soname, 
 	     found_sym, found_lib, found_file, found_textrels;
 	elfobj *elf;
-	struct stat st;
 	static char *out_buffer = NULL;
 	static size_t out_len;
-
-	/* make sure 'filename' exists */
-	if (lstat(filename, &st) == -1) {
-		if (be_verbose > 2) printf("%s: does not exist\n", filename);
-		return;
-	}
-	/* always handle regular files and handle symlinked files if no -y */
-	if (S_ISLNK(st.st_mode)) {
-		if (!scan_symlink) return;
-		stat(filename, &st);
-	}
-	if (!S_ISREG(st.st_mode)) {
-		if (be_verbose > 2) printf("%s: skipping non-file\n", filename);
-		return;
-	}
 
 	found_pax = found_phdr = found_relro = found_load = found_textrel = \
 	found_rpath = found_needed = found_interp = found_bind = found_soname = \
@@ -879,10 +866,8 @@ static void scanelf_file(const char *filename)
 
 	/* verify this is real ELF */
 	if ((elf = _readelf(filename, !fix_elf)) == NULL) {
-		/* if it isn't an ELF, maybe it's an .a archive */
-		archive_handle *ar = ar_open(filename);
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
-		return;
+		return 1;
 	}
 
 	if (be_verbose > 1)
@@ -1015,6 +1000,44 @@ static void scanelf_file(const char *filename)
 	}
 
 	unreadelf(elf);
+
+	return 0;
+}
+
+/* scan an archive of elfs */
+static int scanelf_archive(const char *filename)
+{
+	archive_handle *ar = ar_open(filename);
+	archive_member *m;
+	while ((m=ar_next(ar)) != NULL)
+		printf("%o %i:%i %s\n", m->mode, m->uid, m->gid, m->name);
+	return 0;
+}
+
+/* scan a file which may be an elf or an archive or some other magical beast */
+static void scanelf_file(const char *filename)
+{
+	struct stat st;
+
+	/* make sure 'filename' exists */
+	if (lstat(filename, &st) == -1) {
+		if (be_verbose > 2) printf("%s: does not exist\n", filename);
+		return;
+	}
+
+	/* always handle regular files and handle symlinked files if no -y */
+	if (S_ISLNK(st.st_mode)) {
+		if (!scan_symlink) return;
+		stat(filename, &st);
+	}
+	if (!S_ISREG(st.st_mode)) {
+		if (be_verbose > 2) printf("%s: skipping non-file\n", filename);
+		return;
+	}
+
+	if (scanelf_elf(filename) == 1 && scan_archives)
+		/* if it isn't an ELF, maybe it's an .a archive */
+		scanelf_archive(filename);
 }
 
 /* scan a directory for ET_EXEC files and print when we find one */
@@ -1163,7 +1186,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyXxetrnLibSs:gN:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyAXxetrnLibSs:gN:TaqvF:f:o:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1171,13 +1194,14 @@ static struct option const long_opts[] = {
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
 	{"symlink",   no_argument, NULL, 'y'},
+	{"archives",  no_argument, NULL, 'A'},
+	{"ldcache",   no_argument, NULL, 'L'},
 	{"fix",       no_argument, NULL, 'X'},
 	{"pax",       no_argument, NULL, 'x'},
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
 	{"rpath",     no_argument, NULL, 'r'},
 	{"needed",    no_argument, NULL, 'n'},
-	{"ldcache",   no_argument, NULL, 'L'},
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
 	{"soname",    no_argument, NULL, 'S'},
@@ -1203,13 +1227,14 @@ static const char *opts_help[] = {
 	"Scan directories recursively",
 	"Don't recursively cross mount points",
 	"Don't scan symlinks",
+	"Scan archives (.a files)",
+	"Utilize ld.so.cache information (use with -r/-n)",
 	"Try and 'fix' bad things (use with -r/-e)\n",
 	"Print PaX markings",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Print TEXTREL information",
 	"Print RPATH information",
 	"Print NEEDED information",
-	"Utilize ld.so.cache information (use with -r/-n)",
 	"Print INTERP information",
 	"Print BIND information",
 	"Print SONAME information",
@@ -1234,7 +1259,7 @@ static void usage(int status)
 {
 	unsigned long i;
 	printf("* Scan ELF binaries for stuff\n\n"
-	       "Usage: %s [options] <dir1/file1> [dir2 dirN fileN ...]\n\n", argv0);
+	       "Usage: %s [options] <dir1/file1> [dir2 dirN file2 fileN ...]\n\n", argv0);
 	printf("Options: -[%s]\n", PARSE_FLAGS);
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
@@ -1311,6 +1336,7 @@ static void parseargs(int argc, char *argv[])
 		case 'g': gmatch = 1; /* break; any reason we dont breal; here ? */
 		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
+		case 'A': scan_archives = 1; break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
