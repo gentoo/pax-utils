@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.105 2006/01/13 12:12:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.106 2006/01/14 01:39:55 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.105 2006/01/13 12:12:52 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.106 2006/01/14 01:39:55 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -17,12 +17,13 @@ static const char *rcsid = "$Id: scanelf.c,v 1.105 2006/01/13 12:12:52 vapier Ex
 
 
 /* prototypes */
-static int scanelf_elf(const char *filename);
-static int scanelf_archive(const char *filename);
+static int scanelf_elfobj(elfobj *elf);
+static int scanelf_elf(const char *filename, int fd, size_t len);
+static int scanelf_archive(const char *filename, int fd, size_t len);
 static void scanelf_file(const char *filename);
 static void scanelf_dir(const char *path);
-static void scanelf_ldpath();
-static void scanelf_envpath();
+static void scanelf_ldpath(void);
+static void scanelf_envpath(void);
 static void usage(int status);
 static void parseargs(int argc, char *argv[]);
 static char *xstrdup(const char *s);
@@ -850,13 +851,12 @@ break_out:
 }
 /* scan an elf file and show all the fun stuff */
 #define prints(str) write(fileno(stdout), str, strlen(str))
-static int scanelf_elf(const char *filename)
+static int scanelf_elfobj(elfobj *elf)
 {
 	unsigned long i;
 	char found_pax, found_phdr, found_relro, found_load, found_textrel, 
 	     found_rpath, found_needed, found_interp, found_bind, found_soname, 
 	     found_sym, found_lib, found_file, found_textrels;
-	elfobj *elf;
 	static char *out_buffer = NULL;
 	static size_t out_len;
 
@@ -864,18 +864,12 @@ static int scanelf_elf(const char *filename)
 	found_rpath = found_needed = found_interp = found_bind = found_soname = \
 	found_sym = found_lib = found_file = found_textrels = 0;
 
-	/* verify this is real ELF */
-	if ((elf = _readelf(filename, !fix_elf)) == NULL) {
-		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
-		return 1;
-	}
-
 	if (be_verbose > 1)
-		printf("%s: scanning file {%s,%s}\n", filename,
+		printf("%s: scanning file {%s,%s}\n", elf->filename,
 		       get_elfeitype(EI_CLASS, elf->elf_class),
 		       get_elfeitype(EI_DATA, elf->data[EI_DATA]));
 	else if (be_verbose)
-		printf("%s: scanning file\n", filename);
+		printf("%s: scanning file\n", elf->filename);
 
 	/* init output buffer */
 	if (!out_buffer) {
@@ -939,16 +933,16 @@ static int scanelf_elf(const char *filename)
 		case 'F':
 			found_file = 1;
 			if (be_wewy_wewy_quiet) break;
-			xstrcat(&out_buffer, filename, &out_len);
+			xstrcat(&out_buffer, elf->filename, &out_len);
 			break;
 		case 'p':
 			found_file = 1;
 			if (be_wewy_wewy_quiet) break;
-			tmp = filename;
+			tmp = elf->filename;
 			if (search_path) {
 				ssize_t len_search = strlen(search_path);
-				ssize_t len_file = strlen(filename);
-				if (!strncmp(filename, search_path, len_search) && \
+				ssize_t len_file = strlen(elf->filename);
+				if (!strncmp(elf->filename, search_path, len_search) && \
 				    len_file > len_search)
 					tmp += len_search;
 				if (*tmp == '/' && search_path[len_search-1] == '/') tmp++;
@@ -958,8 +952,8 @@ static int scanelf_elf(const char *filename)
 		case 'f':
 			found_file = 1;
 			if (be_wewy_wewy_quiet) break;
-			tmp = strrchr(filename, '/');
-			tmp = (tmp == NULL ? filename : tmp+1);
+			tmp = strrchr(elf->filename, '/');
+			tmp = (tmp == NULL ? elf->filename : tmp+1);
 			xstrcat(&out_buffer, tmp, &out_len);
 			break;
 		case 'o': out = get_elfetype(elf); break;
@@ -992,32 +986,61 @@ static int scanelf_elf(const char *filename)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
 		xchrcat(&out_buffer, ' ', &out_len);
-		xstrcat(&out_buffer, filename, &out_len);
+		xstrcat(&out_buffer, elf->filename, &out_len);
 	}
 	if (!be_quiet || (be_quiet && FOUND_SOMETHING())) {
 		puts(out_buffer);
 		fflush(stdout);
 	}
 
-	unreadelf(elf);
-
 	return 0;
 }
 
-/* scan an archive of elfs */
-static int scanelf_archive(const char *filename)
+/* scan a single elf */
+static int scanelf_elf(const char *filename, int fd, size_t len)
 {
-	archive_handle *ar = ar_open(filename);
+	int ret;
+	elfobj *elf;
+
+	/* verify this is real ELF */
+	if ((elf = _readelf_fd(filename, fd, len, !fix_elf)) == NULL) {
+		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
+		return 1;
+	}
+
+	ret = scanelf_elfobj(elf);
+	unreadelf(elf);
+	return ret;
+}
+/* scan an archive of elfs */
+static int scanelf_archive(const char *filename, int fd, size_t len)
+{
+	archive_handle *ar;
 	archive_member *m;
-	while ((m=ar_next(ar)) != NULL)
-		printf("%o %i:%i %s\n", m->mode, m->uid, m->gid, m->name);
+	char *ar_buffer;
+	elfobj *elf;
+
+	ar = ar_open_fd(filename, fd);
+	if (ar == NULL)
+		return 1;
+
+	ar_buffer = (char*)mmap(0, len, PROT_READ | (fix_elf ? PROT_WRITE : 0), (fix_elf ? MAP_SHARED : MAP_PRIVATE), fd, 0);
+	while ((m=ar_next(ar)) != NULL) {
+		elf = readelf_buffer(m->name, ar_buffer+lseek(fd,0,SEEK_CUR), m->size);
+		if (elf) {
+			scanelf_elfobj(elf);
+			unreadelf(elf);
+		}
+	}
+	munmap(ar_buffer, len);
+
 	return 0;
 }
-
 /* scan a file which may be an elf or an archive or some other magical beast */
 static void scanelf_file(const char *filename)
 {
 	struct stat st;
+	int fd;
 
 	/* make sure 'filename' exists */
 	if (lstat(filename, &st) == -1) {
@@ -1035,9 +1058,14 @@ static void scanelf_file(const char *filename)
 		return;
 	}
 
-	if (scanelf_elf(filename) == 1 && scan_archives)
+	if ((fd=open(filename, (fix_elf ? O_RDWR : O_RDONLY))) == -1)
+		return;
+
+	if (scanelf_elf(filename, fd, st.st_size) == 1 && scan_archives)
 		/* if it isn't an ELF, maybe it's an .a archive */
-		scanelf_archive(filename);
+		scanelf_archive(filename, fd, st.st_size);
+
+	close(fd);
 }
 
 /* scan a directory for ET_EXEC files and print when we find one */

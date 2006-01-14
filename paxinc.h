@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.5 2006/01/13 12:12:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.6 2006/01/14 01:39:55 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -32,6 +32,7 @@ extern char do_reverse_endian;
 typedef struct {
 	int fd;
 	const char *filename;
+	size_t skip;
 } archive_handle;
 #else
 typedef void archive_handle;
@@ -58,6 +59,7 @@ typedef struct {
 	} buf;
 #endif
 } archive_member;
+archive_handle *ar_open_fd(const char *filename, int fd);
 archive_handle *ar_open(const char *filename);
 archive_member *ar_next(archive_handle *);
 

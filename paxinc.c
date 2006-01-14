@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.3 2006/01/13 12:12:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.4 2006/01/14 01:39:55 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -20,26 +20,35 @@ char do_reverse_endian;
 
 #define AR_MAGIC "!<arch>"
 #define AR_MAGIC_SIZE (sizeof(AR_MAGIC)-1) /* dont count null byte */
-archive_handle *ar_open(const char *filename)
+archive_handle *ar_open_fd(const char *filename, int fd)
 {
 	static archive_handle ret;
 	char buf[AR_MAGIC_SIZE];
 
-	if ((ret.fd=open(filename, O_RDONLY)) == -1)
-		err("Could not open '%s'", filename);
-
-	memset(buf, 0x00, sizeof(buf));
-	if (read(ret.fd, buf, AR_MAGIC_SIZE) != AR_MAGIC_SIZE) {
-close_and_ret:
-		close(ret.fd);
-		return NULL;
-	}
-	if (strncmp(buf, AR_MAGIC, AR_MAGIC_SIZE))
-		goto close_and_ret;
-
 	ret.filename = filename;
+	ret.fd = fd;
+	ret.skip = 0;
+
+	if (read(ret.fd, buf, AR_MAGIC_SIZE) != AR_MAGIC_SIZE)
+		return NULL;
+	if (strncmp(buf, AR_MAGIC, AR_MAGIC_SIZE))
+		return NULL;
 
 	return &ret;
+}
+archive_handle *ar_open(const char *filename)
+{
+	int fd;
+	archive_handle *ret;
+
+	if ((fd=open(filename, O_RDONLY)) == -1)
+		err("Could not open '%s'", filename);
+
+	ret = ar_open_fd(filename, fd);
+	if (ret == NULL)
+		close(fd);
+
+	return ret;
 }
 
 archive_member *ar_next(archive_handle *ar)
@@ -48,11 +57,14 @@ archive_member *ar_next(archive_handle *ar)
 	size_t len;
 	static archive_member ret;
 
-	if (read(ar->fd, ret.buf.raw, sizeof(ret.buf.raw)) != sizeof(ret.buf.raw)) {
+	if (ar->skip && lseek(ar->fd, ar->skip, SEEK_CUR) == -1) {
 close_and_ret:
 		close(ar->fd);
 		return NULL;
 	}
+
+	if (read(ar->fd, ret.buf.raw, sizeof(ret.buf.raw)) != sizeof(ret.buf.raw))
+		goto close_and_ret;
 
 	/* ar header starts on an even byte (2 byte aligned)
 	 * '\n' is used for padding */
@@ -66,9 +78,10 @@ close_and_ret:
 		goto close_and_ret;
 	}
 
-	if (ret.buf.formated.name[0] == '/') {
-		warn("Sorry, long filenames not supported at this time");
-		goto close_and_ret;
+	if (ret.buf.formated.name[0] == '/' && ret.buf.formated.name[1] == '/') {
+		warn("Sorry, long names not yet supported; output will be incomplete for %s", ar->filename);
+		ar->skip = atoi(ret.buf.formated.size);
+		return ar_next(ar);
 	}
 
 	len = strlen(ar->filename);
@@ -85,9 +98,7 @@ close_and_ret:
 	ret.gid = atoi(ret.buf.formated.gid);
 	ret.mode = strtol(ret.buf.formated.mode, NULL, 8);
 	ret.size = atoi(ret.buf.formated.size);
-
-	if (lseek(ar->fd, ret.size, SEEK_CUR) == -1)
-		goto close_and_ret;
+	ar->skip = ret.size;
 
 	return &ret;
 }

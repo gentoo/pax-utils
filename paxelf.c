@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.34 2006/01/10 01:40:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.35 2006/01/14 01:39:55 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -326,45 +326,34 @@ const char *get_elfstttype(int type)
 	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
 	 (buff[EI_VERSION] == EV_CURRENT))
-elfobj *_readelf(const char *filename, int read_only)
+elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 {
-	struct stat st;
-	int fd;
 	elfobj *elf;
-
-	if (stat(filename, &st) == -1)
-		return NULL;
-
-	if ((fd = open(filename, (read_only ? O_RDONLY : O_RDWR))) == -1)
-		return NULL;
-
-	/* make sure we have enough bytes to scan e_ident */
-	if (st.st_size <= EI_NIDENT)
-		goto close_fd_and_return;
 
 	elf = (elfobj*)malloc(sizeof(*elf));
 	if (elf == NULL)
-		goto close_fd_and_return;
+		return NULL;
 	memset(elf, 0x00, sizeof(*elf));
 
-	elf->fd = fd;
-	elf->len = st.st_size;
-	elf->data = (char*)mmap(0, elf->len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
-	if (elf->data == (char*)MAP_FAILED) {
-		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)elf->len);
-		goto free_elf_and_return;
-	}
+	elf->fd = -1;
+	elf->len = buffer_len;
+	elf->data = buffer;
 
-	if (!IS_ELF_BUFFER(elf->data)) /* make sure we have an elf */
-		goto unmap_data_and_return;
-	if (!DO_WE_LIKE_ELF(elf->data)) { /* check class and stuff */
+	/* make sure we have an elf */
+	if (!IS_ELF_BUFFER(elf->data)) {
+free_elf_and_return:
+		free(elf);
+		return NULL;
+	}
+	/* check class and stuff */
+	if (!DO_WE_LIKE_ELF(elf->data)) {
 		warn("we no likey %s: {%s,%s,%s,%s}",
 		     filename,
 		     get_elfeitype(EI_CLASS, elf->data[EI_CLASS]),
 		     get_elfeitype(EI_DATA, elf->data[EI_DATA]),
 		     get_elfeitype(EI_VERSION, elf->data[EI_VERSION]),
 		     get_elfeitype(EI_OSABI, elf->data[EI_OSABI]));
-		goto unmap_data_and_return;
+		goto free_elf_and_return;
 	}
 
 	elf->filename = filename;
@@ -413,22 +402,64 @@ elfobj *_readelf(const char *filename, int read_only)
 	/* { char *p; strncpy(elf->basename, (p = strrchr(filename, '/')) == NULL ? "?" : p+1 , sizeof(elf->basename)); } */
 
 	return elf;
-
-unmap_data_and_return:
-	munmap(elf->data, elf->len);
-free_elf_and_return:
-	free(elf);
-close_fd_and_return:
-	close(fd);
-	return NULL;
 }
-elfobj *readelf(const char *filename) { return _readelf(filename, 1); }
+elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only)
+{
+	char *buffer;
+	elfobj *ret;
+
+	if (len == 0) {
+		struct stat st;
+		if (fstat(fd, &st) == -1)
+			return NULL;
+		len = st.st_size;
+	}
+
+	buffer = (char*)mmap(0, len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
+	if (buffer == (char*)MAP_FAILED) {
+		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)len);
+		return NULL;
+	}
+
+	ret = readelf_buffer(filename, buffer, len);
+	if (ret == NULL)
+		munmap(buffer, len);
+	else
+		ret->is_mmap = 1;
+
+	return ret;
+}
+elfobj *_readelf(const char *filename, int read_only)
+{
+	elfobj *ret;
+	struct stat st;
+	int fd;
+
+	if (stat(filename, &st) == -1)
+		return NULL;
+
+	if ((fd = open(filename, (read_only ? O_RDONLY : O_RDWR))) == -1)
+		return NULL;
+
+	/* make sure we have enough bytes to scan e_ident */
+	if (st.st_size <= EI_NIDENT) {
+close_fd_and_return:
+		close(fd);
+		return NULL;
+	}
+
+	ret = readelf_fd(filename, fd, st.st_size);
+	if (ret == NULL)
+		goto close_fd_and_return;
+
+	return ret;
+}
 
 /* undo the readelf() stuff */
 void unreadelf(elfobj *elf)
 {
-	munmap(elf->data, elf->len);
-	close(elf->fd);
+	if (elf->is_mmap) munmap(elf->data, elf->len);
+	if (elf->fd != -1) close(elf->fd);
 	free(elf);
 }
 
