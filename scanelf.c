@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.106 2006/01/14 01:39:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.107 2006/01/18 22:28:46 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.106 2006/01/14 01:39:55 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.107 2006/01/18 22:28:46 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -465,7 +465,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 						} \
 					} \
 					if (*r) { \
-						if (fix_elf > 2 || **r == '\0') { \
+						if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
 							/* just nuke it */ \
 							nuke_it##B: \
 							memset(*r, 0x00, offset); \
