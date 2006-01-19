@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.107 2006/01/18 22:28:46 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.108 2006/01/19 23:53:34 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.107 2006/01/18 22:28:46 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.108 2006/01/19 23:53:34 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -154,6 +154,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	multi_stack = multi_relro = multi_load = 0;
 	max_pt_load = elf_max_pt_load(elf);
 
+#define NOTE_GNU_STACK ".note.GNU-stack"
 #define SHOW_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
@@ -195,11 +196,16 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		/* no program headers which means this is prob an object file */ \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
+		char *str; \
+		if ((void*)strtbl > (void*)(elf->data + sizeof(*strtbl))) \
+			goto skip_this_shdr##B; \
 		check_flags = SHF_WRITE|SHF_EXECINSTR; \
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
-			if (!strcmp((char*)(elf->data + offset), ".note.GNU-stack")) { \
+			str = elf->data + offset; \
+			if (str > elf->data + offset + sizeof(NOTE_GNU_STACK)) continue; \
+			if (!strcmp(str, NOTE_GNU_STACK)) { \
 				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
 				flags = EGET(shdr[i].sh_flags); \
 				if (be_quiet && ((flags & check_flags) != check_flags)) \
@@ -213,6 +219,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				break; \
 			} \
 		} \
+		skip_this_shdr##B: \
 		if (!multi_stack) { \
 			*found_phdr = 1; \
 			shown = 1; \
