@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.35 2006/01/14 01:39:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.36 2006/01/19 17:49:47 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -329,6 +329,9 @@ const char *get_elfstttype(int type)
 elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 {
 	elfobj *elf;
+
+	if (buffer_len < 1)
+		return NULL;
 
 	elf = (elfobj*)malloc(sizeof(*elf));
 	if (elf == NULL)
