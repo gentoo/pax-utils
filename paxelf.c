@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.36 2006/01/19 17:49:47 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.37 2006/01/19 22:39:34 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -330,7 +330,8 @@ elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 {
 	elfobj *elf;
 
-	if (buffer_len < 1)
+	/* make sure we have enough bytes to scan e_ident */
+	if (buffer == NULL || buffer_len < EI_NIDENT)
 		return NULL;
 
 	elf = (elfobj*)malloc(sizeof(*elf));
@@ -348,6 +349,7 @@ free_elf_and_return:
 		free(elf);
 		return NULL;
 	}
+
 	/* check class and stuff */
 	if (!DO_WE_LIKE_ELF(elf->data)) {
 		warn("we no likey %s: {%s,%s,%s,%s}",
@@ -371,33 +373,44 @@ free_elf_and_return:
 
 #define READELF_HEADER(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
+		char invalid; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Off size; \
 		/* verify program header */ \
-		if (EGET(ehdr->e_phnum) > 0) { \
+		invalid = 0; \
+		if (EGET(ehdr->e_phnum) <= 0) \
+			invalid = 1; /* this is not abnormal so dont warn */ \
+		else if (EGET(ehdr->e_phentsize) != sizeof(Elf ## B ## _Phdr)) \
+			invalid = 3; \
+		else { \
 			elf->phdr = elf->data + EGET(ehdr->e_phoff); \
 			size = EGET(ehdr->e_phnum) * EGET(ehdr->e_phentsize); \
 			if (elf->phdr < elf->ehdr || /* check overflow */ \
 			    elf->phdr + size < elf->phdr || /* before start of mem */ \
 			    elf->phdr + size > elf->ehdr + elf->len) /* before end of mem */ \
-			{ \
-				warn("%s: Invalid program header info", filename); \
-				elf->phdr = NULL; \
-			} \
-		} else \
+				invalid = 2; \
+		} \
+		if (invalid > 1) \
+			warn("%s: Invalid program header info (%i)", filename, invalid); \
+		if (invalid) \
 			elf->phdr = NULL; \
 		/* verify section header */ \
-		if (EGET(ehdr->e_shnum) > 0) { \
+		invalid = 0; \
+		if (EGET(ehdr->e_shnum) <= 0) \
+			invalid = 1; /* this is not abnormal so dont warn */ \
+		else if (EGET(ehdr->e_shentsize) != sizeof(Elf ## B ## _Shdr)) \
+			invalid = 3; \
+		else { \
 			elf->shdr = elf->data + EGET(ehdr->e_shoff); \
 			size = EGET(ehdr->e_shnum) * EGET(ehdr->e_shentsize); \
 			if (elf->shdr < elf->ehdr || /* check overflow */ \
 			    elf->shdr + size < elf->shdr || /* before start of mem */ \
 			    elf->shdr + size > elf->ehdr + elf->len) /* before end of mem */ \
-			{ \
-				warn("%s: Invalid section header info", filename); \
-				elf->shdr = NULL; \
-			} \
-		} else \
+				invalid = 2; \
+		} \
+		if (invalid > 1) \
+			warn("%s: Invalid section header info (%i)", filename, invalid); \
+		if (invalid) \
 			elf->shdr = NULL; \
 	}
 	READELF_HEADER(32)
@@ -416,6 +429,8 @@ elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only)
 		if (fstat(fd, &st) == -1)
 			return NULL;
 		len = st.st_size;
+		if (len == 0)
+			return NULL;
 	}
 
 	buffer = (char*)mmap(0, len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
