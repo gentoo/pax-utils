@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.37 2006/01/19 22:39:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.38 2006/01/20 02:42:55 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -580,6 +580,7 @@ int elf_max_pt_load(elfobj *elf)
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	switch (EGET(ehdr->e_ident[EI_OSABI])) { \
 	case ELFOSABI_NONE: \
+	case ELFOSABI_LINUX: \
 	case ELFOSABI_ARM:     return 2; \
 	case ELFOSABI_OPENBSD: return 7; \
 	} }
