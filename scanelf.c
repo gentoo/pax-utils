@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.113 2006/01/24 00:31:58 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.114 2006/01/24 00:33:05 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.113 2006/01/24 00:31:58 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.114 2006/01/24 00:33:05 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -879,11 +879,11 @@ static int scanelf_elfobj(elfobj *elf)
 	found_rpath = found_needed = found_interp = found_bind = found_soname = \
 	found_sym = found_lib = found_file = found_textrels = 0;
 
-	if (be_verbose > 1)
+	if (be_verbose > 2)
 		printf("%s: scanning file {%s,%s}\n", elf->filename,
 		       get_elfeitype(EI_CLASS, elf->elf_class),
 		       get_elfeitype(EI_DATA, elf->data[EI_DATA]));
-	else if (be_verbose)
+	else if (be_verbose > 1)
 		printf("%s: scanning file\n", elf->filename);
 
 	/* init output buffer */
@@ -1109,7 +1109,7 @@ static void scanelf_dir(const char *path)
 		warnf("could not opendir %s: %s", path, strerror(errno));
 		return;
 	}
-	if (be_verbose) printf("%s: scanning dir\n", path);
+	if (be_verbose > 1) printf("%s: scanning dir\n", path);
 
 	pathlen = strlen(path);
 	while ((dentry = readdir(dir))) {
