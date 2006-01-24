@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.114 2006/01/24 00:33:05 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.115 2006/01/24 00:34:00 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.114 2006/01/24 00:33:05 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.115 2006/01/24 00:34:00 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -814,13 +814,15 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-		unsigned long cnt = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
+		unsigned long cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
+		if (cnt) \
+			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
 			if (sym->st_name) { \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
-				if ((void*)symname > (void*)elf->data) { \
-					warn("%s: corrupt ELF symbols", elf->filename); \
+				if ((void*)symname > (void*)elf->data_end) { \
+					warnf("%s: corrupt ELF symbols", elf->filename); \
 					continue; \
 				} \
 				if (*find_sym == '*') { \
