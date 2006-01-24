@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.38 2006/01/20 02:42:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.39 2006/01/24 00:29:37 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -342,6 +342,7 @@ elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 	elf->fd = -1;
 	elf->len = buffer_len;
 	elf->data = buffer;
+	elf->data_end = buffer + buffer_len;
 
 	/* make sure we have an elf */
 	if (!IS_ELF_BUFFER(elf->data)) {
