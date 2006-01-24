@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.112 2006/01/24 00:30:36 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.113 2006/01/24 00:31:58 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.112 2006/01/24 00:30:36 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.113 2006/01/24 00:31:58 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -1400,11 +1400,11 @@ static void parseargs(int argc, char *argv[])
 		case 'a': show_pax = show_phdr = show_textrel = show_rpath = show_bind = 1; break;
 
 		case ':':
-			err("Option missing parameter\n");
+			err("Option '%c' is missing parameter", optopt);
 		case '?':
-			err("Unknown option\n");
+			err("Unknown option '%c'", optopt);
 		default:
-			err("Unhandled option '%c'", i);
+			err("Unhandled option '%c'; please report this", i);
 		}
 	}
 
