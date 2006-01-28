@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.116 2006/01/28 18:54:08 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.117 2006/01/28 19:47:47 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.116 2006/01/28 18:54:08 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.117 2006/01/28 19:47:47 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -174,7 +174,8 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				offset = 4; \
 				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-				if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
+				if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) \
+					if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 				found = found_load; \
 				offset = 8; \
 				check_flags = PF_W|PF_X; \
