@@ -1,4 +1,4 @@
-.TH "scanelf" "1" "May 2005" "Ned Ludd, Mike Frysinger" "User Commands"
+.TH "scanelf" "1" "Jan 2006" "Ned Ludd, Mike Frysinger" "User Commands"
 .SH "NAME"
 .LP 
 scanelf \- 
@@ -16,6 +16,9 @@ scanelf is a user-space utility to scan and list ELF types, as well as thier res
 \fB\-p, \-\-path\fR
 Scan all directories in PATH environment
 .TP
+\fB\-A, \-\-archives\fR
+Scan archives (.a files)
+.TP
 \fB\-l, \-\-ldpath\fR
 Scan all directories in /etc/ld.so.conf
 .TP
@@ -28,8 +31,14 @@ Don't recursively cross mount points
 \fB\-y, \-\-symlink\fR
 Don't scan symlinks
 .TP
+\fB\-X, \-\-fix\fR
+Try and 'fix' bad things (use with -r/-e)
+.TP
 \fB\-x, \-\-pax\fR
 Print PaX markings
+.TP
+\fB\-L, \-\-ldcache\fR
+Utilize ld.so.cache information (use with -r/-n)
 .TP
 \fB\-e, \-\-header\fR
 Print GNU_STACK markings
@@ -141,6 +150,7 @@ options) and send bug reports to pax-utils <solar@gentoo.org> or
 .BR chpax (1),
 .BR paxctl (1),
 .BR pspax (1),
+.BR dumpelf (1),
 .BR readelf (1),
 .SH "AUTHORS"
 scanelf was written by <solar@gentoo.org> and <vapier@gentoo.org>
