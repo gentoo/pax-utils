@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.115 2006/01/24 00:34:00 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.116 2006/01/28 18:54:08 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.115 2006/01/24 00:34:00 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.116 2006/01/28 18:54:08 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -599,8 +599,10 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 
 		close(fd);
 
-		if (ldcache == (caddr_t)-1)
+		if (ldcache == (caddr_t)-1) {
+			ldcache = 0;
 			return NULL;
+		}
 
 		if (memcmp(((header_t *) ldcache)->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN))
 			return NULL;
