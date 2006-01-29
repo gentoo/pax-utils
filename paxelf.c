@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.39 2006/01/24 00:29:37 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.40 2006/01/29 14:36:41 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -443,8 +443,10 @@ elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only)
 	ret = readelf_buffer(filename, buffer, len);
 	if (ret == NULL)
 		munmap(buffer, len);
-	else
+	else {
+		ret->fd = fd;
 		ret->is_mmap = 1;
+	}
 
 	return ret;
 }
