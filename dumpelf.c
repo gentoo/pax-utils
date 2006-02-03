@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.16 2006/01/05 03:12:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.17 2006/02/03 00:13:52 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.16 2006/01/05 03:12:07 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.17 2006/02/03 00:13:52 solar Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -209,7 +209,7 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 		} \
 		case SHT_STRTAB: { \
 			char bool; \
-			printf("\n\t/* section dump:\n"); \
+			printf("\n\t/%c section dump:\n", '*'); \
 			bool = 1; \
 			if (type == SHT_PROGBITS) --data; \
 			for (i = 0; i < size; ++i) { \
@@ -228,7 +228,7 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 		} \
 		case SHT_DYNSYM: { \
 			Elf##B##_Sym *sym = (Elf##B##_Sym*)data; \
-			printf("\n\t/* section dump:\n"); \
+			printf("\n\t/%c section dump:\n", '*'); \
 			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
 				printf("\t * Elf%i_Sym sym%li = {\n", B, (long)i); \
 				printf("\t * \t.st_name  = %i,\n", (unsigned int)EGET(sym->st_name)); \
@@ -246,11 +246,11 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 		default: { \
 			if (be_verbose <= 1) \
 				break; \
-			printf("\n\t/* section dump:\n"); \
+			printf("\n\t/%c section dump:\n", '*'); \
 			for (i = 0; i < size; ++i) { \
 				++data; \
 				if (i % 20 == 0) printf("\t * "); \
-				printf("%.2X ", *data); \
+				printf("%.2X ", *data); /* this line can cause segfaults */ \
 				if (i % 20 == 19) printf("\n"); \
 			} \
 			if (i % 20) printf("\n"); \
