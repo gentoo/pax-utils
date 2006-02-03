@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.117 2006/01/28 19:47:47 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.118 2006/02/03 00:10:05 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.117 2006/01/28 19:47:47 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.118 2006/02/03 00:10:05 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -198,7 +198,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
 		char *str; \
-		if ((void*)strtbl > (void*)(elf->data + sizeof(*strtbl))) \
+		if ((void*)strtbl > (void*)elf->data_end) \
 			goto skip_this_shdr##B; \
 		check_flags = SHF_WRITE|SHF_EXECINSTR; \
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
