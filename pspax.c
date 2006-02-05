@@ -21,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.26 2006/01/13 11:31:55 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.27 2006/02/05 17:15:47 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -367,7 +367,7 @@ static void usage(int status)
 	       "Usage: %s [options]\n\n", argv0);
 	fputs("Options:\n", stdout);
 	for (i = 0; long_opts[i].name; ++i)
-		printf("  -%c, --%-12s× %s\n", long_opts[i].val, 
+		printf("  -%c, --%-12s* %s\n", long_opts[i].val, 
 		       long_opts[i].name, opts_help[i]);
 #ifdef MANLYPAGE
 	for (i = 0; long_opts[i].name; ++i)
