@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.118 2006/02/03 00:10:05 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.119 2006/02/05 02:25:58 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.118 2006/02/03 00:10:05 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.119 2006/02/05 02:25:58 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -33,6 +33,7 @@ static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
 
 /* variables to control behavior */
+static char match_etypes[126] = "";
 static char *ldpaths[256];
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
@@ -869,6 +870,8 @@ break_out:
 	else
 		return (char *)" - ";
 }
+
+
 /* scan an elf file and show all the fun stuff */
 #define prints(str) write(fileno(stdout), str, strlen(str))
 static int scanelf_elfobj(elfobj *elf)
@@ -1028,10 +1031,31 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 		return 1;
 	}
 
+	if (strlen(match_etypes)) {
+		char sbuf[126];
+		strncpy(sbuf, match_etypes, sizeof(sbuf));
+		if (strchr(match_etypes, ',') != NULL) {
+			char *p;
+			while((p = strrchr(sbuf, ',')) != NULL) {
+				*p = 0;
+				if (atoi(p+1) == get_etype(elf))
+					goto label_ret;
+			}
+		}
+		if (atoi(sbuf) != get_etype(elf)) {
+			ret = 1;
+			goto label_done;
+		}
+	}
+
+label_ret:
 	ret = scanelf_elfobj(elf);
+
+label_done:
 	unreadelf(elf);
 	return ret;
 }
+
 /* scan an archive of elfs */
 static int scanelf_archive(const char *filename, int fd, size_t len)
 {
@@ -1234,7 +1258,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyAXxetrnLibSs:gN:TaqvF:f:o:BhV"
+#define PARSE_FLAGS "plRmyAXxetrnLibSs:gN:TaqvF:f:o:E:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1257,6 +1281,7 @@ static struct option const long_opts[] = {
 	{"lib",        a_argument, NULL, 'N'},
 	{"gmatch",    no_argument, NULL, 'g'},
 	{"textrels",  no_argument, NULL, 'T'},
+	{"etype",      a_argument, NULL, 'E'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -1290,6 +1315,7 @@ static const char *opts_help[] = {
 	"Find a specified library",
 	"Use strncmp to match libraries. (use with -N)",
 	"Locate cause of TEXTREL",
+	"Print only ELF files matching numeric constant",
 	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -1354,6 +1380,9 @@ static void parseargs(int argc, char *argv[])
 			if (from_file) warn("You prob don't want to specify -f twice");
 			from_file = optarg;
 			break;
+		case 'E':
+			strncpy(match_etypes, optarg, sizeof(match_etypes));
+			break;
 		case 'o': {
 			FILE *fp = NULL;
 			if ((fp = freopen(optarg, "w", stdout)) == NULL)
@@ -1407,7 +1436,7 @@ static void parseargs(int argc, char *argv[])
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':
-			err("Unknown option '%c'", optopt);
+			err("Unknown option '%c' or argument missing", optopt);
 		default:
 			err("Unhandled option '%c'; please report this", i);
 		}

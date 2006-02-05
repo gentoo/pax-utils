@@ -27,6 +27,7 @@ Options: -[plRmyxetrnLibSs:gN:TaqvF:f:o:BhV]
   -N, --lib    <arg> * Find a specified library
   -g, --gmatch       * Use strncmp to match libraries. (use with -N)
   -T, --textrels     * Locate cause of TEXTREL
+  -E, --etype  <arg> * Print only ELF files matching numeric constant
   -a, --all          * Print all scanned info (-x -e -t -r -b)
 
   -q, --quiet        * Only output 'bad' things

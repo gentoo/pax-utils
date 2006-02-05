@@ -1,4 +1,4 @@
-.TH "scanelf" "1" "Jan 2006" "Ned Ludd, Mike Frysinger" "User Commands"
+.TH "scanelf" "1" "Feb 2006" "Ned Ludd, Mike Frysinger" "User Commands"
 .SH "NAME"
 .LP 
 scanelf \- 
@@ -74,6 +74,9 @@ Use strncmp to match libraries. (use with \-N)
 Find a specified symbol
 Locate cause of TEXTREL
 .TP
+\fB\-E, \-\-etype <arg>\fR
+Print only ELF files matching numeric constant
+.TP
 \fB\-a, \-\-all\fR
 Print all scanned info (-x -e -t -r -n -i -b)
 .TP
@@ -142,6 +145,9 @@ scanelf -ltq # Would search every elf in your library paths for quality assuranc
 Alternativly you can run it like:
 .LP 
 scanelf /bin /usr/bin /lib /sbin/insmod
+.SH "HOMEPAGE"
+http://hardened.gentoo.org/pax-utils.xml
+.LP
 .SH "REPORTING BUGS"
 Please include as much information as possible (using any available debugging 
 options) and send bug reports to pax-utils <solar@gentoo.org> or 
