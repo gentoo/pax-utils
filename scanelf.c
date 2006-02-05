@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.119 2006/02/05 02:25:58 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.120 2006/02/05 03:01:30 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.119 2006/02/05 02:25:58 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.120 2006/02/05 03:01:30 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -62,7 +62,7 @@ static char fix_elf = 0;
 static char gmatch = 0;
 static char use_ldcache = 0;
 
-
+int match_bits = 0;
 caddr_t ldcache = 0;
 size_t ldcache_size = 0;
 
@@ -1022,15 +1022,25 @@ static int scanelf_elfobj(elfobj *elf)
 /* scan a single elf */
 static int scanelf_elf(const char *filename, int fd, size_t len)
 {
-	int ret;
+	int ret = 1;
 	elfobj *elf;
 
 	/* verify this is real ELF */
 	if ((elf = _readelf_fd(filename, fd, len, !fix_elf)) == NULL) {
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
-		return 1;
+		return ret;
 	}
-
+	switch (match_bits) {
+		case 32:
+			if (elf->elf_class != ELFCLASS32)
+				goto label_done;
+			break;
+		case 64:
+			if (elf->elf_class != ELFCLASS64)
+				goto label_done;
+			break;
+		default: break;
+	}
 	if (strlen(match_etypes)) {
 		char sbuf[126];
 		strncpy(sbuf, match_etypes, sizeof(sbuf));
@@ -1042,10 +1052,8 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 					goto label_ret;
 			}
 		}
-		if (atoi(sbuf) != get_etype(elf)) {
-			ret = 1;
+		if (atoi(sbuf) != get_etype(elf))
 			goto label_done;
-		}
 	}
 
 label_ret:
@@ -1258,7 +1266,7 @@ static void scanelf_envpath()
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyAXxetrnLibSs:gN:TaqvF:f:o:E:BhV"
+#define PARSE_FLAGS "plRmyAXxetrnLibSs:gN:TaqvF:f:o:M:E:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1282,6 +1290,7 @@ static struct option const long_opts[] = {
 	{"gmatch",    no_argument, NULL, 'g'},
 	{"textrels",  no_argument, NULL, 'T'},
 	{"etype",      a_argument, NULL, 'E'},
+	{"bits",       a_argument, NULL, 'M'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -1315,7 +1324,8 @@ static const char *opts_help[] = {
 	"Find a specified library",
 	"Use strncmp to match libraries. (use with -N)",
 	"Locate cause of TEXTREL",
-	"Print only ELF files matching numeric constant",
+	"Print only ELF files matching numeric constant type",
+	"Print only ELF files matching numeric bits",
 	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -1382,6 +1392,9 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'E':
 			strncpy(match_etypes, optarg, sizeof(match_etypes));
+			break;
+		case 'M':
+			match_bits = atoi(optarg);
 			break;
 		case 'o': {
 			FILE *fp = NULL;
