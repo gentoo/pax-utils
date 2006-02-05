@@ -5,21 +5,23 @@ used on any distro.
 == scanelf ==
 * Scan ELF binaries for stuff
 
-Usage: scanelf [options] <dir1/file1> [dir2 dirN fileN ...]
+Usage: scanelf [options] <dir1/file1> [dir2 dirN file2 fileN ...]
 
-Options: -[plRmyxetrnLibSs:gN:TaqvF:f:o:BhV]
+Options: -[plRmyAXxetrnLibSs:gN:TaqvF:f:o:M:E:BhV]
   -p, --path         * Scan all directories in PATH environment
   -l, --ldpath       * Scan all directories in /etc/ld.so.conf
   -R, --recursive    * Scan directories recursively
   -m, --mount        * Don't recursively cross mount points
   -y, --symlink      * Don't scan symlinks
+  -A, --archives     * Scan archives (.a files)
+  -L, --ldcache      * Utilize ld.so.cache information (use with -r/-n)
+  -X, --fix          * Try and 'fix' bad things (use with -r/-e)
 
   -x, --pax          * Print PaX markings
   -e, --header       * Print GNU_STACK/PT_LOAD markings
   -t, --textrel      * Print TEXTREL information
   -r, --rpath        * Print RPATH information
   -n, --needed       * Print NEEDED information
-  -L, --ldcache      * Resolve NEEDED information (use with -n)
   -i, --interp       * Print INTERP information
   -b, --bind         * Print BIND information
   -S, --soname       * Print SONAME information
@@ -27,7 +29,8 @@ Options: -[plRmyxetrnLibSs:gN:TaqvF:f:o:BhV]
   -N, --lib    <arg> * Find a specified library
   -g, --gmatch       * Use strncmp to match libraries. (use with -N)
   -T, --textrels     * Locate cause of TEXTREL
-  -E, --etype  <arg> * Print only ELF files matching numeric constant
+  -E, --etype  <arg> * Print only ELF files matching numeric constant type
+  -M, --bits   <arg> * Print only ELF files matching numeric bits
   -a, --all          * Print all scanned info (-x -e -t -r -b)
 
   -q, --quiet        * Only output 'bad' things
@@ -48,6 +51,18 @@ The format modifiers for the -F option are:
  p filename (with search path removed)
  f filename (short name/basename)
 Prefix each modifier with '%' (verbose) or '#' (silent)
+
+ELF Etypes:
+ (0) = ET_NONE
+ (1) = ET_REL
+ (2) = ET_EXEC
+ (3) = ET_DYN
+ (4) = ET_CORE
+ (5) = ET_NUM
+ (65024) = ET_LOOS
+ (65279) = ET_HIOS
+ (65280) = ET_LOPROC
+ (65535) = ET_HIPROC
 
 == pspax ==
 * List ELF/PaX information about running processes
