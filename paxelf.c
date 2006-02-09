@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.43 2006/02/09 18:44:50 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.44 2006/02/09 21:40:18 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -597,6 +597,7 @@ int elf_max_pt_load(elfobj *elf)
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	switch (EGET(ehdr->e_ident[EI_OSABI])) { \
 	case ELFOSABI_NONE: \
+	case ELFOSABI_NETBSD: \
 	case ELFOSABI_FREEBSD: \
 	case ELFOSABI_LINUX: \
 	case ELFOSABI_ARM:     return 2; \
@@ -605,5 +606,21 @@ int elf_max_pt_load(elfobj *elf)
 	MAX_PT_LOAD(32)
 	MAX_PT_LOAD(64)
 
-	return 0;
+	return 1;
 }
+#if 0
+ # define ELFOSABI_NONE           0       /* UNIX System V ABI */
+ # define ELFOSABI_SYSV           0       /* Alias.  */
+ # define ELFOSABI_HPUX           1       /* HP-UX */
+ # define ELFOSABI_NETBSD         2       /* NetBSD.  */
+ # define ELFOSABI_LINUX          3       /* Linux.  */
+ # define ELFOSABI_SOLARIS        6       /* Sun Solaris.  */
+ # define ELFOSABI_AIX            7       /* IBM AIX.  */
+ # define ELFOSABI_IRIX           8       /* SGI Irix.  */
+ # define ELFOSABI_FREEBSD        9       /* FreeBSD.  */
+ # define ELFOSABI_TRU64          10      /* Compaq TRU64 UNIX.  */
+ # define ELFOSABI_MODESTO        11      /* Novell Modesto.  */
+ # define ELFOSABI_OPENBSD        12      /* OpenBSD.  */
+ # define ELFOSABI_ARM            97      /* ARM */
+ # define ELFOSABI_STANDALONE     255     /* Standalone (embedded) application */
+#endif
