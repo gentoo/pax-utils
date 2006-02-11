@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.121 2006/02/05 17:10:52 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.122 2006/02/11 04:11:44 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.121 2006/02/05 17:10:52 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.122 2006/02/11 04:11:44 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -938,10 +938,6 @@ static int scanelf_elfobj(elfobj *elf)
 		const char *out;
 		const char *tmp;
 
-		/* make sure we trim leading spaces in quiet mode */
-		if (be_quiet && *out_buffer == ' ' && !out_buffer[1])
-			*out_buffer = '\0';
-
 		if (!IS_MODIFIER(out_format[i])) {
 			xchrcat(&out_buffer, out_format[i], &out_len);
 			continue;
@@ -1426,7 +1422,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 
-		case 'g': gmatch = 1; /* break; any reason we dont breal; here ? */
+		case 'g': gmatch = 1; break;
 		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
