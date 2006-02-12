@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.122 2006/02/11 04:11:44 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.123 2006/02/12 16:51:21 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.122 2006/02/11 04:11:44 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.123 2006/02/12 16:51:21 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -1189,24 +1189,56 @@ static int scanelf_from_file(char *filename)
 	return 0;
 }
 
-static void load_ld_so_conf()
+static int load_ld_so_conf(int i, const char *fname)
 {
 	FILE *fp = NULL;
 	char *p;
 	char path[__PAX_UTILS_PATH_MAX];
-	int i = 0;
 
-	if ((fp = fopen("/etc/ld.so.conf", "r")) == NULL)
-		return;
+	if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+		return i;
+
+	if ((fp = fopen(fname, "r")) == NULL)
+		return i;
 
 	while ((fgets(path, __PAX_UTILS_PATH_MAX, fp)) != NULL) {
-		if (*path != '/')
-			continue;
-
 		if ((p = strrchr(path, '\r')) != NULL)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
+#ifdef HAVE_GLOB
+		// recursive includes of the same file will make this segfault.
+		if ((*path == 'i') && (strncmp(path, "include", 7) == 0) && isblank(path[7])) {
+			glob64_t gl;
+			size_t x;
+			char gpath[__PAX_UTILS_PATH_MAX];
+
+			gpath[sizeof(gpath)] = 0;
+
+			if (path[8] != '/')
+				snprintf(gpath, sizeof(gpath)-1, "/etc/%s", &path[8]);
+			else
+				strncpy(gpath, &path[8], sizeof(gpath)-1);
+
+			if ((glob64(gpath, 0, NULL, &gl)) == 0) {
+				for (x = 0; x < gl.gl_pathc; ++x) {
+					/* try to avoid direct loops */
+					if (strcmp(gl.gl_pathv[x], fname) == 0)
+						continue;
+					i = load_ld_so_conf(i, gl.gl_pathv[x]);
+					if (i + 1 >= sizeof(ldpaths) / sizeof(*ldpaths)) {
+						globfree64(&gl);
+						return i;
+					}
+				}
+				globfree64 (&gl);
+				continue;
+			} else
+				abort();
+		}
+#endif
+		if (*path != '/')
+			continue;
 
 		ldpaths[i++] = xstrdup(path);
 
@@ -1216,6 +1248,7 @@ static void load_ld_so_conf()
 	ldpaths[i] = NULL;
 
 	fclose(fp);
+	return i;
 }
 
 /* scan /etc/ld.so.conf for paths */
@@ -1508,7 +1541,7 @@ static void parseargs(int argc, char *argv[])
 
 	/* now lets actually do the scanning */
 	if (scan_ldpath || use_ldcache)
-		load_ld_so_conf();
+		load_ld_so_conf(0, "/etc/ld.so.conf");
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (from_file) {

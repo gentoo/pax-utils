@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.49 2006/01/28 19:47:47 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.50 2006/02/12 16:51:21 solar Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -49,8 +49,8 @@ all: $(OBJS) $(TARGETS)
 
 debug:
 	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb -nopie" clean all
-	@-/sbin/chpax  -permsx $(TARGETS)
-	@-/sbin/paxctl -permsx $(TARGETS)
+	@-/sbin/chpax  -permsx $(ELF_TARGETS)
+	@-/sbin/paxctl -permsx $(ELF_TARGETS)
 
 %.o: %.c
 ifeq ($(findstring s,$(MAKEFLAGS)),)

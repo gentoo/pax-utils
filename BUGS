@@ -1,7 +1,13 @@
 KNOWN BUGS
 ----------
 
-none at the moment
+dumpelf -vvvv ; This can segv on some malformed ELF files when trying to 
+print *data;
+
+when using scanelf -ln and the /etc/ld.so.conf includes file which 
+includes the orig /etc/ld.so.conf again will cause a recursion segv.
+This is not really a problem however as any system containing such a
+malformed ld.so.conf would have bigger problems.
 
 
 REPORTING BUGS

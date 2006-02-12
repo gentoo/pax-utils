@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.11 2006/01/13 11:31:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.12 2006/02/12 16:51:21 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -28,6 +28,12 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <pwd.h>
+
+#ifndef HATE_GLOB
+# undef HAVE_GLOB
+# define HAVE_GLOB
+# include <glob.h>
+#endif
 
 #include <sys/mman.h>
 #include "elf.h"
