@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.124 2006/02/16 03:07:44 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.125 2006/02/16 05:06:14 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.124 2006/02/16 03:07:44 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.125 2006/02/16 05:06:14 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -1416,13 +1416,13 @@ static void usage(int status)
 
 	if (status != EXIT_SUCCESS)
 		exit(status);
-
+	
 	puts("\nThe format modifiers for the -F option are:");
 	puts(" F Filename \tx PaX Flags \te STACK/RELRO");
 	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
 	puts(" i INTERP   \tb BIND      \ts symbol");
 	puts(" N library  \to Type      \tT TEXTRELs");
-	puts(" S SONAME");
+	puts(" S SONAME   \tk section");
 	puts(" p filename (with search path removed)");
 	puts(" f filename (short name/basename)");
 	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");

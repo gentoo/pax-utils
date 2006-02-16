@@ -7,47 +7,48 @@ used on any distro.
 
 Usage: scanelf [options] <dir1/file1> [dir2 dirN file2 fileN ...]
 
-Options: -[plRmyAXxetrnLibSs:gN:TaqvF:f:o:M:E:BhV]
-  -p, --path         * Scan all directories in PATH environment
-  -l, --ldpath       * Scan all directories in /etc/ld.so.conf
-  -R, --recursive    * Scan directories recursively
-  -m, --mount        * Don't recursively cross mount points
-  -y, --symlink      * Don't scan symlinks
-  -A, --archives     * Scan archives (.a files)
-  -L, --ldcache      * Utilize ld.so.cache information (use with -r/-n)
-  -X, --fix          * Try and 'fix' bad things (use with -r/-e)
+Options: -[plRmyAXxetrnLibSs:k:gN:TaqvF:f:o:M:E:BhV]
+  -p, --path          * Scan all directories in PATH environment
+  -l, --ldpath        * Scan all directories in /etc/ld.so.conf
+  -R, --recursive     * Scan directories recursively
+  -m, --mount         * Don't recursively cross mount points
+  -y, --symlink       * Don't scan symlinks
+  -A, --archives      * Scan archives (.a files)
+  -L, --ldcache       * Utilize ld.so.cache information (use with -r/-n)
+  -X, --fix           * Try and 'fix' bad things (use with -r/-e)
 
-  -x, --pax          * Print PaX markings
-  -e, --header       * Print GNU_STACK/PT_LOAD markings
-  -t, --textrel      * Print TEXTREL information
-  -r, --rpath        * Print RPATH information
-  -n, --needed       * Print NEEDED information
-  -i, --interp       * Print INTERP information
-  -b, --bind         * Print BIND information
-  -S, --soname       * Print SONAME information
-  -s, --symbol <arg> * Find a specified symbol
-  -N, --lib    <arg> * Find a specified library
-  -g, --gmatch       * Use strncmp to match libraries. (use with -N)
-  -T, --textrels     * Locate cause of TEXTREL
-  -E, --etype  <arg> * Print only ELF files matching numeric constant type
-  -M, --bits   <arg> * Print only ELF files matching numeric bits
-  -a, --all          * Print all scanned info (-x -e -t -r -b)
+  -x, --pax           * Print PaX markings
+  -e, --header        * Print GNU_STACK/PT_LOAD markings
+  -t, --textrel       * Print TEXTREL information
+  -r, --rpath         * Print RPATH information
+  -n, --needed        * Print NEEDED information
+  -i, --interp        * Print INTERP information
+  -b, --bind          * Print BIND information
+  -S, --soname        * Print SONAME information
+  -s, --symbol  <arg> * Find a specified symbol
+  -k, --section <arg> * Find a specified section
+  -N, --lib     <arg> * Find a specified library
+  -g, --gmatch        * Use strncmp to match libraries. (use with -N)
+  -T, --textrels      * Locate cause of TEXTREL
+  -E, --etype   <arg> * Print only ELF files matching numeric constant type
+  -M, --bits    <arg> * Print only ELF files matching numeric bits
+  -a, --all           * Print all scanned info (-x -e -t -r -b)
 
-  -q, --quiet        * Only output 'bad' things
-  -v, --verbose      * Be verbose (can be specified more than once)
-  -F, --format <arg> * Use specified format for output
-  -f, --from   <arg> * Read input stream from a filename
-  -o, --file   <arg> * Write output stream to a filename
-  -B, --nobanner     * Don't display the header
-  -h, --help         * Print this help and exit
-  -V, --version      * Print version and exit
+  -q, --quiet         * Only output 'bad' things
+  -v, --verbose       * Be verbose (can be specified more than once)
+  -F, --format  <arg> * Use specified format for output
+  -f, --from    <arg> * Read input stream from a filename
+  -o, --file    <arg> * Write output stream to a filename
+  -B, --nobanner      * Don't display the header
+  -h, --help          * Print this help and exit
+  -V, --version       * Print version and exit
 
 The format modifiers for the -F option are:
  F Filename 	x PaX Flags 	e STACK/RELRO
  t TEXTREL  	r RPATH     	n NEEDED
  i INTERP   	b BIND      	s symbol
  N library  	o Type      	T TEXTRELs
- S SONAME
+ S SONAME   	k section
  p filename (with search path removed)
  f filename (short name/basename)
 Prefix each modifier with '%' (verbose) or '#' (silent)

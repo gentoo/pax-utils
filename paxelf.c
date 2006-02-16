@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.45 2006/02/16 03:07:44 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.46 2006/02/16 05:06:14 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -625,7 +625,7 @@ int elf_max_pt_load(elfobj *elf)
  # define ELFOSABI_STANDALONE     255     /* Standalone (embedded) application */
 
  /* These 3 ABIs should be in elf.h but are not.
-  http://www.caldera.com/developers/gabi/latest/ch4.eheader.html#generic_osabi_values
+  * http://www.caldera.com/developers/gabi/latest/ch4.eheader.html#generic_osabi_values
   */
 
  # define ELFOSABI_OPENVMS 13     /* OpenVMS */
