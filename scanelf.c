@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.125 2006/02/16 05:06:14 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.126 2006/02/16 05:47:23 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.125 2006/02/16 05:06:14 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.126 2006/02/16 05:47:23 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -952,7 +952,7 @@ static int scanelf_elfobj(elfobj *elf)
 			case 's': prints("SYM "); break;
 			case 'N': prints("LIB "); break;
 			case 'T': prints("TEXTRELS "); break;
-			case 'k': break;
+			case 'k': prints("SECTION "); break;
 			default: warnf("'%c' has no title ?", out_format[i]);
 			}
 		}
@@ -1468,7 +1468,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'k':
-			if (find_section) warn("You can not specify -k twice");
+			if (find_section) warn("You prob don't want to specify -k twice");
 			find_section = optarg;
 			break;
 		case 's': {
