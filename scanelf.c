@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.127 2006/02/17 07:13:54 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.128 2006/02/17 15:36:16 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.127 2006/02/17 07:13:54 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.128 2006/02/17 15:36:16 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -130,15 +130,18 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	SHOW_PAX(64)
 	}
 
+
+	if (fix_elf && setpax) {
+		/* set the chpax settings */
+		if (elf->elf_class == ELFCLASS32)
+			ESET(EHDR32(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
+		else
+			ESET(EHDR64(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
+	}
+
 	/* fall back to EI_PAX if no PT_PAX was found */
 	if (!*ret) {
 		static char *paxflags;
-
-		if (fix_elf && setpax) {
-			/* set the chpax settings */
-			// ESET(EHDR ## B (elf->ehdr)->e_ident[EI_PAX]), setpax);
-		}
-
 		paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
 		if (!be_quiet || (be_quiet && EI_PAX_FLAGS(elf))) {
 			*found_pax = 1;

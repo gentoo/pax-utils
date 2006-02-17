@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.43 2006/02/05 17:10:52 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.44 2006/02/17 15:36:16 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -60,6 +60,7 @@ extern void *elf_findsecbyname(elfobj *elf, const char *name);
 extern int elf_max_pt_load(elfobj *elf);
 extern int get_etype(elfobj *elf);
 extern void print_etypes(FILE *);
+extern unsigned long pax_pf2hf_flags(unsigned long paxflags);
 
 /* PaX flags (to be read in elfhdr.e_flags) */
 #define HF_PAX_PAGEEXEC      1   /* 0: Paging based non-exec pages */

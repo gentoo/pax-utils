@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.46 2006/02/16 05:06:14 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.47 2006/02/17 15:36:16 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -542,6 +542,56 @@ char *pax_short_pf_flags(unsigned long flags)
 		warn("inconsistent state detected.  flags=%lX\n", flags);
 
 	return buffer;
+}
+
+unsigned long pax_pf2hf_flags(unsigned long paxflags)
+{
+	unsigned long flags = 0;
+	char *pf_flags = pax_short_pf_flags(paxflags);
+	size_t x, len = strlen(pf_flags);
+	for (x = 0; x < len; x++) {
+		switch(pf_flags[x]) {
+			case 'p':
+				flags |= HF_PAX_PAGEEXEC;
+				break;
+			case 'P':
+				flags = (flags & ~HF_PAX_PAGEEXEC) | HF_PAX_SEGMEXEC;
+				break;
+			case 'E':
+				flags |= HF_PAX_EMUTRAMP;
+				break;
+			case 'e':
+				flags = (flags & ~HF_PAX_EMUTRAMP);
+				break;
+			case 'm':
+				flags |= HF_PAX_MPROTECT;
+				break;
+			case 'M':
+				flags = (flags & ~HF_PAX_MPROTECT);
+				break;
+			case 'r':
+				flags |= HF_PAX_RANDMMAP;
+				break;
+			case 'R':
+				flags = (flags & ~HF_PAX_RANDMMAP);
+				break;
+			case 'X':
+				flags |= HF_PAX_RANDEXEC;
+				break;
+			case 'x':
+				flags = (flags & ~HF_PAX_RANDEXEC);
+				break;
+			case 's':
+				flags |= HF_PAX_SEGMEXEC;
+				break;
+			case 'S':
+				flags = (flags & ~HF_PAX_SEGMEXEC) | HF_PAX_PAGEEXEC;
+				break;
+			default:
+				break;
+		}
+	}
+	return flags;
 }
 
 char *gnu_short_stack_flags(unsigned long flags)
