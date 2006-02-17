@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.126 2006/02/16 05:47:23 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.127 2006/02/17 07:13:54 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.126 2006/02/16 05:47:23 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.127 2006/02/17 07:13:54 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -53,7 +53,7 @@ static char show_textrels = 0;
 static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
-static char be_very_quiet = 0;
+static char be_wewy_wewy_quiet = 0;
 static char *find_sym = NULL, *versioned_symname = NULL;
 static char *find_lib = NULL;
 static char *find_section = NULL;
@@ -66,6 +66,7 @@ static char use_ldcache = 0;
 int match_bits = 0;
 caddr_t ldcache = 0;
 size_t ldcache_size = 0;
+unsigned long setpax = 0UL;
 
 /* sub-funcs for scanelf_file() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
@@ -94,6 +95,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
 	GET_SYMTABS(32)
 	GET_SYMTABS(64)
 }
+
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
 	static char ret[7];
@@ -112,6 +114,10 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) != PT_PAX_FLAGS) \
 			continue; \
+		if (fix_elf && setpax) { \
+			/* set the paxctl flags */ \
+			ESET(phdr[i].p_flags, setpax); \
+		} \
 		if (be_quiet && (EGET(phdr[i].p_flags) == 10240)) \
 			continue; \
 		memcpy(ret, pax_short_pf_flags(EGET(phdr[i].p_flags)), 6); \
@@ -127,15 +133,21 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	/* fall back to EI_PAX if no PT_PAX was found */
 	if (!*ret) {
 		static char *paxflags;
+
+		if (fix_elf && setpax) {
+			/* set the chpax settings */
+			// ESET(EHDR ## B (elf->ehdr)->e_ident[EI_PAX]), setpax);
+		}
+
 		paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
 		if (!be_quiet || (be_quiet && EI_PAX_FLAGS(elf))) {
 			*found_pax = 1;
-			return (be_very_quiet ? NULL : paxflags);
+			return (be_wewy_wewy_quiet ? NULL : paxflags);
 		}
 		strncpy(ret, paxflags, sizeof(ret));
 	}
 
-	if (be_very_quiet || (be_quiet && !shown))
+	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
 	else
 		return ret;
@@ -233,7 +245,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	SHOW_PHDR(32)
 	SHOW_PHDR(64)
 
-	if (be_very_quiet || (be_quiet && !shown))
+	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
 	else
 		return ret;
@@ -261,7 +273,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 				*found_textrel = 1; \
 				/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
-				return (be_very_quiet ? NULL : ret); \
+				return (be_wewy_wewy_quiet ? NULL : ret); \
 			} \
 			++dyn; \
 		} \
@@ -270,7 +282,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	SHOW_TEXTREL(64)
 	}
 
-	if (be_quiet || be_very_quiet)
+	if (be_quiet || be_wewy_wewy_quiet)
 		return NULL;
 	else
 		return "   -   ";
@@ -528,7 +540,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		SHOW_RPATH(64)
 	}
 
-	if (be_very_quiet) return;
+	if (be_wewy_wewy_quiet) return;
 
 	if (rpath && runpath) {
 		if (!strcmp(rpath, runpath)) {
@@ -667,7 +679,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 					} \
 					needed = (char*)(elf->data + offset); \
 					if (op == 0) { \
-						if (!be_very_quiet) { \
+						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
 							if (use_ldcache) \
 								if ((p = lookup_cache_lib(elf, needed)) != NULL) \
@@ -678,7 +690,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 					} else { \
 						if (!strncmp(find_lib, needed, strlen( !gmatch ? needed : find_lib))) { \
 							*found_lib = 1; \
-							return (be_very_quiet ? NULL : needed); \
+							return (be_wewy_wewy_quiet ? NULL : needed); \
 						} \
 					} \
 				} \
@@ -706,7 +718,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		if (elf->elf_class == ELFCLASS ## B) { \
 			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 			*found_interp = 1; \
-			return (be_very_quiet ? NULL : elf->data + EGET(strtbl->sh_offset)); \
+			return (be_wewy_wewy_quiet ? NULL : elf->data + EGET(strtbl->sh_offset)); \
 		}
 		SHOW_INTERP(32)
 		SHOW_INTERP(64)
@@ -738,7 +750,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 				{ \
 					if (be_quiet) return NULL; \
 					*found_bind = 1; \
-					return (char *)(be_very_quiet ? NULL : "NOW"); \
+					return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
 				} \
 				++dyn; \
 			} \
@@ -747,7 +759,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	SHOW_BIND(32)
 	SHOW_BIND(64)
 
-	if (be_very_quiet) return NULL;
+	if (be_wewy_wewy_quiet) return NULL;
 
 	if (be_quiet && !fstat(elf->fd, &s) && !(s.st_mode & S_ISUID || s.st_mode & S_ISGID)) {
 		return NULL;
@@ -791,7 +803,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 					} \
 					soname = (char*)(elf->data + offset); \
 					*found_soname = 1; \
-					return (be_very_quiet ? NULL : soname); \
+					return (be_wewy_wewy_quiet ? NULL : soname); \
 				} \
 				++dyn; \
 			} \
@@ -862,7 +874,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 	}
 
 break_out:
-	if (be_very_quiet) return NULL;
+	if (be_wewy_wewy_quiet) return NULL;
 
 	if (*find_sym != '*' && *found_sym)
 		return ret;
@@ -889,7 +901,7 @@ static char *scanelf_file_sections(elfobj *elf, char *found_section)
 	FIND_SECTION(64)
 
 
-	if (be_very_quiet) return NULL;
+	if (be_wewy_wewy_quiet) return NULL;
 
 	if (*found_section)
 		return find_section;
@@ -973,19 +985,19 @@ static int scanelf_elfobj(elfobj *elf)
 		}
 
 		out = NULL;
-		be_very_quiet = (out_format[i] == '#');
+		be_wewy_wewy_quiet = (out_format[i] == '#');
 		switch (out_format[++i]) {
 		case '%':
 		case '#':
 			xchrcat(&out_buffer, out_format[i], &out_len); break;
 		case 'F':
 			found_file = 1;
-			if (be_very_quiet) break;
+			if (be_wewy_wewy_quiet) break;
 			xstrcat(&out_buffer, elf->filename, &out_len);
 			break;
 		case 'p':
 			found_file = 1;
-			if (be_very_quiet) break;
+			if (be_wewy_wewy_quiet) break;
 			tmp = elf->filename;
 			if (search_path) {
 				ssize_t len_search = strlen(search_path);
@@ -999,7 +1011,7 @@ static int scanelf_elfobj(elfobj *elf)
 			break;
 		case 'f':
 			found_file = 1;
-			if (be_very_quiet) break;
+			if (be_wewy_wewy_quiet) break;
 			tmp = strrchr(elf->filename, '/');
 			tmp = (tmp == NULL ? elf->filename : tmp+1);
 			xstrcat(&out_buffer, tmp, &out_len);
@@ -1323,9 +1335,8 @@ static void scanelf_envpath()
 	free(path);
 }
 
-
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyAXxetrnLibSs:k:gN:TaqvF:f:o:M:E:BhV"
+#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1336,6 +1347,7 @@ static struct option const long_opts[] = {
 	{"archives",  no_argument, NULL, 'A'},
 	{"ldcache",   no_argument, NULL, 'L'},
 	{"fix",       no_argument, NULL, 'X'},
+	{"setpax",     a_argument, NULL, 'z'},
 	{"pax",       no_argument, NULL, 'x'},
 	{"header",    no_argument, NULL, 'e'},
 	{"textrel",   no_argument, NULL, 't'},
@@ -1371,7 +1383,8 @@ static const char *opts_help[] = {
 	"Don't scan symlinks",
 	"Scan archives (.a files)",
 	"Utilize ld.so.cache information (use with -r/-n)",
-	"Try and 'fix' bad things (use with -r/-e)\n",
+	"Try and 'fix' bad things (use with -r/-e)",
+	"Sets EI_PAX/PT_PAX_FLAGS to <arg> (use with -Xx)\n",
 	"Print PaX markings",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Print TEXTREL information",
@@ -1489,7 +1502,58 @@ static void parseargs(int argc, char *argv[])
 			out_format = optarg;
 			break;
 		}
+		case 'z': {
+			unsigned long flags = 10240;
+			size_t x;
 
+#define do_state(option, flag)				\
+			if (islower(option)) {		\
+				flags &= ~PF_##flag;	\
+				flags |= PF_NO##flag;	\
+			} else {			\
+				flags &= ~PF_NO##flag;	\
+				flags |= PF_##flag;	\
+			}
+
+			for (x = 0 ; x < strlen(optarg); x++) {
+				switch(optarg[x]) {
+					case 'p':
+					case 'P':
+						do_state(optarg[x], PAGEEXEC);
+						break;
+					case 's':
+					case 'S':
+						do_state(optarg[x], SEGMEXEC);
+						break;
+					case 'm':
+					case 'M':
+						do_state(optarg[x], MPROTECT);
+						break;
+					case 'e':
+					case 'E':
+						do_state(optarg[x], EMUTRAMP);
+						break;
+					case 'r':
+					case 'R':
+						do_state(optarg[x], RANDMMAP);
+						break;
+					case 'x':
+					case 'X':
+						do_state(optarg[x], RANDEXEC);
+						break;
+					default:
+						break;
+				}
+			}
+			if (!(((flags & PF_PAGEEXEC) && (flags & PF_NOPAGEEXEC)) ||
+				((flags & PF_SEGMEXEC) && (flags & PF_NOSEGMEXEC)) ||
+				((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)) ||
+				((flags & PF_RANDEXEC) && (flags & PF_NORANDEXEC)) ||
+				((flags & PF_EMUTRAMP) && (flags & PF_NOEMUTRAMP)) ||
+				((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP))))
+					setpax = flags;
+			break;
+		}
 		case 'g': gmatch = 1; break;
 		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
