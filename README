@@ -7,7 +7,7 @@ used on any distro.
 
 Usage: scanelf [options] <dir1/file1> [dir2 dirN file2 fileN ...]
 
-Options: -[plRmyAXxetrnLibSs:k:gN:TaqvF:f:o:M:E:BhV]
+Options: -[plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:BhV]
   -p, --path          * Scan all directories in PATH environment
   -l, --ldpath        * Scan all directories in /etc/ld.so.conf
   -R, --recursive     * Scan directories recursively
@@ -16,6 +16,7 @@ Options: -[plRmyAXxetrnLibSs:k:gN:TaqvF:f:o:M:E:BhV]
   -A, --archives      * Scan archives (.a files)
   -L, --ldcache       * Utilize ld.so.cache information (use with -r/-n)
   -X, --fix           * Try and 'fix' bad things (use with -r/-e)
+  -z, --setpax  <arg> * Sets EI_PAX/PT_PAX_FLAGS to <arg> (use with -Xx)
 
   -x, --pax           * Print PaX markings
   -e, --header        * Print GNU_STACK/PT_LOAD markings
@@ -30,7 +31,7 @@ Options: -[plRmyAXxetrnLibSs:k:gN:TaqvF:f:o:M:E:BhV]
   -N, --lib     <arg> * Find a specified library
   -g, --gmatch        * Use strncmp to match libraries. (use with -N)
   -T, --textrels      * Locate cause of TEXTREL
-  -E, --etype   <arg> * Print only ELF files matching numeric constant type
+  -E, --etype   <arg> * Print only ELF files matching etype ET_DYN,ET_EXEC ...
   -M, --bits    <arg> * Print only ELF files matching numeric bits
   -a, --all           * Print all scanned info (-x -e -t -r -b)
 

@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.50 2006/02/12 16:51:21 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.51 2006/02/18 15:51:11 solar Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -16,7 +16,7 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              $(call check-gcc, -Wextra)
 
 CFLAGS    ?= -O2 -pipe
-CFLAGS    += -D_GNU_SOURCE
+WFLAGS    += -D_GNU_SOURCE
 #CFLAGS   += -DEBUG -g
 #LDFLAGS  := -pie
 DESTDIR    =

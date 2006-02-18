@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.47 2006/02/17 15:36:16 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.48 2006/02/18 15:51:11 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -115,6 +115,20 @@ void print_etypes(FILE *stream)
 		fprintf(stream, " (%d) = %s\n", elf_etypes[i].value, elf_etypes[i].str);
 	}
 }
+
+int etype_lookup(const char *str)
+{
+	if (*str == 'E') {
+		int i;
+		for (i = 0; elf_etypes[i].str; ++i) {
+			if (strcmp(str, elf_etypes[i].str) == 0)
+				return elf_etypes[i].value;
+		}
+	}
+	return atoi(str);
+}
+
+
 /* translate elf EM_ defines */
 static pairtype elf_emtypes[] = {
 	QUERY(EM_NONE),

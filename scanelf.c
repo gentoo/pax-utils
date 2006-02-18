@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.128 2006/02/17 15:36:16 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.129 2006/02/18 15:51:11 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.128 2006/02/17 15:36:16 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.129 2006/02/18 15:51:11 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -118,7 +118,7 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 			/* set the paxctl flags */ \
 			ESET(phdr[i].p_flags, setpax); \
 		} \
-		if (be_quiet && (EGET(phdr[i].p_flags) == 10240)) \
+		if (be_quiet && (EGET(phdr[i].p_flags) == (PF_NOEMUTRAMP | PF_NORANDEXEC))) \
 			continue; \
 		memcpy(ret, pax_short_pf_flags(EGET(phdr[i].p_flags)), 6); \
 		*found_pax = 1; \
@@ -133,10 +133,13 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 
 	if (fix_elf && setpax) {
 		/* set the chpax settings */
-		if (elf->elf_class == ELFCLASS32)
-			ESET(EHDR32(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
-		else
-			ESET(EHDR64(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
+		if (elf->elf_class == ELFCLASS32) {
+			if (EHDR32(elf->ehdr)->e_type == ET_DYN || EHDR32(elf->ehdr)->e_type == ET_EXEC)
+				ESET(EHDR32(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
+		} else {
+			if (EHDR64(elf->ehdr)->e_type == ET_DYN || EHDR64(elf->ehdr)->e_type == ET_EXEC)
+				ESET(EHDR64(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
+		}
 	}
 
 	/* fall back to EI_PAX if no PT_PAX was found */
@@ -1089,11 +1092,11 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 			char *p;
 			while((p = strrchr(sbuf, ',')) != NULL) {
 				*p = 0;
-				if (atoi(p+1) == get_etype(elf))
+				if (etype_lookup(p+1) == get_etype(elf))
 					goto label_ret;
 			}
 		}
-		if (atoi(sbuf) != get_etype(elf))
+		if (etype_lookup(sbuf) != get_etype(elf))
 			goto label_done;
 	}
 
@@ -1253,17 +1256,17 @@ static int load_ld_so_conf(int i, const char *fname)
 			*p = 0;
 #ifdef HAVE_GLOB
 		// recursive includes of the same file will make this segfault.
-		if ((*path == 'i') && (strncmp(path, "include", 7) == 0) && isblank(path[7])) {
+		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob64_t gl;
 			size_t x;
 			char gpath[__PAX_UTILS_PATH_MAX];
 
-			gpath[sizeof(gpath)] = 0;
+			memset(gpath, 0, sizeof(gpath));
 
 			if (path[8] != '/')
-				snprintf(gpath, sizeof(gpath)-1, "/etc/%s", &path[8]);
+				snprintf(gpath, sizeof(gpath), "/etc/%s", &path[8]);
 			else
-				strncpy(gpath, &path[8], sizeof(gpath)-1);
+				strncpy(gpath, &path[8], sizeof(gpath));
 
 			if ((glob64(gpath, 0, NULL, &gl)) == 0) {
 				for (x = 0; x < gl.gl_pathc; ++x) {
@@ -1401,7 +1404,7 @@ static const char *opts_help[] = {
 	"Find a specified library",
 	"Use strncmp to match libraries. (use with -N)",
 	"Locate cause of TEXTREL",
-	"Print only ELF files matching numeric constant type",
+	"Print only ELF files matching etype ET_DYN,ET_EXEC ...",
 	"Print only ELF files matching numeric bits",
 	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
@@ -1506,7 +1509,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'z': {
-			unsigned long flags = 10240;
+			unsigned long flags = (PF_NOEMUTRAMP | PF_NORANDEXEC);
 			size_t x;
 
 #define do_state(option, flag)				\

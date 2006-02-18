@@ -17,10 +17,10 @@ scanelf | grep -e ^'  -' -e ^$ | while read line; do
 	[[ $arg != "" ]] && arg=" $arg"
 
 	short_opt=$(echo "${line}" | awk '{print $1}' | sed s/,//)
-	echo "${short_opt}${arg}" | awk '{print "  <ti>"$0"</ti>"}'
+	printf "%s\n" "${short_opt}${arg}" | awk '{print "  <ti>"$0"</ti>"}'
 
 	long_opt=$(echo "${line}" | awk '{print $2}' )
-	echo "${long_opt}${arg}" | awk '{print "  <ti>"$0"</ti>"}'
+	printf "%s" "${long_opt}${arg}" | awk '{print "  <ti>"$0"</ti>"}'
 
 
 	echo "  <ti>$(echo "${line}" | cut -d '*' -f 2- | cut -c 2-)</ti>"

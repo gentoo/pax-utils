@@ -34,6 +34,9 @@ Don't scan symlinks
 \fB\-X, \-\-fix\fR
 Try and 'fix' bad things (use with -r/-e)
 .TP
+\fB\-z, \-\-setpax\fR
+Sets EI_PAX/PT_PAX_FLAGS to <arg> (use with -Xx)
+.TP
 \fB\-x, \-\-pax\fR
 Print PaX markings
 .TP
@@ -78,7 +81,7 @@ Find a specified symbol
 Locate cause of TEXTREL
 .TP
 \fB\-E, \-\-etype <arg>\fR
-Print only ELF files matching numeric constant
+Print only ELF files matching etype ET_DYN,ET_EXEC ...
 .TP
 \fB\-M, \-\-bits <arg>\fR
 Print only ELF files matching numeric bits
