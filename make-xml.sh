@@ -23,7 +23,7 @@ scanelf | grep -e ^'  -' -e ^$ | while read line; do
 	printf "%s" "${long_opt}${arg}" | awk '{print "  <ti>"$0"</ti>"}'
 
 
-	echo "  <ti>$(echo "${line}" | cut -d '*' -f 2- | cut -c 2-)</ti>"
+	echo "  <ti>$(echo "${line}" | cut -d '*' -f 2- | tr '<,>' '[,]' | cut -c 2-)</ti>"
 	echo "</tr>"
 done
 echo "</table>"
