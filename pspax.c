@@ -21,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.27 2006/02/05 17:15:47 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.28 2006/02/27 18:19:10 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -204,7 +204,6 @@ static const char *get_proc_type(pid_t pid)
 	return ret;
 }
 
-
 static char *scanelf_file_phdr(elfobj *elf)
 {
 	static char ret[8];
@@ -257,7 +256,7 @@ static const char *get_proc_phdr(pid_t pid)
 }
 
 
-static void pspax(pid_t ppid)
+static void pspax(pid_t ppid, const char *find_name)
 {
 	register DIR *dir;
 	register struct dirent *de;
@@ -295,6 +294,12 @@ static void pspax(pid_t ppid)
 		stat(de->d_name, &st);
 		if ((errno != ENOENT) && (errno != EACCES)) {
 			pid = (pid_t) atoi((char *) basename((char *) de->d_name));
+			if (find_name && pid) {
+				char *str = get_proc_name(pid);
+	                        if (!str) continue;
+				if (strcmp(str, find_name) != 0)
+					pid = 0;
+			}
 			if (((ppid > 0) && (pid != ppid)) || (!pid))
 				continue;
 
@@ -420,6 +425,12 @@ static pid_t parseargs(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	pspax(parseargs(argc, argv));
+	pid_t pid = parseargs(argc, argv);
+	char *name = NULL;
+
+	if ((optind < argc) && (pid == 0))
+		name = argv[optind];
+
+	pspax(pid, name);
 	return EXIT_SUCCESS;
 }
