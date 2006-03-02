@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.130 2006/02/21 00:31:53 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.131 2006/03/02 14:40:53 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.130 2006/02/21 00:31:53 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.131 2006/03/02 14:40:53 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#')
@@ -735,6 +735,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 {
 	unsigned long i;
 	struct stat s;
+	char dynamic = 0;
 
 	if (!show_bind) return NULL;
 	if (!elf->phdr) return NULL;
@@ -747,6 +748,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			dynamic = 1; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			dyn = DYN ## B (elf->data + offset); \
@@ -771,7 +773,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return NULL;
 	} else {
 		*found_bind = 1;
-		return (char *) "LAZY";
+		return (char *) (dynamic ? "LAZY" : "STATIC");
 	}
 }
 static char *scanelf_file_soname(elfobj *elf, char *found_soname)
