@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.131 2006/03/02 14:40:53 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.132 2006/03/07 17:48:17 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,11 +9,20 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.131 2006/03/02 14:40:53 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.132 2006/03/07 17:48:17 solar Exp $";
 #define argv0 "scanelf"
 
-#define IS_MODIFIER(c) (c == '%' || c == '#')
+#define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
 
+
+#define do_state(option, flag)		\
+	if (islower(option)) {		\
+		flags &= ~PF_##flag;	\
+		flags |= PF_NO##flag;	\
+	} else {			\
+		flags &= ~PF_NO##flag;	\
+		flags |= PF_##flag;	\
+	}
 
 
 /* prototypes */
@@ -54,6 +63,7 @@ static char show_banner = 1;
 static char be_quiet = 0;
 static char be_verbose = 0;
 static char be_wewy_wewy_quiet = 0;
+static char be_semi_verbose = 0;
 static char *find_sym = NULL, *versioned_symname = NULL;
 static char *find_lib = NULL;
 static char *find_section = NULL;
@@ -867,7 +877,13 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							next_sym = this_sym + strlen(this_sym); \
 						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
 						    (strcmp(symname, versioned_symname) == 0)) { \
-							ret = this_sym; \
+							if (be_semi_verbose) { \
+								char buf[126]; \
+								snprintf(buf, sizeof(buf), "%lX %s %s", \
+									(unsigned long)sym->st_size, get_elfstttype(sym->st_info), this_sym); \
+								ret = buf; \
+							} else \
+								ret = this_sym; \
 							(*found_sym)++; \
 							goto break_out; \
 						} \
@@ -955,6 +971,7 @@ static int scanelf_elfobj(elfobj *elf)
 			if (!IS_MODIFIER(out_format[i])) continue;
 
 			switch (out_format[++i]) {
+			case '+': break;
 			case '%': break;
 			case '#': break;
 			case 'F':
@@ -994,7 +1011,9 @@ static int scanelf_elfobj(elfobj *elf)
 
 		out = NULL;
 		be_wewy_wewy_quiet = (out_format[i] == '#');
+		be_semi_verbose = (out_format[i] == '+');
 		switch (out_format[++i]) {
+		case '+':
 		case '%':
 		case '#':
 			xchrcat(&out_buffer, out_format[i], &out_len); break;
@@ -1223,7 +1242,7 @@ static int scanelf_from_file(char *filename)
 	char *p;
 	char path[__PAX_UTILS_PATH_MAX];
 
-	if (((strcmp(filename, "-")) == 0) && (ttyname(0) == NULL))
+	if (strcmp(filename, "-") == 0)
 		fp = stdin;
 	else if ((fp = fopen(filename, "r")) == NULL)
 		return 1;
@@ -1514,15 +1533,6 @@ static void parseargs(int argc, char *argv[])
 			unsigned long flags = (PF_NOEMUTRAMP | PF_NORANDEXEC);
 			size_t x;
 
-#define do_state(option, flag)				\
-			if (islower(option)) {		\
-				flags &= ~PF_##flag;	\
-				flags |= PF_NO##flag;	\
-			} else {			\
-				flags &= ~PF_NO##flag;	\
-				flags |= PF_##flag;	\
-			}
-
 			for (x = 0 ; x < strlen(optarg); x++) {
 				switch(optarg[x]) {
 					case 'p':
@@ -1603,6 +1613,7 @@ static void parseargs(int argc, char *argv[])
 			if (!IS_MODIFIER(out_format[i])) continue;
 
 			switch (out_format[++i]) {
+			case '+': break;
 			case '%': break;
 			case '#': break;
 			case 'F': break;
@@ -1653,6 +1664,8 @@ static void parseargs(int argc, char *argv[])
 		load_ld_so_conf(0, "/etc/ld.so.conf");
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
+	if (!from_file && ttyname(0) == NULL)
+		from_file = (char *) "-";
 	if (from_file) {
 		scanelf_from_file(from_file);
 		from_file = *argv;
