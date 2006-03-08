@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.132 2006/03/07 17:48:17 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.133 2006/03/08 05:32:53 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.132 2006/03/07 17:48:17 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.133 2006/03/08 05:32:53 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1236,7 +1236,7 @@ static void scanelf_dir(const char *path)
 	closedir(dir);
 }
 
-static int scanelf_from_file(char *filename)
+static int scanelf_from_file(const char *filename)
 {
 	FILE *fp = NULL;
 	char *p;
@@ -1477,7 +1477,7 @@ static void usage(int status)
 static void parseargs(int argc, char *argv[])
 {
 	int i;
-	char *from_file = NULL;
+	const char *from_file = NULL;
 
 	opterr = 0;
 	while ((i=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
@@ -1665,7 +1665,7 @@ static void parseargs(int argc, char *argv[])
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (!from_file && ttyname(0) == NULL)
-		from_file = (char *) "-";
+		from_file = "-";
 	if (from_file) {
 		scanelf_from_file(from_file);
 		from_file = *argv;
