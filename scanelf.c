@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.133 2006/03/08 05:32:53 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.134 2006/03/15 03:20:29 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.133 2006/03/08 05:32:53 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.134 2006/03/15 03:20:29 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -855,12 +855,15 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
 			if (sym->st_name) { \
+				/* make sure the symbol name is in acceptable memory range */ \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 				if ((void*)symname > (void*)elf->data_end) { \
 					warnf("%s: corrupt ELF symbols", elf->filename); \
+					++sym; \
 					continue; \
 				} \
-				if (*find_sym == '*') { \
+				/* debug display ... show all symbols and some extra info */ \
+				if (*ret == '*') { \
 					printf("%s(%s) %5lX %15s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \
@@ -869,12 +872,25 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					       symname); \
 					*found_sym = 1; \
 				} else { \
+					/* allow the user to specify a comma delimited list of symbols to search for */ \
 					char *this_sym, *next_sym; \
-					this_sym = find_sym; \
+					this_sym = ret; \
 					do { \
 						next_sym = strchr(this_sym, ','); \
 						if (next_sym == NULL) \
 							next_sym = this_sym + strlen(this_sym); \
+						/* do we want a defined symbol ? */ \
+						if (*this_sym == '+') { \
+							if (sym->st_value == 0) \
+								goto skip_this_sym##B; \
+							++this_sym; \
+						/* do we want an undefined symbol ? */ \
+						} else if (*this_sym == '-') { \
+							if (sym->st_value != 0) \
+								goto skip_this_sym##B; \
+							++this_sym; \
+						} \
+						/* ok, lets compare the name now */ \
 						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
 						    (strcmp(symname, versioned_symname) == 0)) { \
 							if (be_semi_verbose) { \
@@ -887,7 +903,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							(*found_sym)++; \
 							goto break_out; \
 						} \
-						this_sym = next_sym + 1; \
+						skip_this_sym##B: this_sym = next_sym + 1; \
 					} while (*next_sym != '\0'); \
 				} \
 			} \
