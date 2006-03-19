@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.14 2006/03/16 17:00:21 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.15 2006/03/19 02:41:17 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -28,20 +28,6 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <pwd.h>
-
-#ifndef HATE_GLOB
-# undef HAVE_GLOB
-# define HAVE_GLOB
-
-# include <glob.h>
-
-#ifndef __linux__
-# define glob64_t glob_t
-# define globfree64 globfree
-# define glob64 glob
-#endif
-
-#endif /* !HATE_GLOB */
 
 #include <sys/mman.h>
 #include "elf.h"

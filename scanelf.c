@@ -1,15 +1,17 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.136 2006/03/17 15:27:00 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.137 2006/03/19 02:41:17 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 #include "paxinc.h"
-
-static const char *rcsid = "$Id: scanelf.c,v 1.136 2006/03/17 15:27:00 solar Exp $";
+#ifdef __linux__
+ #include <glob.h>
+#endif
+static const char *rcsid = "$Id: scanelf.c,v 1.137 2006/03/19 02:41:17 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1292,7 +1294,7 @@ static int load_ld_so_conf(int i, const char *fname)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
-#ifdef HAVE_GLOB
+#ifdef __linux__
 		// recursive includes of the same file will make this segfault.
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob64_t gl;
