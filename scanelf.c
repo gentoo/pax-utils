@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.137 2006/03/19 02:41:17 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.138 2006/03/31 06:07:47 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -11,7 +11,7 @@
 #ifdef __linux__
  #include <glob.h>
 #endif
-static const char *rcsid = "$Id: scanelf.c,v 1.137 2006/03/19 02:41:17 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.138 2006/03/31 06:07:47 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -943,8 +943,8 @@ static char *scanelf_file_sections(elfobj *elf, char *found_section)
 	FIND_SECTION(32)
 	FIND_SECTION(64)
 
-
-	if (be_wewy_wewy_quiet) return NULL;
+	if (be_wewy_wewy_quiet)
+		return NULL;
 
 	if (*found_section)
 		return find_section;
