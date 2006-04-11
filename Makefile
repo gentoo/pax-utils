@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.51 2006/02/18 15:51:11 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.52 2006/04/11 01:04:23 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -98,6 +98,7 @@ dist: distclean
 	if [ -n "$$tempfiles" ] ; then \
 		echo "Please remove these files first:" ; \
 		echo "$$tempfiles" ; \
+		exit 1 ; \
 	fi
 	@if [ "$(PV)" = "" ] ; then \
 		echo "Please run 'make dist PV=<ver>'" ; \
