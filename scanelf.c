@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.138 2006/03/31 06:07:47 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.139 2006/04/11 02:47:34 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -11,7 +11,7 @@
 #ifdef __linux__
  #include <glob.h>
 #endif
-static const char *rcsid = "$Id: scanelf.c,v 1.138 2006/03/31 06:07:47 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.139 2006/04/11 02:47:34 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1683,7 +1683,7 @@ static void parseargs(int argc, char *argv[])
 		load_ld_so_conf(0, "/etc/ld.so.conf");
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
-	if (!from_file && ttyname(0) == NULL)
+	if (!from_file && optind == argc && ttyname(0) == NULL)
 		from_file = "-";
 	if (from_file) {
 		scanelf_from_file(from_file);
