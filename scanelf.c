@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.139 2006/04/11 02:47:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.140 2006/04/15 07:52:00 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -11,7 +11,7 @@
 #ifdef __linux__
  #include <glob.h>
 #endif
-static const char *rcsid = "$Id: scanelf.c,v 1.139 2006/04/11 02:47:34 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.140 2006/04/15 07:52:00 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -882,12 +882,12 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							next_sym = this_sym + strlen(this_sym); \
 						/* do we want a defined symbol ? */ \
 						if (*this_sym == '+') { \
-							if (sym->st_value == 0) \
+							if (sym->st_shndx == SHN_UNDEF) \
 								goto skip_this_sym##B; \
 							++this_sym; \
 						/* do we want an undefined symbol ? */ \
 						} else if (*this_sym == '-') { \
-							if (sym->st_value != 0) \
+							if (sym->st_shndx != SHN_UNDEF) \
 								goto skip_this_sym##B; \
 							++this_sym; \
 						} \
