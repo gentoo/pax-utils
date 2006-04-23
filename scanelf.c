@@ -1,17 +1,21 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.140 2006/04/15 07:52:00 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.141 2006/04/23 15:24:38 flameeyes Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 #include "paxinc.h"
-#ifdef __linux__
+#if defined(__GLIBC__) || defined(__UCLIBC__)
  #include <glob.h>
 #endif
-static const char *rcsid = "$Id: scanelf.c,v 1.140 2006/04/15 07:52:00 vapier Exp $";
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+ #include <elf-hints.h>
+#endif
+
+static const char *rcsid = "$Id: scanelf.c,v 1.141 2006/04/23 15:24:38 flameeyes Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -596,6 +600,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 #define FLAG_MIPS64_LIBN64  0x0700
 
 static char *lookup_cache_lib(elfobj *, char *);
+#if defined(__GLIBC__) || defined(__UCLIBC__)
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	int fd = 0;
@@ -661,7 +666,13 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	}
 	return buf;
 }
-
+#else
+#warning Cache support not implemented for your current target.
+static char *lookup_cache_lib(elfobj *elf, char *fname)
+{
+	return NULL;
+}
+#endif
 
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
@@ -1277,6 +1288,7 @@ static int scanelf_from_file(const char *filename)
 	return 0;
 }
 
+#if defined(__GLIBC__) || defined(__UCLIBC__)
 static int load_ld_so_conf(int i, const char *fname)
 {
 	FILE *fp = NULL;
@@ -1294,7 +1306,6 @@ static int load_ld_so_conf(int i, const char *fname)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
-#ifdef __linux__
 		// recursive includes of the same file will make this segfault.
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob64_t gl;
@@ -1324,7 +1335,6 @@ static int load_ld_so_conf(int i, const char *fname)
 			} else
 				abort();
 		}
-#endif
 		if (*path != '/')
 			continue;
 
@@ -1338,6 +1348,50 @@ static int load_ld_so_conf(int i, const char *fname)
 	fclose(fp);
 	return i;
 }
+#endif
+
+#if defined(__FreeBSD__) || (__DragonFly__)
+static int load_ld_so_hints(int i, const char *fname)
+{
+	FILE *fp = NULL;
+	char *b = NULL, *p;
+	struct elfhints_hdr hdr;
+	
+	if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+		return i;
+
+	if ((fp = fopen(fname, "r")) == NULL)
+		return i;
+
+	if ( fread(&hdr, 1, sizeof(hdr), fp) != sizeof(hdr) ||
+		hdr.magic != ELFHINTS_MAGIC || hdr.version != 1 ||
+		fseek(fp, hdr.strtab + hdr.dirlist, SEEK_SET) == -1
+	) {
+		fclose(fp);
+		return i;
+	}
+	
+	b = (char*)malloc(hdr.dirlistlen+1);
+	if ( fread(b, 1, hdr.dirlistlen+1, fp) != hdr.dirlistlen+1 ) {
+		fclose(fp);
+		free(b);
+		return i;
+	}
+	
+	while ( (p = strsep(&b, ":")) ) {
+		if ( *p == '\0' ) continue;
+		ldpaths[i++] = xstrdup(p);
+		
+		if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+			break;
+	}
+	ldpaths[i] = NULL;
+	
+	free(b);
+	fclose(fp);
+	return i;
+}
+#endif
 
 /* scan /etc/ld.so.conf for paths */
 static void scanelf_ldpath()
@@ -1680,7 +1734,11 @@ static void parseargs(int argc, char *argv[])
 
 	/* now lets actually do the scanning */
 	if (scan_ldpath || use_ldcache)
+#if defined(__GLIBC__) || defined(__UCLIBC__)
 		load_ld_so_conf(0, "/etc/ld.so.conf");
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+		load_ld_so_hints(0, _PATH_ELF_HINTS);
+#endif
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (!from_file && optind == argc && ttyname(0) == NULL)
