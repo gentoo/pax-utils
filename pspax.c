@@ -21,7 +21,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.28 2006/02/27 18:19:10 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.29 2006/04/25 02:58:19 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -31,6 +31,8 @@ static char show_all = 0;
 static char verbose = 0;
 static char show_banner = 1;
 static char show_phdr = 0;
+static char noexec = 1;
+static char writeexec = 1;
 
 static char *get_proc_name(pid_t pid)
 {
@@ -316,6 +318,14 @@ static void pspax(pid_t ppid, const char *find_name)
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 
+			if (noexec != writeexec) {
+				if ((wx == 1) && (writeexec != wx))
+					goto free_caps;
+
+				if ((wx == 0) && (writeexec))
+					goto free_caps;
+			}
+
 			if (show_all || type) {
 				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s\n",
 				       uid  ? uid->pw_name : "--------",
@@ -329,10 +339,12 @@ static void pspax(pid_t ppid, const char *find_name)
 				if (verbose && wx)
 					print_executable_mappings(pid);
 			}
+		free_caps:
 #ifdef WANT_SYSCAP
 			if (caps)
 				cap_free((void *)caps);
 #endif
+			continue;
 		}
 	}
 	closedir(dir);
@@ -341,12 +353,14 @@ static void pspax(pid_t ppid, const char *find_name)
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aep:vBhV"
+#define PARSE_FLAGS "aep:nwvBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
 	{"header",    no_argument, NULL, 'e'},
 	{"pid",        a_argument, NULL, 'p'},
+	{"nx",        no_argument, NULL, 'n'},
+	{"wx",        no_argument, NULL, 'w'},
 	{"verbose",   no_argument, NULL, 'v'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
@@ -357,6 +371,8 @@ static const char *opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Process ID/pid #",
+	"Only display w^x processes",
+	"Only display w|x processes",
 	"Be verbose about executable mappings",
 	"Don't display the header",
 	"Print this help and exit",
@@ -403,6 +419,8 @@ static pid_t parseargs(int argc, char *argv[])
 		case 'a': show_all = 1; break;
 		case 'e': show_phdr = 1; break;
 		case 'p': pid = atoi(optarg); break;
+		case 'n': noexec = 1; writeexec = 0; break;
+		case 'w': noexec = 0; writeexec = 1; break;
 		case 'v': verbose++; break;
 
 		case ':':
