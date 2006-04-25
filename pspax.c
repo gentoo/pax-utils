@@ -16,12 +16,15 @@
 #include "paxinc.h"
 
 #ifdef WANT_SYSCAP
-#undef _POSIX_SOURCE
-#include <sys/capability.h>
+# undef _POSIX_SOURCE
+# include <sys/capability.h>
+# define WRAP_SYSCAP(x) x
+#else
+# define WRAP_SYSCAP(x)
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.29 2006/04/25 02:58:19 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.30 2006/04/25 04:18:45 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -127,6 +130,15 @@ static int print_executable_mappings(pid_t pid)
 	return 0;
 }
 
+#ifdef __BOUNDS_CHECKING_ON
+#define NOTE_TO_SELF warn( \
+	"This is bullshit but getpwuid() is leaking memory and I wasted a few hrs 1 day tracking it down in pspax\n" \
+	"Later on I forgot I tracked it down before and saw pspax leaking memory so I tracked it down all over again (silly me)\n" \
+	"Hopefully the getpwuid()/nis/nss/pam or whatever wont suck later on in the future.")
+#else
+ #define NOTE_TO_SELF
+#endif
+
 static struct passwd *get_proc_uid(pid_t pid)
 {
 	struct stat st;
@@ -135,14 +147,6 @@ static struct passwd *get_proc_uid(pid_t pid)
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
 
-	/* this is bullshit but getpwuid() is leaking memory
-	 * and I've wasted a few hrs 1 day tracking it down.
-	 * I forgot I tracked it down before and saw pspax leaking
-	 * memory so I tracked it down again (silly me)
-	 * anyway.. please leave this comment here so I don't waste my
-	 * time again the next time I forget.
-	 * and till such time as getpwuid()/nis/nss/pam or whatever does not suck.
-	 */
 	if ((stat(str, &st)) != (-1))
 		if ((pwd = getpwuid(st.st_uid)) != NULL)
 			return pwd;
@@ -161,12 +165,12 @@ static char *get_proc_status(pid_t pid, const char *name)
 
 	len = strlen(name);
 	while (fgets(str, sizeof(str), fp)) {
-		if (strncasecmp(str, name, len) == 0) {
-			if (str[len] == ':') {
-				fclose(fp);
-				str[strlen(str) - 1] = 0;
-				return (str + len + 2);
-			}
+		if (strncasecmp(str, name, len) != 0)
+			continue;
+		if (str[len] == ':') {
+			fclose(fp);
+			str[strlen(str) - 1] = 0;
+			return (str + len + 2);
 		}
 	}
 	fclose(fp);
@@ -267,12 +271,9 @@ static void pspax(pid_t ppid, const char *find_name)
 	struct passwd *uid;
 	struct stat st;
 	const char *pax, *type, *name, *caps, *attr;
-#ifdef WANT_SYSCAP
-	ssize_t length;
-	cap_t cap_d;
+	WRAP_SYSCAP(ssize_t length; cap_t cap_d;);
 
-	cap_d = cap_init();
-#endif
+	WRAP_SYSCAP(cap_d = cap_init());
 
 	caps = NULL;
 
@@ -305,26 +306,25 @@ static void pspax(pid_t ppid, const char *find_name)
 			if (((ppid > 0) && (pid != ppid)) || (!pid))
 				continue;
 
-#ifdef WANT_SYSCAP
-			/* this is a non-POSIX function */
-			capgetp(pid, cap_d);
-			caps = cap_to_text(cap_d, &length);
-#endif
+			wx = get_proc_maps(pid);
+
+			if (noexec != writeexec) {
+				if ((wx == 1) && (writeexec != wx))
+					goto next_pid;
+
+				if ((wx == 0) && (writeexec))
+					goto next_pid;
+			}
 
 			uid  = get_proc_uid(pid);
 			pax  = get_proc_status(pid, "PAX");
-			wx   = get_proc_maps(pid);
 			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 
-			if (noexec != writeexec) {
-				if ((wx == 1) && (writeexec != wx))
-					goto free_caps;
-
-				if ((wx == 0) && (writeexec))
-					goto free_caps;
-			}
+			/* this is a non-POSIX function */
+			WRAP_SYSCAP(capgetp(pid, cap_d));
+			WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
 
 			if (show_all || type) {
 				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s\n",
@@ -339,11 +339,10 @@ static void pspax(pid_t ppid, const char *find_name)
 				if (verbose && wx)
 					print_executable_mappings(pid);
 			}
-		free_caps:
-#ifdef WANT_SYSCAP
-			if (caps)
-				cap_free((void *)caps);
-#endif
+
+			WRAP_SYSCAP(if (caps) cap_free((void *)caps));
+
+		next_pid:
 			continue;
 		}
 	}
@@ -450,5 +449,6 @@ int main(int argc, char *argv[])
 		name = argv[optind];
 
 	pspax(pid, name);
+	NOTE_TO_SELF;
 	return EXIT_SUCCESS;
 }
