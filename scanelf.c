@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.141 2006/04/23 15:24:38 flameeyes Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.142 2006/05/10 22:45:08 kevquinn Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,7 +15,7 @@
  #include <elf-hints.h>
 #endif
 
-static const char *rcsid = "$Id: scanelf.c,v 1.141 2006/04/23 15:24:38 flameeyes Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.142 2006/05/10 22:45:08 kevquinn Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -31,6 +31,7 @@ static const char *rcsid = "$Id: scanelf.c,v 1.141 2006/04/23 15:24:38 flameeyes
 
 
 /* prototypes */
+static int file_matches_list(const char *filename, char **matchlist);
 static int scanelf_elfobj(elfobj *elf);
 static int scanelf_elf(const char *filename, int fd, size_t len);
 static int scanelf_archive(const char *filename, int fd, size_t len);
@@ -39,9 +40,12 @@ static void scanelf_dir(const char *path);
 static void scanelf_ldpath(void);
 static void scanelf_envpath(void);
 static void usage(int status);
+static char **get_split_env(const char *envvar);
+static void parseenv(void);
 static void parseargs(int argc, char *argv[]);
 static char *xstrdup(const char *s);
 static void *xmalloc(size_t size);
+static void *xrealloc(void *ptr, size_t size);
 static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
 #define xstrcat(dst,src,curr_len) xstrncat(dst,src,curr_len,0)
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
@@ -78,10 +82,80 @@ static char fix_elf = 0;
 static char gmatch = 0;
 static char use_ldcache = 0;
 
+static char **qa_textrels = NULL;
+static char **qa_execstack = NULL;
+
 int match_bits = 0;
 caddr_t ldcache = 0;
 size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
+
+/* utility funcs */
+static char *xstrdup(const char *s)
+{
+	char *ret = strdup(s);
+	if (!ret) err("Could not strdup(): %s", strerror(errno));
+	return ret;
+}
+static void *xmalloc(size_t size)
+{
+	void *ret = malloc(size);
+	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
+	return ret;
+}
+static void *xrealloc(void *ptr, size_t size)
+{
+	void *ret = realloc(ptr, size);
+	if (!ret) err("Could not realloc() %li bytes", (unsigned long)size);
+	return ret;
+}
+static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
+{
+	size_t new_len;
+
+	new_len = strlen(*dst) + strlen(src);
+	if (*curr_len <= new_len) {
+		*curr_len = new_len + (*curr_len / 2);
+		*dst = realloc(*dst, *curr_len);
+		if (!*dst)
+			err("could not realloc() %li bytes", (unsigned long)*curr_len);
+	}
+
+	if (n)
+		strncat(*dst, src, n);
+	else
+		strcat(*dst, src);
+}
+static inline void xchrcat(char **dst, const char append, size_t *curr_len)
+{
+	static char my_app[2];
+	my_app[0] = append;
+	my_app[1] = '\0';
+	xstrcat(dst, my_app, curr_len);
+}
+
+/* Match filename against entries in matchlist, return TRUE
+ * if the file is listed */
+static int file_matches_list(const char *filename, char **matchlist) {
+	char **file;
+	char *match;
+	char buf[__PAX_UTILS_PATH_MAX];
+	if (matchlist!=NULL) {
+		for (file=matchlist;
+			 *file!=NULL;
+			 file++) {
+			if (search_path) {
+				snprintf(buf,__PAX_UTILS_PATH_MAX,"%s%s",search_path,*file);
+				match=buf;
+			} else {
+				match=*file;
+			}
+			if (fnmatch(match, filename, 0) == 0)
+				return 1; /* TRUE */
+		}
+	}
+	return 0; /* FALSE */
+}
 
 /* sub-funcs for scanelf_file() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
@@ -200,9 +274,11 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
 			if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
 				if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
-				found = found_phdr; \
-				offset = 0; \
-				check_flags = PF_X; \
+				if (!file_matches_list(elf->filename, qa_execstack)) {\
+					found = found_phdr; \
+					offset = 0; \
+					check_flags = PF_X; \
+				} else continue; \
 			} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
 				if (multi_relro++) warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
 				found = found_relro; \
@@ -271,12 +347,15 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	else
 		return ret;
 }
+
 static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
 	static const char *ret = "TEXTREL";
 	unsigned long i;
 
 	if (!show_textrel && !show_textrels) return NULL;
+
+	if (file_matches_list(elf->filename, qa_textrels)) return NULL;
 
 	if (elf->phdr) {
 #define SHOW_TEXTREL(B) \
@@ -1253,7 +1332,7 @@ static void scanelf_dir(const char *path)
 			      (unsigned long)len, (unsigned long)sizeof(buf));
 			continue;
 		}
-		sprintf(buf, "%s/%s", path, dentry->d_name);
+		sprintf(buf, "%s%s%s", path, path[pathlen-1]=='/'?"":"/", dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
 				scanelf_file(buf);
@@ -1763,44 +1842,35 @@ static void parseargs(int argc, char *argv[])
 		munmap(ldcache, ldcache_size);
 }
 
+static char **get_split_env(const char *envvar) {
+	char **envvals=NULL;
+	char *saveptr=NULL;
+	char *env;
+	char *s;
+	int nentry;
 
+	env=getenv(envvar);
+	if (env==NULL) return NULL;
 
-/* utility funcs */
-static char *xstrdup(const char *s)
-{
-	char *ret = strdup(s);
-	if (!ret) err("Could not strdup(): %s", strerror(errno));
-	return ret;
-}
-static void *xmalloc(size_t size)
-{
-	void *ret = malloc(size);
-	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
-	return ret;
-}
-static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
-{
-	size_t new_len;
+	env=xstrdup(env);
+	if (env==NULL) return NULL;
 
-	new_len = strlen(*dst) + strlen(src);
-	if (*curr_len <= new_len) {
-		*curr_len = new_len + (*curr_len / 2);
-		*dst = realloc(*dst, *curr_len);
-		if (!*dst)
-			err("could not realloc() %li bytes", (unsigned long)*curr_len);
+	nentry=0;
+	for (s=strtok_r(env, " \t\n", &saveptr);
+		 s!=NULL;
+		 s=strtok_r(NULL, " \t\n", &saveptr)) {
+		envvals=xrealloc(envvals, sizeof(char *)*(nentry+1));
+		if (envvals==NULL) return NULL;
+		envvals[nentry++]=s;
 	}
+	envvals[nentry]=NULL;
 
-	if (n)
-		strncat(*dst, src, n);
-	else
-		strcat(*dst, src);
+	return envvals;
 }
-static inline void xchrcat(char **dst, const char append, size_t *curr_len)
-{
-	static char my_app[2];
-	my_app[0] = append;
-	my_app[1] = '\0';
-	xstrcat(dst, my_app, curr_len);
+
+static void parseenv() {
+	qa_textrels=get_split_env("QA_TEXTRELS");
+	qa_execstack=get_split_env("QA_EXECSTACK");
 }
 
 
@@ -1809,6 +1879,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2)
 		usage(EXIT_FAILURE);
+	parseenv();
 	parseargs(argc, argv);
 	fclose(stdout);
 #ifdef __BOUNDS_CHECKING_ON

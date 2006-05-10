@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.15 2006/03/19 02:41:17 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.16 2006/05/10 22:45:08 kevquinn Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -28,6 +28,7 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <fnmatch.h>
 
 #include <sys/mman.h>
 #include "elf.h"
