@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.142 2006/05/10 22:45:08 kevquinn Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.143 2006/05/11 05:44:22 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,7 +15,7 @@
  #include <elf-hints.h>
 #endif
 
-static const char *rcsid = "$Id: scanelf.c,v 1.142 2006/05/10 22:45:08 kevquinn Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.143 2006/05/11 05:44:22 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -140,19 +140,19 @@ static int file_matches_list(const char *filename, char **matchlist) {
 	char **file;
 	char *match;
 	char buf[__PAX_UTILS_PATH_MAX];
-	if (matchlist!=NULL) {
-		for (file=matchlist;
-			 *file!=NULL;
-			 file++) {
-			if (search_path) {
-				snprintf(buf,__PAX_UTILS_PATH_MAX,"%s%s",search_path,*file);
-				match=buf;
-			} else {
-				match=*file;
-			}
-			if (fnmatch(match, filename, 0) == 0)
-				return 1; /* TRUE */
+
+	if (matchlist == NULL)
+		return 0;
+
+	for (file = matchlist; *file != NULL; file++) {
+		if (search_path) {
+			snprintf(buf,__PAX_UTILS_PATH_MAX, "%s%s", search_path, *file);
+			match=buf;
+		} else {
+			match=*file;
 		}
+		if (fnmatch(match, filename, 0) == 0)
+			return 1; /* TRUE */
 	}
 	return 0; /* FALSE */
 }
@@ -1332,7 +1332,7 @@ static void scanelf_dir(const char *path)
 			      (unsigned long)len, (unsigned long)sizeof(buf));
 			continue;
 		}
-		sprintf(buf, "%s%s%s", path, path[pathlen-1]=='/'?"":"/", dentry->d_name);
+		snprintf(buf, sizeof(buf), "%s%s%s", path, (path[pathlen-1] == '/') ? "" : "/", dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
 				scanelf_file(buf);
@@ -1843,27 +1843,26 @@ static void parseargs(int argc, char *argv[])
 }
 
 static char **get_split_env(const char *envvar) {
-	char **envvals=NULL;
-	char *saveptr=NULL;
+	char **envvals = NULL;
+	char *saveptr = NULL;
 	char *env;
 	char *s;
 	int nentry;
 
-	env=getenv(envvar);
-	if (env==NULL) return NULL;
+	if ((env = getenv(envvar)) == NULL)
+		return NULL;
 
-	env=xstrdup(env);
-	if (env==NULL) return NULL;
+	env = xstrdup(env);
+	if (env == NULL)
+		return NULL;
 
-	nentry=0;
-	for (s=strtok_r(env, " \t\n", &saveptr);
-		 s!=NULL;
-		 s=strtok_r(NULL, " \t\n", &saveptr)) {
-		envvals=xrealloc(envvals, sizeof(char *)*(nentry+1));
-		if (envvals==NULL) return NULL;
-		envvals[nentry++]=s;
+	nentry = 0;
+	for (s = strtok_r(env, " \t\n", &saveptr); s != NULL; s = strtok_r(NULL, " \t\n", &saveptr)) {
+		if ((envvals = xrealloc(envvals, sizeof(char *)*(nentry+1))) == NULL)
+			return NULL;
+		envvals[nentry++] = s;
 	}
-	envvals[nentry]=NULL;
+	envvals[nentry] = NULL;
 
 	return envvals;
 }
