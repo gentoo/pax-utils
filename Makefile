@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.52 2006/04/11 01:04:23 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.53 2006/05/13 23:40:38 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -16,17 +16,26 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              $(call check-gcc, -Wextra)
 
 CFLAGS    ?= -O2 -pipe
-WFLAGS    += -D_GNU_SOURCE
-#CFLAGS   += -DEBUG -g
-#LDFLAGS  := -pie
+CPPFLAGS  := -D_GNU_SOURCE
+LDFLAGS   :=
+LIBS      :=
 DESTDIR    =
 PREFIX    := $(DESTDIR)/usr
 STRIP     := strip
 MKDIR     := mkdir -p
 CP        := cp
 
+# Some fun settings
+#CFLAGS   += -DEBUG -g
+#LDFLAGS  := -pie
+
+ifeq ($(USE_CAP),yes)
+CPPFLAGS  += -DWANT_SYSCAP
+LIBS      += -lcap
+endif
+
 ifdef PV
-HFLAGS    += -DVERSION=\"$(PV)\"
+CPPFLAGS  += -DVERSION=\"$(PV)\"
 endif
 
 ####################################################################
@@ -54,15 +63,15 @@ debug:
 
 %.o: %.c
 ifeq ($(findstring s,$(MAKEFLAGS)),)
-	@echo $(CC) $(CFLAGS) -c $<
+	@echo $(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 endif
-	@$(CC) $(CFLAGS) $(WFLAGS) $(HFLAGS) -c $<
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(WFLAGS) -c $<
 
 $(ELF_TARGETS): $(ELF_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o $(LIBS)
 
 $(MACH_TARGETS): $(MACH_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o $(LIBS)
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
