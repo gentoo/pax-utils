@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.53 2006/05/13 23:40:38 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.54 2006/05/13 23:42:08 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -16,8 +16,8 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              $(call check-gcc, -Wextra)
 
 CFLAGS    ?= -O2 -pipe
-CPPFLAGS  := -D_GNU_SOURCE
-LDFLAGS   :=
+CPPFLAGS  += -D_GNU_SOURCE
+LDFLAGS   +=
 LIBS      :=
 DESTDIR    =
 PREFIX    := $(DESTDIR)/usr
@@ -27,7 +27,7 @@ CP        := cp
 
 # Some fun settings
 #CFLAGS   += -DEBUG -g
-#LDFLAGS  := -pie
+#LDFLAGS  += -pie
 
 ifeq ($(USE_CAP),yes)
 CPPFLAGS  += -DWANT_SYSCAP
