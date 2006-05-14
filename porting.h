@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.16 2006/05/10 22:45:08 kevquinn Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.17 2006/05/14 21:04:25 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -37,12 +37,6 @@
 # include <byteswap.h>
 #elif defined(__FreeBSD__)
 # include <sys/endian.h>
-#endif
-
-#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
-# define SET_STDOUT(fp) err("Darwin/NetBSD/OpenBSD have stupid stdout handling")
-#else
-# define SET_STDOUT(fp) stdout = fp
 #endif
 
 #if !defined(bswap_16)

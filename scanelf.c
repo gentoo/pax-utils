@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.145 2006/05/14 19:08:56 kevquinn Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.146 2006/05/14 21:04:25 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,7 +15,7 @@
  #include <elf-hints.h>
 #endif
 
-static const char *rcsid = "$Id: scanelf.c,v 1.145 2006/05/14 19:08:56 kevquinn Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.146 2006/05/14 21:04:25 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1656,10 +1656,8 @@ static void parseargs(int argc, char *argv[])
 			match_bits = atoi(optarg);
 			break;
 		case 'o': {
-			FILE *fp = NULL;
-			if ((fp = freopen(optarg, "w", stdout)) == NULL)
+			if (freopen(optarg, "w", stdout) == NULL)
 				err("Could not open output stream '%s': %s", optarg, strerror(errno));
-			SET_STDOUT(fp);
 			break;
 		}
 		case 'k':
