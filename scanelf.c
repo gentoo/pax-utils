@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.147 2006/05/14 21:07:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.148 2006/05/14 21:18:38 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.147 2006/05/14 21:07:39 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.148 2006/05/14 21:18:38 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -676,7 +676,9 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 #define FLAG_MIPS64_LIBN64  0x0700
 
 static char *lookup_cache_lib(elfobj *, char *);
+
 #if defined(__GLIBC__) || defined(__UCLIBC__)
+
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	int fd = 0;
@@ -742,8 +744,9 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	}
 	return buf;
 }
+
 #else
-#warning Cache support not implemented for your current target.
+#warning Cache support not implemented for your target
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	return NULL;
@@ -1365,7 +1368,8 @@ static int scanelf_from_file(const char *filename)
 }
 
 #if defined(__GLIBC__) || defined(__UCLIBC__)
-static int load_ld_so_conf(int i, const char *fname)
+
+static int load_ld_cache_config(int i, const char *fname)
 {
 	FILE *fp = NULL;
 	char *p;
@@ -1400,7 +1404,7 @@ static int load_ld_so_conf(int i, const char *fname)
 					/* try to avoid direct loops */
 					if (strcmp(gl.gl_pathv[x], fname) == 0)
 						continue;
-					i = load_ld_so_conf(i, gl.gl_pathv[x]);
+					i = load_ld_cache_config(i, gl.gl_pathv[x]);
 					if (i + 1 >= sizeof(ldpaths) / sizeof(*ldpaths)) {
 						globfree64(&gl);
 						return i;
@@ -1424,10 +1428,10 @@ static int load_ld_so_conf(int i, const char *fname)
 	fclose(fp);
 	return i;
 }
-#endif
 
-#if defined(__FreeBSD__) || (__DragonFly__)
-static int load_ld_so_hints(int i, const char *fname)
+#elif defined(__FreeBSD__) || (__DragonFly__)
+
+static int load_ld_cache_config(int i, const char *fname)
 {
 	FILE *fp = NULL;
 	char *b = NULL, *p;
@@ -1467,6 +1471,15 @@ static int load_ld_so_hints(int i, const char *fname)
 	fclose(fp);
 	return i;
 }
+
+#else
+
+#warning Cache config support not implemented for your target
+static int load_ld_cache_config(int i, const char *fname)
+{
+	memset(ldpaths, 0x00, sizeof(ldpaths));
+}
+
 #endif
 
 /* scan /etc/ld.so.conf for paths */
@@ -1808,11 +1821,7 @@ static void parseargs(int argc, char *argv[])
 
 	/* now lets actually do the scanning */
 	if (scan_ldpath || use_ldcache)
-#if defined(__GLIBC__) || defined(__UCLIBC__)
-		load_ld_so_conf(0, "/etc/ld.so.conf");
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-		load_ld_so_hints(0, _PATH_ELF_HINTS);
-#endif
+		load_ld_cache_config(0, __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG);
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (!from_file && optind == argc && ttyname(0) == NULL)
