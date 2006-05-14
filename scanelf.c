@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.148 2006/05/14 21:18:38 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.149 2006/05/14 21:21:35 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.148 2006/05/14 21:18:38 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.149 2006/05/14 21:21:35 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1375,7 +1375,7 @@ static int load_ld_cache_config(int i, const char *fname)
 	char *p;
 	char path[__PAX_UTILS_PATH_MAX];
 
-	if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+	if (i + 1 == ARRAY_SIZE(ldpaths))
 		return i;
 
 	if ((fp = fopen(fname, "r")) == NULL)
@@ -1405,7 +1405,7 @@ static int load_ld_cache_config(int i, const char *fname)
 					if (strcmp(gl.gl_pathv[x], fname) == 0)
 						continue;
 					i = load_ld_cache_config(i, gl.gl_pathv[x]);
-					if (i + 1 >= sizeof(ldpaths) / sizeof(*ldpaths)) {
+					if (i + 1 >= ARRAY_SIZE(ldpaths)) {
 						globfree64(&gl);
 						return i;
 					}
@@ -1420,7 +1420,7 @@ static int load_ld_cache_config(int i, const char *fname)
 
 		ldpaths[i++] = xstrdup(path);
 
-		if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+		if (i + 1 == ARRAY_SIZE(ldpaths))
 			break;
 	}
 	ldpaths[i] = NULL;
@@ -1437,7 +1437,7 @@ static int load_ld_cache_config(int i, const char *fname)
 	char *b = NULL, *p;
 	struct elfhints_hdr hdr;
 	
-	if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+	if (i + 1 == ARRAY_SIZE(ldpaths))
 		return i;
 
 	if ((fp = fopen(fname, "r")) == NULL)
@@ -1462,7 +1462,7 @@ static int load_ld_cache_config(int i, const char *fname)
 		if ( *p == '\0' ) continue;
 		ldpaths[i++] = xstrdup(p);
 		
-		if (i + 1 == sizeof(ldpaths) / sizeof(*ldpaths))
+		if (i + 1 == ARRAY_SIZE(ldpaths))
 			break;
 	}
 	ldpaths[i] = NULL;
