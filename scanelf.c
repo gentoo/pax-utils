@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.149 2006/05/14 21:21:35 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.150 2006/05/14 21:37:55 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.149 2006/05/14 21:21:35 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.150 2006/05/14 21:37:55 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -131,7 +131,8 @@ static inline void xchrcat(char **dst, const char append, size_t *curr_len)
 
 /* Match filename against entries in matchlist, return TRUE
  * if the file is listed */
-static int file_matches_list(const char *filename, char **matchlist) {
+static int file_matches_list(const char *filename, char **matchlist)
+{
 	char **file;
 	char *match;
 	char buf[__PAX_UTILS_PATH_MAX];
@@ -142,9 +143,9 @@ static int file_matches_list(const char *filename, char **matchlist) {
 	for (file = matchlist; *file != NULL; file++) {
 		if (search_path) {
 			snprintf(buf,__PAX_UTILS_PATH_MAX, "%s%s", search_path, *file);
-			match=buf;
+			match = buf;
 		} else {
-			match=*file;
+			match = *file;
 		}
 		if (fnmatch(match, filename, 0) == 0)
 			return 1; /* TRUE */
@@ -1846,7 +1847,8 @@ static void parseargs(int argc, char *argv[])
 		munmap(ldcache, ldcache_size);
 }
 
-static char **get_split_env(const char *envvar) {
+static char **get_split_env(const char *envvar)
+{
 	char **envvals = NULL;
 	char *saveptr = NULL;
 	char *env;
@@ -1871,10 +1873,11 @@ static char **get_split_env(const char *envvar) {
 	return envvals;
 }
 
-static void parseenv() {
-	qa_textrels=get_split_env("QA_TEXTRELS");
-	qa_execstack=get_split_env("QA_EXECSTACK");
-	qa_wx_load=get_split_env("QA_WX_LOAD");
+static void parseenv()
+{
+	qa_textrels = get_split_env("QA_TEXTRELS");
+	qa_execstack = get_split_env("QA_EXECSTACK");
+	qa_wx_load = get_split_env("QA_WX_LOAD");
 }
 
 
