@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.20 2006/05/14 21:21:35 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.21 2006/05/14 23:49:56 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -13,6 +13,7 @@
 #define _PORTING_H
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(*arr))
+#undef __PAX_UTILS_CLEANUP
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +53,13 @@
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG _PATH_ELF_HINTS
 #else
 # undef __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG
+#endif
+
+/* bounds checking code will fart on free(NULL) even though that
+ * is valid usage.  So let's wrap it if need be. */
+#ifdef __BOUNDS_CHECKING_ON
+# define free(ptr) do { if (ptr) free(ptr); } while (0)
+# define __PAX_UTILS_CLEANUP
 #endif
 
 #if !defined(bswap_16)

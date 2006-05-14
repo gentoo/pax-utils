@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.151 2006/05/14 23:17:31 kevquinn Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.152 2006/05/14 23:49:56 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.151 2006/05/14 23:17:31 kevquinn Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.152 2006/05/14 23:49:56 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -142,16 +142,18 @@ static int file_matches_list(const char *filename, char **matchlist)
 
 	for (file = matchlist; *file != NULL; file++) {
 		if (search_path) {
-			snprintf(buf,__PAX_UTILS_PATH_MAX, "%s%s", search_path, *file);
+			snprintf(buf, sizeof(buf), "%s%s", search_path, *file);
 			match = buf;
 		} else {
 			match = *file;
 		}
 		if (fnmatch(match, filename, 0) == 0)
-			return 1; /* TRUE */
+			return 1;
 	}
-	return 0; /* FALSE */
+	return 0;
 }
+
+
 
 /* sub-funcs for scanelf_file() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
@@ -269,25 +271,28 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
 			if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
-				if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
-				if (!file_matches_list(elf->filename, qa_execstack)) {\
-					found = found_phdr; \
-					offset = 0; \
-					check_flags = PF_X; \
-				} else continue; \
+				if (multi_stack++) \
+					warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
+				if (file_matches_list(elf->filename, qa_execstack)) \
+					continue; \
+				found = found_phdr; \
+				offset = 0; \
+				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_GNU_RELRO) { \
-				if (multi_relro++) warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
+				if (multi_relro++) \
+					warnf("%s: multiple PT_GNU_RELRO's !?", elf->filename); \
 				found = found_relro; \
 				offset = 4; \
 				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
 				if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) \
-					if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
-				if (!file_matches_list(elf->filename, qa_wx_load)) {\
-					found = found_load; \
-					offset = 8; \
-					check_flags = PF_W|PF_X; \
-				} else continue; \
+					if (multi_load++ > max_pt_load) \
+						warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
+				if (file_matches_list(elf->filename, qa_wx_load)) \
+					continue; \
+				found = found_load; \
+				offset = 8; \
+				check_flags = PF_W|PF_X; \
 			} else \
 				continue; \
 			flags = EGET(phdr[i].p_flags); \
@@ -1437,32 +1442,32 @@ static int load_ld_cache_config(int i, const char *fname)
 	FILE *fp = NULL;
 	char *b = NULL, *p;
 	struct elfhints_hdr hdr;
-	
+
 	if (i + 1 == ARRAY_SIZE(ldpaths))
 		return i;
 
 	if ((fp = fopen(fname, "r")) == NULL)
 		return i;
 
-	if ( fread(&hdr, 1, sizeof(hdr), fp) != sizeof(hdr) ||
-		hdr.magic != ELFHINTS_MAGIC || hdr.version != 1 ||
-		fseek(fp, hdr.strtab + hdr.dirlist, SEEK_SET) == -1
-	) {
+	if (fread(&hdr, 1, sizeof(hdr), fp) != sizeof(hdr) ||
+	    hdr.magic != ELFHINTS_MAGIC || hdr.version != 1 ||
+	    fseek(fp, hdr.strtab + hdr.dirlist, SEEK_SET) == -1)
+	{
 		fclose(fp);
 		return i;
 	}
-	
+
 	b = (char*)malloc(hdr.dirlistlen+1);
-	if ( fread(b, 1, hdr.dirlistlen+1, fp) != hdr.dirlistlen+1 ) {
+	if (fread(b, 1, hdr.dirlistlen+1, fp) != hdr.dirlistlen+1) {
 		fclose(fp);
 		free(b);
 		return i;
 	}
-	
-	while ( (p = strsep(&b, ":")) ) {
-		if ( *p == '\0' ) continue;
+
+	while ((p = strsep(&b, ":"))) {
+		if (*p == '\0') continue;
 		ldpaths[i++] = xstrdup(p);
-		
+
 		if (i + 1 == ARRAY_SIZE(ldpaths))
 			break;
 	}
@@ -1839,7 +1844,7 @@ static void parseargs(int argc, char *argv[])
 	}
 
 	/* clean up */
-	if (versioned_symname) free(versioned_symname);
+	free(versioned_symname);
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
 
@@ -1849,10 +1854,9 @@ static void parseargs(int argc, char *argv[])
 
 static char **get_split_env(const char *envvar)
 {
+	const char *delims = " \t\n";
 	char **envvals = NULL;
-	char *saveptr = NULL;
-	char *env;
-	char *s;
+	char *env, *s;
 	int nentry;
 
 	if ((env = getenv(envvar)) == NULL)
@@ -1862,23 +1866,40 @@ static char **get_split_env(const char *envvar)
 	if (env == NULL)
 		return NULL;
 
-	nentry = 0;
-	for (s = strtok_r(env, " \t\n", &saveptr); s != NULL; s = strtok_r(NULL, " \t\n", &saveptr)) {
-		if ((envvals = xrealloc(envvals, sizeof(char *)*(nentry+1))) == NULL)
-			return NULL;
-		envvals[nentry++] = s;
+	s = strtok(env, delims);
+	if (s == NULL) {
+		free(env);
+		return NULL;
 	}
-	if (nentry > 0) envvals[nentry] = NULL;
 
+	nentry = 0;
+	while (s != NULL) {
+		++nentry;
+		envvals = xrealloc(envvals, sizeof(*envvals) * (nentry+1));
+		envvals[nentry-1] = s;
+		s = strtok(NULL, delims);
+	}
+	envvals[nentry] = NULL;
+
+	/* don't want to free(env) as it contains the memory that backs
+	 * the envvals array of strings */
 	return envvals;
 }
-
 static void parseenv()
 {
 	qa_textrels = get_split_env("QA_TEXTRELS");
 	qa_execstack = get_split_env("QA_EXECSTACK");
 	qa_wx_load = get_split_env("QA_WX_LOAD");
 }
+#ifdef __PAX_UTILS_CLEANUP
+static void cleanup()
+{
+	free(out_format);
+	free(qa_textrels);
+	free(qa_execstack);
+	free(qa_wx_load);
+}
+#endif
 
 
 
@@ -1889,8 +1910,11 @@ int main(int argc, char *argv[])
 	parseenv();
 	parseargs(argc, argv);
 	fclose(stdout);
-#ifdef __BOUNDS_CHECKING_ON
-	warn("The calls to add/delete heap should be off by 1 due to the out_buffer not being freed in scanelf_file()");
+#ifdef __PAX_UTILS_CLEANUP
+	cleanup();
+	warn("The calls to add/delete heap should be off:\n"
+	     "\t- 1 due to the out_buffer not being freed in scanelf_file()\n"
+	     "\t- 1 per QA_TEXTRELS/QA_EXECSTACK/QA_WX_LOAD");
 #endif
 	return EXIT_SUCCESS;
 }
