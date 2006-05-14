@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.144 2006/05/14 03:40:33 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.145 2006/05/14 19:08:56 kevquinn Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,7 +15,7 @@
  #include <elf-hints.h>
 #endif
 
-static const char *rcsid = "$Id: scanelf.c,v 1.144 2006/05/14 03:40:33 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.145 2006/05/14 19:08:56 kevquinn Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -84,6 +84,7 @@ static char use_ldcache = 0;
 
 static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
+static char **qa_wx_load = NULL;
 
 int match_bits = 0;
 caddr_t ldcache = 0;
@@ -287,9 +288,11 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
 				if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) \
 					if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
-				found = found_load; \
-				offset = 8; \
-				check_flags = PF_W|PF_X; \
+				if (!file_matches_list(elf->filename, qa_wx_load)) {\
+					found = found_load; \
+					offset = 8; \
+					check_flags = PF_W|PF_X; \
+				} else continue; \
 			} else \
 				continue; \
 			flags = EGET(phdr[i].p_flags); \
@@ -1870,6 +1873,7 @@ static char **get_split_env(const char *envvar) {
 static void parseenv() {
 	qa_textrels=get_split_env("QA_TEXTRELS");
 	qa_execstack=get_split_env("QA_EXECSTACK");
+	qa_wx_load=get_split_env("QA_WX_LOAD");
 }
 
 
