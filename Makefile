@@ -1,6 +1,6 @@
 # Copyright 2003 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.54 2006/05/13 23:42:08 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.55 2006/05/14 05:52:46 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -30,8 +30,8 @@ CP        := cp
 #LDFLAGS  += -pie
 
 ifeq ($(USE_CAP),yes)
-CPPFLAGS  += -DWANT_SYSCAP
-LIBS      += -lcap
+CPPFLAGS-pspax.c += -DWANT_SYSCAP
+LIBS-pspax       += -lcap
 endif
 
 ifdef PV
@@ -61,17 +61,24 @@ debug:
 	@-/sbin/chpax  -permsx $(ELF_TARGETS)
 	@-/sbin/paxctl -permsx $(ELF_TARGETS)
 
-%.o: %.c
-ifeq ($(findstring s,$(MAKEFLAGS)),)
-	@echo $(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+compile.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(CPPFLAGS-$<) -o $@ -c $<
+
+ifeq ($(V),)
+Q := @
+else
+Q :=
 endif
-	@$(CC) $(CFLAGS) $(CPPFLAGS) $(WFLAGS) -c $<
+%.o: %.c
+ifeq ($(V),)
+	@echo $(compile.c)
+endif
+	$(Q)$(compile.c) $(WFLAGS)
 
 $(ELF_TARGETS): $(ELF_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o $(LIBS) $(LIBS-$@)
 
 $(MACH_TARGETS): $(MACH_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o $(LIBS) $(LIBS-$@)
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
