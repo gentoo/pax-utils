@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.143 2006/05/11 05:44:22 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.144 2006/05/14 03:40:33 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,7 +15,7 @@
  #include <elf-hints.h>
 #endif
 
-static const char *rcsid = "$Id: scanelf.c,v 1.143 2006/05/11 05:44:22 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.144 2006/05/14 03:40:33 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -983,7 +983,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 						} \
 						/* ok, lets compare the name now */ \
 						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
-						    (strcmp(symname, versioned_symname) == 0)) { \
+						    (strncmp(symname, versioned_symname, strlen(versioned_symname)) == 0)) { \
 							if (be_semi_verbose) { \
 								char buf[126]; \
 								snprintf(buf, sizeof(buf), "%lX %s %s", \
