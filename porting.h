@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.17 2006/05/14 21:04:25 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.18 2006/05/14 21:07:39 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -37,6 +37,14 @@
 # include <byteswap.h>
 #elif defined(__FreeBSD__)
 # include <sys/endian.h>
+#endif
+
+#if defined(__GLIBC__) || defined(__UCLIBC__)
+# include <glob.h>
+#endif
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+# include <elf-hints.h>
 #endif
 
 #if !defined(bswap_16)
