@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.152 2006/05/14 23:49:56 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.153 2006/05/17 21:45:20 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.152 2006/05/14 23:49:56 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.153 2006/05/17 21:45:20 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1830,7 +1830,7 @@ static void parseargs(int argc, char *argv[])
 		load_ld_cache_config(0, __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG);
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
-	if (!from_file && optind == argc && ttyname(0) == NULL)
+	if (!from_file && optind == argc && ttyname(0) == NULL && !scan_ldpath && !scan_envpath)
 		from_file = "-";
 	if (from_file) {
 		scanelf_from_file(from_file);
