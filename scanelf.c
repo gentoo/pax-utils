@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.153 2006/05/17 21:45:20 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.154 2006/06/03 18:25:18 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.153 2006/05/17 21:45:20 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.154 2006/06/03 18:25:18 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -750,7 +750,31 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	}
 	return buf;
 }
+#elif defined(__NetBSD__)
+static char *lookup_cache_lib(elfobj *elf, char *fname)
+{
+	static char buf[__PAX_UTILS_PATH_MAX] = "";
+	static struct stat st;
 
+	char **ldpath;
+	for (ldpath = ldpaths; *ldpath != NULL; ldpath++) {
+		if ((unsigned) snprintf(buf, sizeof(buf), "%s/%s", *ldpath, fname) >= sizeof(buf))
+			continue; /* if the pathname is too long, or something went wrong, ignore */
+
+		if (stat(buf, &st) != 0)
+			continue; /* if the lib doesn't exist in *ldpath, look further */
+
+		/* NetBSD doesn't actually do sanity checks, it just loads the file
+		 * and if that doesn't work, continues looking in other directories.
+		 * This cannot easily be safely emulated, unfortunately. For now,
+		 * just assume that if it exists, it's a valid library. */
+
+		return buf;
+	}
+
+	/* not found in any path */
+	return NULL;
+}
 #else
 #warning Cache support not implemented for your target
 static char *lookup_cache_lib(elfobj *elf, char *fname)
@@ -1373,7 +1397,7 @@ static int scanelf_from_file(const char *filename)
 	return 0;
 }
 
-#if defined(__GLIBC__) || defined(__UCLIBC__)
+#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 
 static int load_ld_cache_config(int i, const char *fname)
 {
@@ -1392,6 +1416,7 @@ static int load_ld_cache_config(int i, const char *fname)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
+#ifdef __linux__
 		// recursive includes of the same file will make this segfault.
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob64_t gl;
@@ -1421,6 +1446,7 @@ static int load_ld_cache_config(int i, const char *fname)
 			} else
 				abort();
 		}
+#endif
 		if (*path != '/')
 			continue;
 

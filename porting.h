@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.21 2006/05/14 23:49:56 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.22 2006/06/03 18:25:18 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -46,7 +46,7 @@
 # include <glob.h>
 #endif
 
-#if defined(__GLIBC__) || defined(__UCLIBC__)
+#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG "/etc/ld.so.conf"
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 # include <elf-hints.h>
