@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.48 2006/02/18 15:51:11 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.49 2006/06/10 19:09:24 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -205,6 +205,22 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_OPENRISC),
 	QUERY(EM_ARC_A5),
 	QUERY(EM_XTENSA),
+	QUERY(EM_VIDEOCORE),
+	QUERY(EM_TMM_GPP),
+	QUERY(EM_NS32K),
+	QUERY(EM_TPC),
+	QUERY(EM_SNP1K),
+	QUERY(EM_ST200),
+	QUERY(EM_IP2K),
+	QUERY(EM_MAX),
+	QUERY(EM_CR),
+	QUERY(EM_F2MC16),
+	QUERY(EM_MSP430),
+	QUERY(EM_BLACKFIN),
+	QUERY(EM_SE_C33),
+	QUERY(EM_SEP),
+	QUERY(EM_ARCA),
+	QUERY(EM_UNICORE),
 	QUERY(EM_NUM),
 	QUERY(EM_ALPHA),
 	{ 0, 0 }
