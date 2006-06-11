@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.155 2006/06/11 00:07:33 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.156 2006/06/11 00:23:11 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.155 2006/06/11 00:07:33 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.156 2006/06/11 00:23:11 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -926,8 +926,9 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					*found_sym = 1; \
 				} else { \
 					/* allow the user to specify a comma delimited list of symbols to search for */ \
-					char *this_sym, *next_sym; \
+					char *this_sym, *this_sym_ver, *next_sym; \
 					this_sym = ret; \
+					this_sym_ver = versioned_symname; \
 					do { \
 						next_sym = strchr(this_sym, ','); \
 						if (next_sym == NULL) \
@@ -937,15 +938,17 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							if (sym->st_shndx == SHN_UNDEF) \
 								goto skip_this_sym##B; \
 							++this_sym; \
+							++this_sym_ver; \
 						/* do we want an undefined symbol ? */ \
 						} else if (*this_sym == '-') { \
 							if (sym->st_shndx != SHN_UNDEF) \
 								goto skip_this_sym##B; \
 							++this_sym; \
+							++this_sym_ver; \
 						} \
 						/* ok, lets compare the name now */ \
 						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
-						    (strncmp(symname, versioned_symname, strlen(versioned_symname)) == 0)) { \
+						    (strncmp(this_sym_ver, symname, strlen(this_sym_ver)) == 0)) { \
 							if (be_semi_verbose) { \
 								char buf[126]; \
 								snprintf(buf, sizeof(buf), "%lX %s %s", \
