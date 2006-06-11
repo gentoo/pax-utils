@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.154 2006/06/03 18:25:18 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.155 2006/06/11 00:07:33 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.154 2006/06/03 18:25:18 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.155 2006/06/11 00:07:33 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -84,74 +84,6 @@ int match_bits = 0;
 caddr_t ldcache = 0;
 size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
-
-/* utility funcs */
-static char *xstrdup(const char *s)
-{
-	char *ret = strdup(s);
-	if (!ret) err("Could not strdup(): %s", strerror(errno));
-	return ret;
-}
-static void *xmalloc(size_t size)
-{
-	void *ret = malloc(size);
-	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
-	return ret;
-}
-static void *xrealloc(void *ptr, size_t size)
-{
-	void *ret = realloc(ptr, size);
-	if (!ret) err("Could not realloc() %li bytes", (unsigned long)size);
-	return ret;
-}
-static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
-{
-	size_t new_len;
-
-	new_len = strlen(*dst) + strlen(src);
-	if (*curr_len <= new_len) {
-		*curr_len = new_len + (*curr_len / 2);
-		*dst = realloc(*dst, *curr_len);
-		if (!*dst)
-			err("could not realloc() %li bytes", (unsigned long)*curr_len);
-	}
-
-	if (n)
-		strncat(*dst, src, n);
-	else
-		strcat(*dst, src);
-}
-static inline void xchrcat(char **dst, const char append, size_t *curr_len)
-{
-	static char my_app[2];
-	my_app[0] = append;
-	my_app[1] = '\0';
-	xstrcat(dst, my_app, curr_len);
-}
-
-/* Match filename against entries in matchlist, return TRUE
- * if the file is listed */
-static int file_matches_list(const char *filename, char **matchlist)
-{
-	char **file;
-	char *match;
-	char buf[__PAX_UTILS_PATH_MAX];
-
-	if (matchlist == NULL)
-		return 0;
-
-	for (file = matchlist; *file != NULL; file++) {
-		if (search_path) {
-			snprintf(buf, sizeof(buf), "%s%s", search_path, *file);
-			match = buf;
-		} else {
-			match = *file;
-		}
-		if (fnmatch(match, filename, 0) == 0)
-			return 1;
-	}
-	return 0;
-}
 
 
 
@@ -1943,4 +1875,74 @@ int main(int argc, char *argv[])
 	     "\t- 1 per QA_TEXTRELS/QA_EXECSTACK/QA_WX_LOAD");
 #endif
 	return EXIT_SUCCESS;
+}
+
+
+
+/* utility funcs */
+static char *xstrdup(const char *s)
+{
+	char *ret = strdup(s);
+	if (!ret) err("Could not strdup(): %s", strerror(errno));
+	return ret;
+}
+static void *xmalloc(size_t size)
+{
+	void *ret = malloc(size);
+	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
+	return ret;
+}
+static void *xrealloc(void *ptr, size_t size)
+{
+	void *ret = realloc(ptr, size);
+	if (!ret) err("Could not realloc() %li bytes", (unsigned long)size);
+	return ret;
+}
+static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
+{
+	size_t new_len;
+
+	new_len = strlen(*dst) + strlen(src);
+	if (*curr_len <= new_len) {
+		*curr_len = new_len + (*curr_len / 2);
+		*dst = realloc(*dst, *curr_len);
+		if (!*dst)
+			err("could not realloc() %li bytes", (unsigned long)*curr_len);
+	}
+
+	if (n)
+		strncat(*dst, src, n);
+	else
+		strcat(*dst, src);
+}
+static inline void xchrcat(char **dst, const char append, size_t *curr_len)
+{
+	static char my_app[2];
+	my_app[0] = append;
+	my_app[1] = '\0';
+	xstrcat(dst, my_app, curr_len);
+}
+
+/* Match filename against entries in matchlist, return TRUE
+ * if the file is listed */
+static int file_matches_list(const char *filename, char **matchlist)
+{
+	char **file;
+	char *match;
+	char buf[__PAX_UTILS_PATH_MAX];
+
+	if (matchlist == NULL)
+		return 0;
+
+	for (file = matchlist; *file != NULL; file++) {
+		if (search_path) {
+			snprintf(buf, sizeof(buf), "%s%s", search_path, *file);
+			match = buf;
+		} else {
+			match = *file;
+		}
+		if (fnmatch(match, filename, 0) == 0)
+			return 1;
+	}
+	return 0;
 }
