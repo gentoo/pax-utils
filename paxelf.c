@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.49 2006/06/10 19:09:24 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.50 2006/07/30 17:58:54 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -100,7 +100,7 @@ int get_etype(elfobj *elf)
 		type = EGET(EHDR32(elf->ehdr)->e_type);
 	else
 		type = EGET(EHDR64(elf->ehdr)->e_type);
-        return type;
+	return type;
 }
 
 const char *get_elfetype(elfobj *elf)
@@ -110,10 +110,9 @@ const char *get_elfetype(elfobj *elf)
 
 void print_etypes(FILE *stream)
 {
-        int i;
-	for (i = 0; elf_etypes[i].str; ++i) {
+	int i;
+	for (i = 0; elf_etypes[i].str; ++i)
 		fprintf(stream, " (%d) = %s\n", elf_etypes[i].value, elf_etypes[i].str);
-	}
 }
 
 int etype_lookup(const char *str)
