@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.50 2006/07/30 17:58:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.51 2006/07/30 18:02:00 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -110,9 +110,16 @@ const char *get_elfetype(elfobj *elf)
 
 void print_etypes(FILE *stream)
 {
-	int i;
-	for (i = 0; elf_etypes[i].str; ++i)
-		fprintf(stream, " (%d) = %s\n", elf_etypes[i].value, elf_etypes[i].str);
+	int i, wrap = 0;
+	for (i = 0; elf_etypes[i].str; ++i) {
+		fprintf(stream, " (%4x) = %-10s", elf_etypes[i].value, elf_etypes[i].str);
+		if (++wrap >= 4) {
+			fprintf(stream, "\n");
+			wrap = 0;
+		}
+	}
+	if (wrap)
+		fprintf(stream, "\n");
 }
 
 int etype_lookup(const char *str)
