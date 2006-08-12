@@ -24,7 +24,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.30 2006/04/25 04:18:45 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.31 2006/08/12 16:47:52 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -36,6 +36,10 @@ static char show_banner = 1;
 static char show_phdr = 0;
 static char noexec = 1;
 static char writeexec = 1;
+
+static pid_t show_pid = 0;
+static uid_t show_uid = -1;
+static gid_t show_gid = -1;
 
 static char *get_proc_name(pid_t pid)
 {
@@ -139,7 +143,7 @@ static int print_executable_mappings(pid_t pid)
  #define NOTE_TO_SELF
 #endif
 
-static struct passwd *get_proc_uid(pid_t pid)
+static struct passwd *get_proc_passwd(pid_t pid)
 {
 	struct stat st;
 	struct passwd *pwd;
@@ -262,13 +266,14 @@ static const char *get_proc_phdr(pid_t pid)
 }
 
 
-static void pspax(pid_t ppid, const char *find_name)
+static void pspax(const char *find_name)
 {
 	register DIR *dir;
 	register struct dirent *de;
 	pid_t pid;
+	pid_t ppid = show_pid;
 	int have_attr, wx;
-	struct passwd *uid;
+	struct passwd *pwd;
 	struct stat st;
 	const char *pax, *type, *name, *caps, *attr;
 	WRAP_SYSCAP(ssize_t length; cap_t cap_d;);
@@ -316,11 +321,19 @@ static void pspax(pid_t ppid, const char *find_name)
 					goto next_pid;
 			}
 
-			uid  = get_proc_uid(pid);
+			pwd  = get_proc_passwd(pid);
 			pax  = get_proc_status(pid, "PAX");
 			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
+
+			if (show_uid != (-1) && pwd)
+				if (pwd->pw_uid != show_uid)
+					continue;
+
+			if (show_gid != (-1) && pwd)
+				if (pwd->pw_gid != show_gid)
+					continue;
 
 			/* this is a non-POSIX function */
 			WRAP_SYSCAP(capgetp(pid, cap_d));
@@ -328,7 +341,7 @@ static void pspax(pid_t ppid, const char *find_name)
 
 			if (show_all || type) {
 				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s\n",
-				       uid  ? uid->pw_name : "--------",
+				       pwd  ? pwd->pw_name : "--------",
 				       pid,
 				       pax  ? pax  : "---",
 				       (wx == 1) ? "w|x" : (wx == -1) ? "---" : "w^x",
@@ -352,12 +365,14 @@ static void pspax(pid_t ppid, const char *find_name)
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aep:nwvBhV"
+#define PARSE_FLAGS "aep:u:g:nwvBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
 	{"header",    no_argument, NULL, 'e'},
 	{"pid",        a_argument, NULL, 'p'},
+	{"user",       a_argument, NULL, 'u'},
+	{"group",      a_argument, NULL, 'g'},
 	{"nx",        no_argument, NULL, 'n'},
 	{"wx",        no_argument, NULL, 'w'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -370,6 +385,8 @@ static const char *opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Process ID/pid #",
+	"Process UID #",
+	"Process GID #",
 	"Only display w^x processes",
 	"Only display w|x processes",
 	"Be verbose about executable mappings",
@@ -398,10 +415,9 @@ static void usage(int status)
 }
 
 /* parse command line arguments and preform needed actions */
-static pid_t parseargs(int argc, char *argv[])
+static void parseargs(int argc, char *argv[])
 {
 	int flag;
-	pid_t pid = 0;
 	opterr = 0;
 	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
 		switch (flag) {
@@ -417,17 +433,16 @@ static pid_t parseargs(int argc, char *argv[])
 		case 'B': show_banner = 0; break;
 		case 'a': show_all = 1; break;
 		case 'e': show_phdr = 1; break;
-		case 'p': pid = atoi(optarg); break;
+		case 'p': show_pid = atoi(optarg); break;
+		case 'u': show_uid = atoi(optarg); break;
+		case 'g': show_gid = atoi(optarg); break;
 		case 'n': noexec = 1; writeexec = 0; break;
 		case 'w': noexec = 0; writeexec = 1; break;
 		case 'v': verbose++; break;
 
 		case ':':
-			warn("Option missing parameter");
-			usage(EXIT_FAILURE);
-			break;
 		case '?':
-			warn("Unknown option");
+			warn("Unknown option or missing parameter");
 			usage(EXIT_FAILURE);
 			break;
 		default:
@@ -435,20 +450,21 @@ static pid_t parseargs(int argc, char *argv[])
 			break;
 		}
 	}
-	return pid;
 }
 
 
 
 int main(int argc, char *argv[])
 {
-	pid_t pid = parseargs(argc, argv);
 	char *name = NULL;
 
-	if ((optind < argc) && (pid == 0))
+	parseargs(argc, argv);
+
+	if ((optind < argc) && (show_pid == 0))
 		name = argv[optind];
 
-	pspax(pid, name);
+	pspax(name);
+
 	NOTE_TO_SELF;
 	return EXIT_SUCCESS;
 }
