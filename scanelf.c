@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.157 2006/08/25 06:31:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.158 2006/08/25 06:32:08 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.157 2006/08/25 06:31:22 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.158 2006/08/25 06:32:08 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -268,6 +268,8 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		} \
 		skip_this_shdr##B: \
 		if (!multi_stack) { \
+			if (file_matches_list(elf->filename, qa_execstack)) \
+				return NULL; \
 			*found_phdr = 1; \
 			shown = 1; \
 			memcpy(ret, "!WX", 3); \
