@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.156 2006/06/11 00:23:11 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.157 2006/08/25 06:31:22 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.156 2006/06/11 00:23:11 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.157 2006/08/25 06:31:22 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -444,7 +444,7 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 		case '$':
 			if (fstat(elf->fd, &st) != -1)
 				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
-					warnf("Security problem with %s='%s' in %s with mode set of %o", 
+					warnf("Security problem with %s='%s' in %s with mode set of %o",
 					      dt_type, item, elf->filename, st.st_mode & 07777);
 			break;
 		default:
@@ -1433,7 +1433,7 @@ static int load_ld_cache_config(int i, const char *fname)
 			break;
 	}
 	ldpaths[i] = NULL;
-	
+
 	free(b);
 	fclose(fp);
 	return i;
@@ -1577,7 +1577,7 @@ static void usage(int status)
 	printf("Options: -[%s]\n", PARSE_FLAGS);
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
-			printf("  -%c, --%-14s* %s\n", long_opts[i].val, 
+			printf("  -%c, --%-14s* %s\n", long_opts[i].val,
 			       long_opts[i].name, opts_help[i]);
 		else
 			printf("  -%c, --%-7s <arg> * %s\n", long_opts[i].val,
@@ -1585,7 +1585,7 @@ static void usage(int status)
 
 	if (status != EXIT_SUCCESS)
 		exit(status);
-	
+
 	puts("\nThe format modifiers for the -F option are:");
 	puts(" F Filename \tx PaX Flags \te STACK/RELRO");
 	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
