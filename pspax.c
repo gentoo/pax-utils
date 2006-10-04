@@ -14,6 +14,7 @@
  */
 
 #include "paxinc.h"
+#include <grp.h>
 
 #ifdef WANT_SYSCAP
 # undef _POSIX_SOURCE
@@ -24,7 +25,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.31 2006/08/12 16:47:52 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.32 2006/10/04 23:42:47 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -418,6 +419,9 @@ static void usage(int status)
 static void parseargs(int argc, char *argv[])
 {
 	int flag;
+	struct passwd *pwd = NULL;
+	struct  group *gwd = NULL;
+
 	opterr = 0;
 	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
 		switch (flag) {
@@ -434,12 +438,29 @@ static void parseargs(int argc, char *argv[])
 		case 'a': show_all = 1; break;
 		case 'e': show_phdr = 1; break;
 		case 'p': show_pid = atoi(optarg); break;
-		case 'u': show_uid = atoi(optarg); break;
-		case 'g': show_gid = atoi(optarg); break;
 		case 'n': noexec = 1; writeexec = 0; break;
 		case 'w': noexec = 0; writeexec = 1; break;
 		case 'v': verbose++; break;
-
+		case 'u':
+			show_uid = atoi(optarg);
+			if (show_uid == 0) {
+				pwd = getpwnam(optarg);
+				if (pwd)
+					show_uid = pwd->pw_uid;
+				else
+					err("unknown uid");
+			}
+			break;
+		case 'g':
+			show_gid = atoi(optarg);
+			if (show_gid == 0) {
+				gwd = getgrnam(optarg);
+				if (gwd)
+					show_gid = gwd->gr_gid;
+				else
+					err("unknown gid");
+			}
+			break;
 		case ':':
 		case '?':
 			warn("Unknown option or missing parameter");
