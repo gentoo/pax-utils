@@ -25,7 +25,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.32 2006/10/04 23:42:47 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.33 2006/10/05 00:21:15 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -443,7 +443,7 @@ static void parseargs(int argc, char *argv[])
 		case 'v': verbose++; break;
 		case 'u':
 			show_uid = atoi(optarg);
-			if (show_uid == 0) {
+			if (show_uid == 0 && (strcmp(optarg, "0") != 0)) {
 				pwd = getpwnam(optarg);
 				if (pwd)
 					show_uid = pwd->pw_uid;
@@ -453,7 +453,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'g':
 			show_gid = atoi(optarg);
-			if (show_gid == 0) {
+			if (show_gid == 0 && (strcmp(optarg, "0") != 0)) {
 				gwd = getgrnam(optarg);
 				if (gwd)
 					show_gid = gwd->gr_gid;
