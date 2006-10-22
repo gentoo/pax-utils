@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.6 2006/01/14 01:39:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.7 2006/10/22 08:47:06 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -96,8 +96,10 @@ archive_member *ar_next(archive_handle *);
 
 /* we need the space before the last comma or we trigger a bug in gcc-2 :( */
 #define warn(fmt, args...) \
-	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM , ## args) 
+	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM , ## args)
 #define warnf(fmt, args...) warn("%s%s%s(): " fmt, YELLOW, __FUNCTION__, NORM , ## args)
+#define warnp(fmt, args...) warn(fmt ": %s" , ## args , strerror(errno))
+#define warnfp(fmt, args...) warnf(fmt ": %s" , ## args , strerror(errno))
 #define _err(wfunc, fmt, args...) \
 	do { \
 	wfunc(fmt, ## args); \
@@ -105,5 +107,6 @@ archive_member *ar_next(archive_handle *);
 	} while (0)
 #define err(fmt, args...) _err(warn, fmt, ## args)
 #define errf(fmt, args...) _err(warnf, fmt, ## args)
+#define errp(fmt, args...) _err(warnp, fmt , ## args)
 
 #endif /* _PAX_INC_H */
