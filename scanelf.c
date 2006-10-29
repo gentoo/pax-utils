@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.158 2006/08/25 06:32:08 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.159 2006/10/29 16:20:54 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.158 2006/08/25 06:32:08 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.159 2006/10/29 16:20:54 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -834,7 +834,8 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 
 	if (be_wewy_wewy_quiet) return NULL;
 
-	if (be_quiet && !fstat(elf->fd, &s) && !(s.st_mode & S_ISUID || s.st_mode & S_ISGID)) {
+	/* don't output anything if quiet mode and the ELF is static or not setuid */
+	if (be_quiet && (!dynamic || (!fstat(elf->fd, &s) && !(s.st_mode & (S_ISUID|S_ISGID))))) {
 		return NULL;
 	} else {
 		*found_bind = 1;
