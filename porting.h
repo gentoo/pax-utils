@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.22 2006/06/03 18:25:18 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.23 2006/11/28 04:01:04 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -56,7 +56,8 @@
 #endif
 
 /* bounds checking code will fart on free(NULL) even though that
- * is valid usage.  So let's wrap it if need be. */
+ * is valid usage.  So let's wrap it if need be.
+ */
 #ifdef __BOUNDS_CHECKING_ON
 # define free(ptr) do { if (ptr) free(ptr); } while (0)
 # define __PAX_UTILS_CLEANUP
@@ -129,7 +130,7 @@
 #endif
 
 /*
- * in case we are not defined by proper/up-to-date system headers, 
+ * in case we are not defined by proper/up-to-date system headers,
  * we check for a whole lot of things and copy them from elf.h.
  */
 
@@ -142,9 +143,9 @@
 # define PT_GNU_RELRO	0x6474e552
 #endif
 
-/* 
+/*
  * propably will never be official added to the toolchain.
- * But none the less we should try to get 0x65041580 reserved 
+ * But none the less we should try to get 0x65041580 reserved
  */
 #ifndef PT_PAX_FLAGS
 # define PT_PAX_FLAGS	0x65041580

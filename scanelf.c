@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.161 2006/11/28 03:55:57 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.162 2006/11/28 04:01:04 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.161 2006/11/28 03:55:57 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.162 2006/11/28 04:01:04 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1018,8 +1018,8 @@ static char *scanelf_file_sections(elfobj *elf, char *found_section)
 static int scanelf_elfobj(elfobj *elf)
 {
 	unsigned long i;
-	char found_pax, found_phdr, found_relro, found_load, found_textrel, 
-	     found_rpath, found_needed, found_interp, found_bind, found_soname, 
+	char found_pax, found_phdr, found_relro, found_load, found_textrel,
+	     found_rpath, found_needed, found_interp, found_bind, found_soname,
 	     found_sym, found_lib, found_file, found_textrels, found_section;
 	static char *out_buffer = NULL;
 	static size_t out_len;
@@ -1759,7 +1759,7 @@ static void parseargs(int argc, char *argv[])
 			case 'S': show_soname = 1; break;
 			case 'T': show_textrels = 1; break;
 			default:
-				err("Invalid format specifier '%c' (byte %i)", 
+				err("Invalid format specifier '%c' (byte %i)",
 				    out_format[i], i+1);
 			}
 		}

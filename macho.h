@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 Apple Computer, Inc. 
+ * Copyright (c) 2005 Apple Computer, Inc.
  *
  * This file describes the format of mach object files.
  */

@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.18 2006/11/28 01:13:02 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.19 2006/11/28 04:01:04 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.18 2006/11/28 01:13:02 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.19 2006/11/28 04:01:04 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -291,7 +291,7 @@ static void usage(int status)
 	printf("Options:\n");
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
-			printf("  -%c, --%-13s* %s\n", long_opts[i].val, 
+			printf("  -%c, --%-13s* %s\n", long_opts[i].val,
 			       long_opts[i].name, opts_help[i]);
 		else
 			printf("  -%c, --%-6s <arg> * %s\n", long_opts[i].val,

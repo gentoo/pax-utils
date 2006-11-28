@@ -8,9 +8,8 @@
 /*
  * normal compile.
  *  cc -o pspax pspax.c
- * or with libcap. 
+ * or with libcap.
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
- *
  */
 
 #include "paxinc.h"
@@ -25,7 +24,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.35 2006/10/18 22:00:17 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.36 2006/11/28 04:01:04 vapier Exp $";
 #define argv0 "pspax"
 
 
@@ -69,7 +68,7 @@ static int get_proc_maps(pid_t pid)
 	FILE *fp;
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
-	
+
 	if ((fp = fopen(str, "r")) == NULL)
 		return -1;
 
@@ -106,7 +105,7 @@ static int print_executable_mappings(pid_t pid)
 	FILE *fp;
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
-	
+
 	if ((fp = fopen(str, "r")) == NULL)
 		return -1;
 
@@ -136,12 +135,12 @@ static int print_executable_mappings(pid_t pid)
 }
 
 #ifdef __BOUNDS_CHECKING_ON
-#define NOTE_TO_SELF warn( \
+# define NOTE_TO_SELF warn( \
 	"This is bullshit but getpwuid() is leaking memory and I wasted a few hrs 1 day tracking it down in pspax\n" \
 	"Later on I forgot I tracked it down before and saw pspax leaking memory so I tracked it down all over again (silly me)\n" \
 	"Hopefully the getpwuid()/nis/nss/pam or whatever wont suck later on in the future.")
 #else
- #define NOTE_TO_SELF
+# define NOTE_TO_SELF
 #endif
 
 static struct passwd *get_proc_passwd(pid_t pid)
@@ -405,11 +404,11 @@ static void usage(int status)
 	       "Usage: %s [options]\n\n", argv0);
 	fputs("Options:\n", stdout);
 	for (i = 0; long_opts[i].name; ++i)
-		printf("  -%c, --%-12s* %s\n", long_opts[i].val, 
+		printf("  -%c, --%-12s* %s\n", long_opts[i].val,
 		       long_opts[i].name, opts_help[i]);
 #ifdef MANLYPAGE
 	for (i = 0; long_opts[i].name; ++i)
-		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val, 
+		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val,
 		       long_opts[i].name, opts_help[i]);
 #endif
 	exit(status);
