@@ -11,7 +11,7 @@ bn="$(basename $(pwd))-${ver}"
 [[ -d "${bn}" ]] && rm -r "${bn}"
 mkdir "${bn}" || exit 1
 cp -r Makefile README TODO BUGS *.[ch] man "${bn}/" || exit 1
-rm -rf "${bn}"/man/CVS
+rm -rf "${bn}"/man/CVS "${bn}"/*macho*
 tar -jcf "${bn}".tar.bz2 ${bn} || exit 1
 rm -r "${bn}" || exit 1
 du -b "${bn}".tar.bz2
