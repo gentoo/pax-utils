@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.160 2006/11/23 23:50:33 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.161 2006/11/28 03:55:57 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.160 2006/11/23 23:50:33 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.161 2006/11/28 03:55:57 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -29,7 +29,7 @@ static int file_matches_list(const char *filename, char **matchlist);
 static int scanelf_elfobj(elfobj *elf);
 static int scanelf_elf(const char *filename, int fd, size_t len);
 static int scanelf_archive(const char *filename, int fd, size_t len);
-static void scanelf_file(const char *filename);
+static void scanelf_file(const char *filename, const struct stat *st_cache);
 static void scanelf_dir(const char *path);
 static void scanelf_ldpath(void);
 static void scanelf_envpath(void);
@@ -1231,23 +1231,20 @@ static int scanelf_archive(const char *filename, int fd, size_t len)
 	return 0;
 }
 /* scan a file which may be an elf or an archive or some other magical beast */
-static void scanelf_file(const char *filename)
+static void scanelf_file(const char *filename, const struct stat *st_cache)
 {
-	struct stat st;
+	const struct stat *st = st_cache;
+	struct stat symlink_st;
 	int fd;
 
-	/* make sure 'filename' exists */
-	if (lstat(filename, &st) == -1) {
-		if (be_verbose > 2) printf("%s: does not exist\n", filename);
-		return;
+	/* always handle regular files and handle symlinked files if no -y */
+	if (S_ISLNK(st->st_mode)) {
+		if (!scan_symlink) return;
+		stat(filename, &symlink_st);
+		st = &symlink_st;
 	}
 
-	/* always handle regular files and handle symlinked files if no -y */
-	if (S_ISLNK(st.st_mode)) {
-		if (!scan_symlink) return;
-		stat(filename, &st);
-	}
-	if (!S_ISREG(st.st_mode)) {
+	if (!S_ISREG(st->st_mode)) {
 		if (be_verbose > 2) printf("%s: skipping non-file\n", filename);
 		return;
 	}
@@ -1255,9 +1252,9 @@ static void scanelf_file(const char *filename)
 	if ((fd=open(filename, (fix_elf ? O_RDWR : O_RDONLY))) == -1)
 		return;
 
-	if (scanelf_elf(filename, fd, st.st_size) == 1 && scan_archives)
+	if (scanelf_elf(filename, fd, st->st_size) == 1 && scan_archives)
 		/* if it isn't an ELF, maybe it's an .a archive */
-		scanelf_archive(filename, fd, st.st_size);
+		scanelf_archive(filename, fd, st->st_size);
 
 	close(fd);
 }
@@ -1279,7 +1276,7 @@ static void scanelf_dir(const char *path)
 
 	/* ok, if it isn't a directory, assume we can open it */
 	if (!S_ISDIR(st_top.st_mode)) {
-		scanelf_file(path);
+		scanelf_file(path, &st_top);
 		return;
 	}
 
@@ -1303,7 +1300,7 @@ static void scanelf_dir(const char *path)
 		snprintf(buf, sizeof(buf), "%s%s%s", path, (path[pathlen-1] == '/') ? "" : "/", dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
-				scanelf_file(buf);
+				scanelf_file(buf, &st);
 			else if (dir_recurse && S_ISDIR(st.st_mode)) {
 				if (dir_crossmount || (st_top.st_dev == st.st_dev))
 					scanelf_dir(buf);
