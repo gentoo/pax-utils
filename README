@@ -104,3 +104,30 @@ really have in common is that pax-utils was initially written to aid in
 deploying PaX systems so it includes support for PT_PAX_FLAGS and the 
 deprecated but still in use EI_PAX flags. For more information about PaX 
 see the homepage at http://pax.grsecurity.net/
+
+== LINKS ==
+
+(Gentoo)
+http://www.gentoo.org/proj/en/hardened/pax-utils.xml
+http://sources.gentoo.org/viewcvs.py/gentoo-projects/pax-utils/
+Maintainer: solar@gentoo.org,vapier@gentoo.org
+
+(OpenSUSE)
+http://lists.opensuse.org/opensuse-commit/2006-11/msg00820.html
+Maintainer: ludwig.nussel@suse.de
+
+(Ubuntu)
+http://packages.ubuntu.com/edgy/devel/pax-utils
+Maintainer: john.r.moser@gmail.com
+
+(Debian)
+http://packages.debian.org/unstable/misc/pax-utils
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=388200
+Maintainer: rdenis@simphalempin.com
+
+(FreeBSD)
+http://portsmon.freebsd.org/portoverview.py?category=sysutils&portname=pax-utils
+http://www.freshports.org/sysutils/pax-utils/
+http://archive.netbsd.se/?ml=freebsd-cvs-all&a=2006-08&m=2311441
+Maintainer: pav@FreeBSD.org
+
