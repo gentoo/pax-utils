@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.162 2006/11/28 04:01:04 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.163 2006/12/01 15:41:23 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.162 2006/11/28 04:01:04 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.163 2006/12/01 15:41:23 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1851,6 +1851,7 @@ static void parseenv()
 	qa_execstack = get_split_env("QA_EXECSTACK");
 	qa_wx_load = get_split_env("QA_WX_LOAD");
 }
+
 #ifdef __PAX_UTILS_CLEANUP
 static void cleanup()
 {
@@ -1860,7 +1861,6 @@ static void cleanup()
 	free(qa_wx_load);
 }
 #endif
-
 
 
 int main(int argc, char *argv[])
