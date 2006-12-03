@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.163 2006/12/01 15:41:23 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.164 2006/12/03 00:17:18 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.163 2006/12/01 15:41:23 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.164 2006/12/03 00:17:18 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -29,14 +29,14 @@ static int file_matches_list(const char *filename, char **matchlist);
 static int scanelf_elfobj(elfobj *elf);
 static int scanelf_elf(const char *filename, int fd, size_t len);
 static int scanelf_archive(const char *filename, int fd, size_t len);
-static void scanelf_file(const char *filename, const struct stat *st_cache);
-static void scanelf_dir(const char *path);
+static int scanelf_file(const char *filename, const struct stat *st_cache);
+static int scanelf_dir(const char *path);
 static void scanelf_ldpath(void);
 static void scanelf_envpath(void);
 static void usage(int status);
 static char **get_split_env(const char *envvar);
 static void parseenv(void);
-static void parseargs(int argc, char *argv[]);
+static int parseargs(int argc, char *argv[]);
 static char *xstrdup(const char *s);
 static void *xmalloc(size_t size);
 static void *xrealloc(void *ptr, size_t size);
@@ -1231,7 +1231,7 @@ static int scanelf_archive(const char *filename, int fd, size_t len)
 	return 0;
 }
 /* scan a file which may be an elf or an archive or some other magical beast */
-static void scanelf_file(const char *filename, const struct stat *st_cache)
+static int scanelf_file(const char *filename, const struct stat *st_cache)
 {
 	const struct stat *st = st_cache;
 	struct stat symlink_st;
@@ -1239,51 +1239,52 @@ static void scanelf_file(const char *filename, const struct stat *st_cache)
 
 	/* always handle regular files and handle symlinked files if no -y */
 	if (S_ISLNK(st->st_mode)) {
-		if (!scan_symlink) return;
+		if (!scan_symlink) return 1;
 		stat(filename, &symlink_st);
 		st = &symlink_st;
 	}
 
 	if (!S_ISREG(st->st_mode)) {
 		if (be_verbose > 2) printf("%s: skipping non-file\n", filename);
-		return;
+		return 1;
 	}
 
 	if ((fd=open(filename, (fix_elf ? O_RDWR : O_RDONLY))) == -1)
-		return;
+		return 1;
 
 	if (scanelf_elf(filename, fd, st->st_size) == 1 && scan_archives)
 		/* if it isn't an ELF, maybe it's an .a archive */
 		scanelf_archive(filename, fd, st->st_size);
 
 	close(fd);
+	return 0;
 }
 
 /* scan a directory for ET_EXEC files and print when we find one */
-static void scanelf_dir(const char *path)
+static int scanelf_dir(const char *path)
 {
 	register DIR *dir;
 	register struct dirent *dentry;
 	struct stat st_top, st;
 	char buf[__PAX_UTILS_PATH_MAX];
 	size_t pathlen = 0, len = 0;
+	int ret = 0;
 
 	/* make sure path exists */
 	if (lstat(path, &st_top) == -1) {
 		if (be_verbose > 2) printf("%s: does not exist\n", path);
-		return;
+		return 1;
 	}
 
 	/* ok, if it isn't a directory, assume we can open it */
 	if (!S_ISDIR(st_top.st_mode)) {
-		scanelf_file(path, &st_top);
-		return;
+		return scanelf_file(path, &st_top);
 	}
 
 	/* now scan the dir looking for fun stuff */
 	if ((dir = opendir(path)) == NULL) {
 		warnf("could not opendir %s: %s", path, strerror(errno));
-		return;
+		return 1;
 	}
 	if (be_verbose > 1) printf("%s: scanning dir\n", path);
 
@@ -1300,14 +1301,15 @@ static void scanelf_dir(const char *path)
 		snprintf(buf, sizeof(buf), "%s%s%s", path, (path[pathlen-1] == '/') ? "" : "/", dentry->d_name);
 		if (lstat(buf, &st) != -1) {
 			if (S_ISREG(st.st_mode))
-				scanelf_file(buf, &st);
+				ret = scanelf_file(buf, &st);
 			else if (dir_recurse && S_ISDIR(st.st_mode)) {
 				if (dir_crossmount || (st_top.st_dev == st.st_dev))
-					scanelf_dir(buf);
+					ret = scanelf_dir(buf);
 			}
 		}
 	}
 	closedir(dir);
+	return ret;
 }
 
 static int scanelf_from_file(const char *filename)
@@ -1315,6 +1317,7 @@ static int scanelf_from_file(const char *filename)
 	FILE *fp = NULL;
 	char *p;
 	char path[__PAX_UTILS_PATH_MAX];
+	int ret = 0;
 
 	if (strcmp(filename, "-") == 0)
 		fp = stdin;
@@ -1325,11 +1328,11 @@ static int scanelf_from_file(const char *filename)
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
 		search_path = path;
-		scanelf_dir(path);
+		ret = scanelf_dir(path);
 	}
 	if (fp != stdin)
 		fclose(fp);
-	return 0;
+	return ret;
 }
 
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
@@ -1602,10 +1605,11 @@ static void usage(int status)
 }
 
 /* parse command line arguments and preform needed actions */
-static void parseargs(int argc, char *argv[])
+static int parseargs(int argc, char *argv[])
 {
 	int i;
 	const char *from_file = NULL;
+	int ret = 0;
 
 	opterr = 0;
 	while ((i=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
@@ -1800,7 +1804,7 @@ static void parseargs(int argc, char *argv[])
 		err("Nothing to scan !?");
 	while (optind < argc) {
 		search_path = argv[optind++];
-		scanelf_dir(search_path);
+		ret = scanelf_dir(search_path);
 	}
 
 	/* clean up */
@@ -1810,6 +1814,7 @@ static void parseargs(int argc, char *argv[])
 
 	if (ldcache != 0)
 		munmap(ldcache, ldcache_size);
+	return ret;
 }
 
 static char **get_split_env(const char *envvar)
@@ -1865,10 +1870,11 @@ static void cleanup()
 
 int main(int argc, char *argv[])
 {
+	int ret;
 	if (argc < 2)
 		usage(EXIT_FAILURE);
 	parseenv();
-	parseargs(argc, argv);
+	ret = parseargs(argc, argv);
 	fclose(stdout);
 #ifdef __PAX_UTILS_CLEANUP
 	cleanup();
@@ -1876,7 +1882,7 @@ int main(int argc, char *argv[])
 	     "\t- 1 due to the out_buffer not being freed in scanelf_file()\n"
 	     "\t- 1 per QA_TEXTRELS/QA_EXECSTACK/QA_WX_LOAD");
 #endif
-	return EXIT_SUCCESS;
+	return ret;
 }
 
 
