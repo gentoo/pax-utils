@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.164 2006/12/03 00:17:18 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.165 2006/12/11 03:24:03 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,20 +9,10 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.164 2006/12/03 00:17:18 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.165 2006/12/11 03:24:03 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
-
-#define do_state(option, flag)		\
-	if (islower(option)) {		\
-		flags &= ~PF_##flag;	\
-		flags |= PF_NO##flag;	\
-	} else {			\
-		flags &= ~PF_NO##flag;	\
-		flags |= PF_##flag;	\
-	}
-
 
 /* prototypes */
 static int file_matches_list(const char *filename, char **matchlist);
@@ -1605,6 +1595,14 @@ static void usage(int status)
 }
 
 /* parse command line arguments and preform needed actions */
+#define do_pax_state(option, flag) \
+	if (islower(option)) { \
+		flags &= ~PF_##flag; \
+		flags |= PF_NO##flag; \
+	} else { \
+		flags &= ~PF_NO##flag; \
+		flags |= PF_##flag; \
+	}
 static int parseargs(int argc, char *argv[])
 {
 	int i;
@@ -1667,27 +1665,27 @@ static int parseargs(int argc, char *argv[])
 				switch(optarg[x]) {
 					case 'p':
 					case 'P':
-						do_state(optarg[x], PAGEEXEC);
+						do_pax_state(optarg[x], PAGEEXEC);
 						break;
 					case 's':
 					case 'S':
-						do_state(optarg[x], SEGMEXEC);
+						do_pax_state(optarg[x], SEGMEXEC);
 						break;
 					case 'm':
 					case 'M':
-						do_state(optarg[x], MPROTECT);
+						do_pax_state(optarg[x], MPROTECT);
 						break;
 					case 'e':
 					case 'E':
-						do_state(optarg[x], EMUTRAMP);
+						do_pax_state(optarg[x], EMUTRAMP);
 						break;
 					case 'r':
 					case 'R':
-						do_state(optarg[x], RANDMMAP);
+						do_pax_state(optarg[x], RANDMMAP);
 						break;
 					case 'x':
 					case 'X':
-						do_state(optarg[x], RANDEXEC);
+						do_pax_state(optarg[x], RANDEXEC);
 						break;
 					default:
 						break;
