@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.19 2006/11/28 04:01:04 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.20 2006/12/11 03:31:54 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.19 2006/11/28 04:01:04 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.20 2006/12/11 03:31:54 vapier Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -140,7 +140,7 @@ static void dump_ehdr(elfobj *elf, void *ehdr_void)
 	       /* EI_BRAND, ehdr->e_ident[EI_BRAND] */ \
 	); \
 	printf("\t.e_type      = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_type), get_elfetype(elf)); \
-	printf("\t.e_machine   = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_machine), get_elfemtype(EGET(ehdr->e_machine))); \
+	printf("\t.e_machine   = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_machine), get_elfemtype(elf)); \
 	printf("\t.e_version   = %-10i ,\n", (int)EGET(ehdr->e_version)); \
 	printf("\t.e_entry     = 0x%-8lX ,\n", (unsigned long)EGET(ehdr->e_entry)); \
 	printf("\t.e_phoff     = %-10li , /* (bytes into file) */\n", (unsigned long)EGET(ehdr->e_phoff)); \

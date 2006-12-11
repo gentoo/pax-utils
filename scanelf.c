@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.165 2006/12/11 03:24:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.166 2006/12/11 03:31:54 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.165 2006/12/11 03:24:03 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.166 2006/12/11 03:31:54 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1057,6 +1057,7 @@ static int scanelf_elfobj(elfobj *elf)
 			case 'N': prints("LIB "); break;
 			case 'T': prints("TEXTRELS "); break;
 			case 'k': prints("SECTION "); break;
+			case 'a': prints("ARCH "); break;
 			default: warnf("'%c' has no title ?", out_format[i]);
 			}
 		}
@@ -1123,6 +1124,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'S': out = scanelf_file_soname(elf, &found_soname); break;
 		case 's': out = scanelf_file_sym(elf, &found_sym); break;
 		case 'k': out = scanelf_file_sections(elf, &found_section); break;
+		case 'a': out = get_elfemtype(elf); break;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
 		if (out) {
@@ -1583,7 +1585,7 @@ static void usage(int status)
 	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
 	puts(" i INTERP   \tb BIND      \ts symbol");
 	puts(" N library  \to Type      \tT TEXTRELs");
-	puts(" S SONAME   \tk section");
+	puts(" S SONAME   \tk section   \ta arch");
 	puts(" p filename (with search path removed)");
 	puts(" f filename (short name/basename)");
 	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");
@@ -1751,6 +1753,7 @@ static int parseargs(int argc, char *argv[])
 			case 's': break;
 			case 'N': break;
 			case 'o': break;
+			case 'a': break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_phdr = 1; break;
 			case 't': show_textrel = 1; break;

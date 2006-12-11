@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.45 2006/02/18 15:51:11 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.46 2006/12/11 03:31:54 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -51,7 +51,7 @@ extern elfobj *_readelf(const char *filename, int read_only);
 extern void unreadelf(elfobj *elf);
 extern const char *get_elfeitype(int ei_type, int type);
 extern const char *get_elfetype(elfobj *elf);
-extern const char *get_elfemtype(int type);
+extern const char *get_elfemtype(elfobj *elf);
 extern const char *get_elfptype(int type);
 extern const char *get_elfdtype(int type);
 extern const char *get_elfshttype(int type);
