@@ -24,7 +24,7 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.36 2006/11/28 04:01:04 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.37 2006/12/12 23:34:34 solar Exp $";
 #define argv0 "pspax"
 
 
@@ -385,8 +385,8 @@ static const char *opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Process ID/pid #",
-	"Process UID #",
-	"Process GID #",
+	"Process user/uid #",
+	"Process group/gid #",
 	"Only display w^x processes",
 	"Only display w|x processes",
 	"Be verbose about executable mappings",
