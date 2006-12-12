@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.46 2006/12/11 03:31:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.47 2006/12/12 23:14:53 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -59,6 +59,7 @@ extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 extern int elf_max_pt_load(elfobj *elf);
 extern int get_etype(elfobj *elf);
+extern int get_emtype(elfobj *elf);
 extern void print_etypes(FILE *);
 extern unsigned long pax_pf2hf_flags(unsigned long);
 extern int etype_lookup(const char *);
