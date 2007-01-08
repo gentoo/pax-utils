@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.166 2006/12/11 03:31:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.167 2007/01/08 07:55:11 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.166 2006/12/11 03:31:54 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.167 2007/01/08 07:55:11 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -409,6 +409,22 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			else \
 				printf("(NULL: fake?)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
+			if (be_verbose) { \
+				char *sysbuf; \
+				size_t syslen; \
+				const char sysfmt[] = "objdump -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
+				syslen = sizeof(sysfmt) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
+				sysbuf = xmalloc(syslen); \
+				if (sysbuf) { \
+					snprintf(sysbuf, syslen, sysfmt, \
+						(unsigned long)offset_tmp, \
+						offset_tmp + EGET(func->st_size), \
+						elf->filename, \
+						(unsigned long)r_offset); \
+					system(sysbuf); \
+					free(sysbuf); \
+				} \
+			} \
 		} \
 	} }
 	SHOW_TEXTRELS(32)
