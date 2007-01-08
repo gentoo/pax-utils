@@ -10,3 +10,11 @@ due to:
 
 pspax -u 0
 errno = 0; uid = strtol(optarg, NULL, 10); if (uid == 0 && errno != 0) error("invalid value");
+
+add support for RPATH checking with -nL ?
+
+we truncate 64bit types in many places to (unsigned long) ... do we really
+care though ?  this would be an issue if:
+ - host is 32bit
+ - object being analyzed is 64bit
+ - object has symbols which is larger than 32bits
