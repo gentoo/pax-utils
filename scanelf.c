@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.167 2007/01/08 07:55:11 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.168 2007/01/08 22:57:01 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.167 2007/01/08 07:55:11 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.168 2007/01/08 22:57:01 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -418,10 +418,12 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				if (sysbuf) { \
 					snprintf(sysbuf, syslen, sysfmt, \
 						(unsigned long)offset_tmp, \
-						offset_tmp + EGET(func->st_size), \
+						(unsigned long)(offset_tmp + EGET(func->st_size)), \
 						elf->filename, \
 						(unsigned long)r_offset); \
+					fflush(stdout); \
 					system(sysbuf); \
+					fflush(stdout); \
 					free(sysbuf); \
 				} \
 			} \
