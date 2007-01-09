@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.168 2007/01/08 22:57:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.169 2007/01/09 00:23:13 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.168 2007/01/08 22:57:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.169 2007/01/09 00:23:13 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -390,7 +390,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			if (sym && sym->st_name) \
 				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
 			else \
-				printf("(memory/fake?)"); \
+				printf("(memory/data?)"); \
 			printf(" [0x%lX]", (unsigned long)r_offset); \
 			/* now try to find the closest symbol that this rel is probably in */ \
 			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
@@ -404,10 +404,14 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				++sym; \
 			} \
 			printf(" in "); \
-			if (func && func->st_name) \
-				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(func->st_name))); \
-			else \
-				printf("(NULL: fake?)"); \
+			if (func && func->st_name) { \
+				const char *func_name = elf->data + EGET(strtab->sh_offset) + EGET(func->st_name); \
+				if (r_offset > EGET(func->st_size)) \
+					printf("(optimized out: previous %s)", func_name); \
+				else \
+					printf("%s", func_name); \
+			} else \
+				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
 			if (be_verbose) { \
 				char *sysbuf; \
@@ -416,9 +420,13 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				syslen = sizeof(sysfmt) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
 				sysbuf = xmalloc(syslen); \
 				if (sysbuf) { \
+					Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
+					if (end_addr < r_offset) \
+						/* not uncommon when things are optimized out */ \
+						end_addr = r_offset + 0x100; \
 					snprintf(sysbuf, syslen, sysfmt, \
 						(unsigned long)offset_tmp, \
-						(unsigned long)(offset_tmp + EGET(func->st_size)), \
+						(unsigned long)end_addr, \
 						elf->filename, \
 						(unsigned long)r_offset); \
 					fflush(stdout); \
