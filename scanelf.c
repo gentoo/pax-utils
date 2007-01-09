@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.171 2007/01/09 23:01:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.172 2007/01/09 23:04:12 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.171 2007/01/09 23:01:09 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.172 2007/01/09 23:04:12 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -80,25 +80,22 @@ int has_objdump = 0;
 static char *which(const char *fname)
 {
 	static char fullpath[BUFSIZ];
-        char *path, *p;
+	char *path, *p;
 
-	memset(fullpath, 0x0, sizeof(fullpath));
-
-        path = getenv("PATH");
-
-        if (!path)
+	path = getenv("PATH");
+	if (!path)
 		return NULL;
 
-        path = xstrdup(path);
-        while ((p = strrchr(path, ':')) != NULL) {
+	path = xstrdup(path);
+	while ((p = strrchr(path, ':')) != NULL) {
 		snprintf(fullpath, sizeof(fullpath), "%s/%s", p + 1, fname);
-                *p = 0;
+		*p = 0;
 		if (access(fullpath, R_OK) != (-1)) {
 			free(path);
 			return (char *) fullpath;
 		}
-        }
-        free(path);
+	}
+	free(path);
 	return NULL;
 }
 
