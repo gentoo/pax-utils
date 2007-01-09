@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.169 2007/01/09 00:23:13 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.170 2007/01/09 18:46:22 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.169 2007/01/09 00:23:13 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.170 2007/01/09 18:46:22 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -75,7 +75,32 @@ caddr_t ldcache = 0;
 size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
 
+int has_objdump = 0;
 
+static char *which(const char *fname)
+{
+	static char fullpath[BUFSIZ];
+        char *path, *p;
+
+	memset(fullpath, 0x0, sizeof(fullpath));
+
+        path = getenv("PATH");
+
+        if (!path)
+		return NULL;
+
+        path = xstrdup(path);
+        while ((p = strrchr(path, ':')) != NULL) {
+		snprintf(fullpath, sizeof(fullpath), "%s/%s", p + 1, fname);
+                *p = 0;
+		if (access(fullpath, R_OK) != (-1)) {
+			free(path);
+			return (char *) fullpath;
+		}
+        }
+        free(path);
+	return NULL;
+}
 
 /* sub-funcs for scanelf_file() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
@@ -413,7 +438,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			} else \
 				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
-			if (be_verbose) { \
+			if (be_verbose && has_objdump) { \
 				char *sysbuf; \
 				size_t syslen; \
 				const char sysfmt[] = "objdump -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
@@ -1759,7 +1784,10 @@ static int parseargs(int argc, char *argv[])
 			err("Unhandled option '%c'; please report this", i);
 		}
 	}
-
+	if (show_textrels && be_verbose) {
+		if (which("objdump") != NULL)
+			has_objdump = 1;
+	}
 	/* let the format option override all other options */
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
