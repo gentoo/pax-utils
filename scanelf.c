@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.170 2007/01/09 18:46:22 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.171 2007/01/09 23:01:09 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.170 2007/01/09 18:46:22 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.171 2007/01/09 23:01:09 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1100,6 +1100,7 @@ static int scanelf_elfobj(elfobj *elf)
 			case 'e': prints("STK/REL/PTL "); break;
 			case 't': prints("TEXTREL "); break;
 			case 'r': prints("RPATH "); break;
+			case 'M': prints("CLASS "); break;
 			case 'n': prints("NEEDED "); break;
 			case 'i': prints("INTERP "); break;
 			case 'b': prints("BIND "); break;
@@ -1168,6 +1169,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 't': out = scanelf_file_textrel(elf, &found_textrel); break;
 		case 'T': out = scanelf_file_textrels(elf, &found_textrels, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
+		case 'M': out = get_elfeitype(EI_CLASS, elf->data[EI_CLASS]); break;
 		case 'n':
 		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
@@ -1808,6 +1810,7 @@ static int parseargs(int argc, char *argv[])
 			case 'N': break;
 			case 'o': break;
 			case 'a': break;
+			case 'M': break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_phdr = 1; break;
 			case 't': show_textrel = 1; break;
