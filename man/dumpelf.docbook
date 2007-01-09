@@ -1,0 +1,57 @@
+<chapter>
+<refentry id='dumpelf.1'>
+
+<refmeta>
+ <refentrytitle>dumpelf</refentrytitle>
+ <manvolnum>1</manvolnum>
+ <refmiscinfo class='source'>&project;</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+ <refname>dumpelf</refname>
+ <refpurpose>dump internal ELF structure</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+ <cmdsynopsis>
+  <command>dumpelf</command>
+  <arg choice='opt'>
+   <replaceable>options</replaceable>
+  </arg>
+  <arg choice='plain'>
+   <replaceable>ELFs</replaceable>
+  </arg>
+ </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'>
+ <title>DESCRIPTION</title>
+ <para>
+  <command>dumpelf</command> is a user-space utility to dump all of the internal
+  ELF structures into the equivalent C structures for fun debugging and/or
+  reference purposes.
+ </para>
+</refsect1>
+
+<refsect1 id='options'>
+ <title>OPTIONS</title>
+ <variablelist>
+  <varlistentry>
+   <term><option>-h</option>, <option>--help</option></term>
+   <listitem><para>Show condensed usage and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-V</option>, <option>--version</option></term>
+   <listitem><para>Print version and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-v</option>, <option>--verbose</option></term>
+   <listitem><para>Be verbose (can be used more than once)</para></listitem>
+  </varlistentry>
+ </variablelist>
+</refsect1>
+
+&reftail;
+
+</refentry>
+</chapter>

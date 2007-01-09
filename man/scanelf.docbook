@@ -1,0 +1,232 @@
+<chapter>
+<refentry id='scanelf.1'>
+
+<refmeta>
+ <refentrytitle>scanelf</refentrytitle>
+ <manvolnum>1</manvolnum>
+ <refmiscinfo class='source'>&project;</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+ <refname>scanelf</refname>
+ <refpurpose>user-space utility to scan ELF files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+ <cmdsynopsis>
+  <command>scanelf</command>
+  <arg choice='opt'>
+   <replaceable>options</replaceable>
+  </arg>
+  <arg choice='plain'>
+   <replaceable>ELFs</replaceable>
+   or
+   <replaceable>directories</replaceable>
+  </arg>
+ </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'>
+ <title>DESCRIPTION</title>
+ <para>
+  <command>scanelf</command> is a user-space utility to quickly scan given
+  ELFs, directories, or common system paths for different information.  This
+  may include ELF types, their PaX markings, TEXTRELs, etc...
+ </para>
+</refsect1>
+
+<refsect1 id='options'>
+ <title>OPTIONS</title>
+ <variablelist>
+  <varlistentry>
+   <term><option>-A</option>, <option>--archives</option></term>
+   <listitem><para>Scan archives (.a files)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-a</option>, <option>--all</option></term>
+   <listitem><para>Print all scanned info (<option>-x -e -t -r -n -i -b</option>)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-B</option>, <option>--banner</option></term>
+   <listitem><para>Don't display the header</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-b</option>, <option>--bind</option></term>
+   <listitem><para>Print BIND information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-E</option>, <option>--etype</option> <replaceable>ETYPE</replaceable></term>
+   <listitem><para>Print only ELF files matching specified etype (like ET_DYN, ET_EXEC, etc...)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-e</option>, <option>--header</option></term>
+   <listitem><para>Print GNU_STACK markings</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-F</option>, <option>--format</option> <replaceable>FORMAT</replaceable></term>
+   <listitem><para>Use specified format for output; see the <emphasis remap='B'>FORMAT</emphasis> section</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-f</option>, <option>--from</option> <replaceable>FILE</replaceable></term>
+   <listitem><para>Read input stream from specified filename</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-g</option>, <option>--gmatch</option></term>
+   <listitem><para>Use strncmp to match libraries (use with <option>-N</option>)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-h</option>, <option>--help</option></term>
+   <listitem><para>Show condensed usage and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-i</option>, <option>--interp</option></term>
+   <listitem><para>Print INTERP information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-k</option>, <option>--section</option> <replaceable>SECTION</replaceable></term>
+   <listitem><para>Find the specified section</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-L</option>, <option>--ldcache</option></term>
+   <listitem><para>Utilize <filename>ld.so.cache</filename> information (use with <option>-r</option>/<option>-n</option>)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-l</option>, <option>--ldpath</option></term>
+   <listitem><para>Scan all directories in <filename>/etc/ld.so.conf</filename></para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-M</option>, <option>--bits</option> <replaceable>BITS</replaceable></term>
+   <listitem><para>Print only ELF files matching specified numeric bits (like 32/64)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-m</option>, <option>--mount</option></term>
+   <listitem><para>Don't recursively cross mount points</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-N</option>, <option>--lib</option> <replaceable>SONAME</replaceable></term>
+   <listitem><para>Find ELFs that need the specified SONAME</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-n</option>, <option>--needed</option></term>
+   <listitem><para>Print NEEDED information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-o</option>, <option>--file</option> <replaceable>FILE</replaceable></term>
+   <listitem><para>Write output stream to specified filename</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-p</option>, <option>--path</option></term>
+   <listitem><para>Scan all directories in PATH environment</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-q</option>, <option>--quiet</option></term>
+   <listitem><para>Only output 'bad' things.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-R</option>, <option>--recursive</option></term>
+   <listitem><para>Scan directories recursively</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-r</option>, <option>--rpath</option></term>
+   <listitem><para>Print RUNPATH information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-S</option>, <option>--soname</option></term>
+   <listitem><para>Print SONAME information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-s</option>, <option>--symbol</option> <replaceable>SYMBOL</replaceable></term>
+   <listitem><para>Find the specified symbol; a <emphasis remap='B'>-</emphasis> prefix will only show undefined references while a <emphasis remap='B'>+</emphasis> prefix will only show defined references while no prefix will show both</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-T</option>, <option>--textrels</option></term>
+   <listitem><para>Locate cause of TEXTRELs</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-t</option>, <option>--textrel</option></term>
+   <listitem><para>Print TEXTREL information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-V</option>, <option>--version</option></term>
+   <listitem><para>Print version and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-v</option>, <option>--verbose</option></term>
+   <listitem><para>Be verbose (can be used more than once)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-X</option>, <option>--fix</option></term>
+   <listitem><para>Try and 'fix' bad things (use with <option>-r</option>/<option>-e</option>)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-x</option>, <option>--pax</option></term>
+   <listitem><para>Print PaX markings</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-y</option>, <option>--symlink</option></term>
+   <listitem><para>Don't scan symlinks</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-z</option>, <option>--setpax</option> <replaceable>FLAGS</replaceable></term>
+   <listitem><para>Sets EI_PAX/PT_PAX_FLAGS to specified flags (use with <option>-Xx</option>)</para></listitem>
+  </varlistentry>
+ </variablelist>
+</refsect1>
+
+<refsect1 id='format'>
+ <title>FORMAT</title>
+ <para>
+  The format string is much like a printf string in that it is a literal string
+  with flags requesting different information.  For example, you could use
+  a format string and expect the following results.
+ </para>
+ <programlisting>
+  # <command>scanelf</command> <option>-BF</option> 'file %f needs %n; funky time!' /bin/bash
+  file bash needs libncurses.so.5,libdl.so.2,libc.so.6; funky time!
+ </programlisting>
+ <para>
+  Note that when you use a format string, generally information related flags
+  should be omitted.  In other words, you do not want to try and request NEEDED
+  output (<option>-n</option>) and try to specify a format output at the sametime
+  as these operations are mutually exclusive.  Each information related flag has
+  an equivalent conversion specifier, so use those instead.  You can of course
+  continue to use non-information related flags (such as <option>--verbose</option>).
+ </para>
+ <para>
+  There are three characters that introduce conversion specifiers.
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>%</emphasis> - replace with info</para></listitem>
+   <listitem><para><emphasis remap='B'>#</emphasis> - silent boolean match</para></listitem>
+   <listitem><para><emphasis remap='B'>+</emphasis> - verbose match</para></listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  And there are a number of conversion specifiers.  We try to match up the
+  specifier with corresponding option.
+  <itemizedlist spacing="compact">
+   <listitem><para><emphasis remap='B'>a</emphasis> - machine (EM) type</para></listitem>
+   <listitem><para><emphasis remap='B'>b</emphasis> - bind flags</para></listitem>
+   <listitem><para><emphasis remap='B'>e</emphasis> - program headers</para></listitem>
+   <listitem><para><emphasis remap='B'>F</emphasis> - long filename</para></listitem>
+   <listitem><para><emphasis remap='B'>f</emphasis> - short filename</para></listitem>
+   <listitem><para><emphasis remap='B'>i</emphasis> - interp</para></listitem>
+   <listitem><para><emphasis remap='B'>k</emphasis> - section</para></listitem>
+   <listitem><para><emphasis remap='B'>M</emphasis> - EI class</para></listitem>
+   <listitem><para><emphasis remap='B'>N</emphasis> - specified needed</para></listitem>
+   <listitem><para><emphasis remap='B'>n</emphasis> - needed libraries</para></listitem>
+   <listitem><para><emphasis remap='B'>p</emphasis> - filename (minus search)</para></listitem>
+   <listitem><para><emphasis remap='B'>o</emphasis> - etype</para></listitem>
+   <listitem><para><emphasis remap='B'>r</emphasis> - runpaths</para></listitem>
+   <listitem><para><emphasis remap='B'>S</emphasis> - SONAME</para></listitem>
+   <listitem><para><emphasis remap='B'>s</emphasis> - symbol</para></listitem>
+   <listitem><para><emphasis remap='B'>T</emphasis> - all textrels</para></listitem>
+   <listitem><para><emphasis remap='B'>t</emphasis> - textrel status</para></listitem>
+   <listitem><para><emphasis remap='B'>x</emphasis> - pax flags</para></listitem>
+  </itemizedlist>
+ </para>
+</refsect1>
+
+&reftail;
+
+</refentry>
+</chapter>

@@ -1,0 +1,74 @@
+<chapter>
+<refentry id='pspax.1'>
+
+<refmeta>
+ <refentrytitle>pspax</refentrytitle>
+ <manvolnum>1</manvolnum>
+ <refmiscinfo class='source'>&project;</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+ <refname>pspax</refname>
+ <refpurpose>list ELF/PaX information about running processes</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+ <cmdsynopsis>
+  <command>pspax</command>
+  <arg choice='opt'>
+   <replaceable>options</replaceable>
+  </arg>
+  <arg choice='plain'>
+   <replaceable>ELFs</replaceable>
+  </arg>
+ </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'>
+ <title>DESCRIPTION</title>
+ <para>
+  <command>pspax</command> is a user-space utility that scans the proc
+  directory and list ELF types, as well as thier respctive PaX flags and
+  filenames and attributes.  Depending on build options, it may additionaly
+  display the process running set of capabilities.
+ </para>
+</refsect1>
+
+<refsect1 id='options'>
+ <title>OPTIONS</title>
+ <variablelist>
+  <varlistentry>
+   <term><option>-a</option>, <option>--all</option></term>
+   <listitem><para>Show all processes</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-B</option>, <option>--banner</option></term>
+   <listitem><para>Don't display the header</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-e</option>, <option>--header</option></term>
+   <listitem><para>Print GNU_STACK/PT_LOAD markings</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-h</option>, <option>--help</option></term>
+   <listitem><para>Show condensed usage and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-p</option>, <option>--pid</option> <replaceable>PID</replaceable></term>
+   <listitem><para>Only process specified process id</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-V</option>, <option>--version</option></term>
+   <listitem><para>Print version and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-v</option>, <option>--verbose</option></term>
+   <listitem><para>Be verbose (can be used more than once)</para></listitem>
+  </varlistentry>
+ </variablelist>
+</refsect1>
+
+&reftail;
+
+</refentry>
+</chapter>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V4.4//EN"
+	"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+
+	<!ENTITY date SYSTEM "fragment/date">
+	<!ENTITY version SYSTEM "fragment/version">
+	<!ENTITY reftail SYSTEM "fragment/reftail">
+
+	<!ENTITY project "pax-utils">
+
+	<!ENTITY dumpelf SYSTEM "dumpelf.docbook">
+	<!ENTITY pspax   SYSTEM   "pspax.docbook">
+	<!ENTITY scanelf SYSTEM "scanelf.docbook">
+]>
+
+<book id="pax-utils" lang="en">
+
+<bookinfo>
+ <title>Documentation for pax-utils</title>
+
+ <authorgroup>
+  <author>
+   <firstname>Ned</firstname>
+   <surname>Ludd</surname>
+   <authorblurb><para>Maintainer</para></authorblurb>
+   <email>solar@gentoo.org</email>
+  </author>
+  <author>
+   <firstname>Mike</firstname>
+   <surname>Frysinger</surname>
+   <authorblurb><para>Maintainer</para></authorblurb>
+   <email>vapier@gentoo.org</email>
+  </author>
+ </authorgroup>
+
+ &version;
+ &date;
+</bookinfo>
+
+&dumpelf;
+&pspax;
+&scanelf;
+
+</book>
