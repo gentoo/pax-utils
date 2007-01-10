@@ -1,9 +1,10 @@
-man_XMANS = dumpelf.1 pspax.1 scanelf.1
+all: man
 
-all:
-	xmlto man -x custom.xsl pax-utils.docbook
+XMLTO_FLAGS_man = -x custom.xsl
+man pdf txt xhtml xhtml-nochunks:
+	xmlto $@ $(XMLTO_FLAGS_$@) pax-utils.docbook
 
 distclean:
-	rm -f $(man_XMANS)
+	rm -f *.1 *.html
 
-.PHONY: all clean distclean
+.PHONY: all distclean xhtml man
