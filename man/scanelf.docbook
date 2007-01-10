@@ -203,7 +203,7 @@
  <para>
   And there are a number of conversion specifiers.  We try to match up the
   specifier with corresponding option.
-  <itemizedlist spacing="compact">
+  <itemizedlist>
    <listitem><para><emphasis remap='B'>a</emphasis> - machine (EM) type</para></listitem>
    <listitem><para><emphasis remap='B'>b</emphasis> - bind flags</para></listitem>
    <listitem><para><emphasis remap='B'>e</emphasis> - program headers</para></listitem>
