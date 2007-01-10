@@ -6,97 +6,11 @@ pax-utils is a small set of various PaX aware and related utilities for
 ELF binaries. It was written for ELF Q/A on Gentoo systems but can be 
 used on any distro.
 
-== scanelf ==
-* Scan ELF binaries for stuff
-
-Usage: scanelf [options] <dir1/file1> [dir2 dirN file2 fileN ...]
-
-Options: -[plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:BhV]
-  -p, --path          * Scan all directories in PATH environment
-  -l, --ldpath        * Scan all directories in /etc/ld.so.conf
-  -R, --recursive     * Scan directories recursively
-  -m, --mount         * Don't recursively cross mount points
-  -y, --symlink       * Don't scan symlinks
-  -A, --archives      * Scan archives (.a files)
-  -L, --ldcache       * Utilize ld.so.cache information (use with -r/-n)
-  -X, --fix           * Try and 'fix' bad things (use with -r/-e)
-  -z, --setpax  <arg> * Sets EI_PAX/PT_PAX_FLAGS to <arg> (use with -Xx)
-
-  -x, --pax           * Print PaX markings
-  -e, --header        * Print GNU_STACK/PT_LOAD markings
-  -t, --textrel       * Print TEXTREL information
-  -r, --rpath         * Print RPATH information
-  -n, --needed        * Print NEEDED information
-  -i, --interp        * Print INTERP information
-  -b, --bind          * Print BIND information
-  -S, --soname        * Print SONAME information
-  -s, --symbol  <arg> * Find a specified symbol
-  -k, --section <arg> * Find a specified section
-  -N, --lib     <arg> * Find a specified library
-  -g, --gmatch        * Use strncmp to match libraries. (use with -N)
-  -T, --textrels      * Locate cause of TEXTREL
-  -E, --etype   <arg> * Print only ELF files matching etype ET_DYN,ET_EXEC ...
-  -M, --bits    <arg> * Print only ELF files matching numeric bits
-  -a, --all           * Print all scanned info (-x -e -t -r -b)
-
-  -q, --quiet         * Only output 'bad' things
-  -v, --verbose       * Be verbose (can be specified more than once)
-  -F, --format  <arg> * Use specified format for output
-  -f, --from    <arg> * Read input stream from a filename
-  -o, --file    <arg> * Write output stream to a filename
-  -B, --nobanner      * Don't display the header
-  -h, --help          * Print this help and exit
-  -V, --version       * Print version and exit
-
-The format modifiers for the -F option are:
- F Filename 	x PaX Flags 	e STACK/RELRO
- t TEXTREL  	r RPATH     	n NEEDED
- i INTERP   	b BIND      	s symbol
- N library  	o Type      	T TEXTRELs
- S SONAME   	k section
- p filename (with search path removed)
- f filename (short name/basename)
-Prefix each modifier with '%' (verbose) or '#' (silent)
-
-ELF Etypes:
- (0) = ET_NONE
- (1) = ET_REL
- (2) = ET_EXEC
- (3) = ET_DYN
- (4) = ET_CORE
- (5) = ET_NUM
- (65024) = ET_LOOS
- (65279) = ET_HIOS
- (65280) = ET_LOPROC
- (65535) = ET_HIPROC
-
-== pspax ==
-* List ELF/PaX information about running processes
-Usage: pspax [options]
-
-Options:
-  -a, --all         * Show all processes
-
-  -B, --nobanner    * Don't display the header
-  -h, --help        * Print this help and exit
-  -V, --version     * Print version and exit
-
-If pspax was compiled with CFLAGS += -DWANT_SYSCAP and LDFLAGS +=- lcap 
-it will also list runtime capabilities If extended attribute support is 
-enabled it will list those values as well.
-
-== dumpelf ==
-* Dump internal ELF structure
-
-Usage: dumpelf <file1> [file2 fileN ...]
-
-Options:
-  -v, --verbose      * Be verbose (can be specified more than once)
-  -h, --help         * Print this help and exit
-  -V, --version      * Print version and exit
-
+Note: to rebuild the man-pages, you will need xmlto and the docbook-xml-dtd
+      packages installed on your system.
 
 == INSTALL ==
+
 make install
 
 You don't need PaX to use the pax-utils. Infact the only thing they 
