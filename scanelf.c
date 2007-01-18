@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.173 2007/01/18 00:26:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.174 2007/01/18 08:12:55 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.173 2007/01/18 00:26:34 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.174 2007/01/18 08:12:55 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -33,6 +33,7 @@ static void *xrealloc(void *ptr, size_t size);
 static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
 #define xstrcat(dst,src,curr_len) xstrncat(dst,src,curr_len,0)
 static inline void xchrcat(char **dst, const char append, size_t *curr_len);
+static int rematch(const char *regex, const char *match, int cflags);
 
 /* variables to control behavior */
 static char match_etypes[126] = "";
@@ -76,7 +77,7 @@ size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
 
 int has_objdump = 0;
-
+/* find the path to a file by name */
 static char *which(const char *fname)
 {
 	static char fullpath[BUFSIZ];
@@ -97,6 +98,32 @@ static char *which(const char *fname)
 	}
 	free(path);
 	return NULL;
+}
+
+/* 1 on failue. 0 otherwise */
+static int rematch(const char *regex, const char *match, int cflags)
+{
+	regex_t preg;
+	int ret;
+
+	if ((match == NULL) || (regex == NULL))
+		return EXIT_FAILURE;
+
+
+	if ((ret = regcomp(&preg, regex, cflags))) {
+		char err[256];
+
+		if (regerror(ret, &preg, err, sizeof(err)))
+			fprintf(stderr, "regcomp failed: %s", err);
+		else
+			fprintf(stderr, "regcomp failed");
+
+		return EXIT_FAILURE;
+	}
+	ret = regexec(&preg, match, 0, NULL, 0);
+	regfree(&preg);
+
+	return ret;
 }
 
 /* sub-funcs for scanelf_file() */
@@ -957,7 +984,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					continue; \
 				} \
 				/* debug display ... show all symbols and some extra info */ \
-				if (*ret == '*') { \
+				if (gmatch ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
 					printf("%s(%s) %5lX %15s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \

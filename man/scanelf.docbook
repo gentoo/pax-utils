@@ -72,7 +72,7 @@
   </varlistentry>
   <varlistentry>
    <term><option>-g</option>, <option>--gmatch</option></term>
-   <listitem><para>Use strncmp to match libraries (use with <option>-N</option>)</para></listitem>
+   <listitem><para>Use strncmp to match libraries (use with <option>-N</option>). Or regexp with symbol matching</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-h</option>, <option>--help</option></term>
