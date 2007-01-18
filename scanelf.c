@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.172 2007/01/09 23:04:12 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.173 2007/01/18 00:26:34 vapier Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.172 2007/01/09 23:04:12 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.173 2007/01/18 00:26:34 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1627,22 +1627,7 @@ static void usage(int status)
 			printf("  -%c, --%-7s <arg> * %s\n", long_opts[i].val,
 			       long_opts[i].name, opts_help[i]);
 
-	if (status != EXIT_SUCCESS)
-		exit(status);
-
-	puts("\nThe format modifiers for the -F option are:");
-	puts(" F Filename \tx PaX Flags \te STACK/RELRO");
-	puts(" t TEXTREL  \tr RPATH     \tn NEEDED");
-	puts(" i INTERP   \tb BIND      \ts symbol");
-	puts(" N library  \to Type      \tT TEXTRELs");
-	puts(" S SONAME   \tk section   \ta arch");
-	puts(" p filename (with search path removed)");
-	puts(" f filename (short name/basename)");
-	puts("Prefix each modifier with '%' (verbose) or '#' (silent)");
-
-	puts("\nELF Etypes:");
-	print_etypes(stdout);
-
+	puts("\nFor more information, see the scanelf(1) manpage");
 	exit(status);
 }
 
