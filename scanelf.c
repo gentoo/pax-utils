@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.174 2007/01/18 08:12:55 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.175 2007/01/18 08:15:16 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.174 2007/01/18 08:12:55 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.175 2007/01/18 08:15:16 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -77,6 +77,7 @@ size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
 
 int has_objdump = 0;
+
 /* find the path to a file by name */
 static char *which(const char *fname)
 {
@@ -100,7 +101,7 @@ static char *which(const char *fname)
 	return NULL;
 }
 
-/* 1 on failue. 0 otherwise */
+/* 1 on failure. 0 otherwise */
 static int rematch(const char *regex, const char *match, int cflags)
 {
 	regex_t preg;
