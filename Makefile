@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.57 2006/07/25 17:21:02 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.58 2007/01/18 00:12:18 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -121,10 +121,10 @@ dist: distclean
 		exit 1 ; \
 	fi
 	$(MAKE) -s distclean
+	echo "<releaseinfo>$(PV)</releaseinfo>" > man/fragment/version
+	$(MAKE) -C man
 	rm -rf ../pax-utils-$(PV)*
-	mkdir ../pax-utils-$(PV)
-	cp -R * .depend ../pax-utils-$(PV)/
-	rm -rf ../pax-utils-$(PV)/CVS ../pax-utils-$(PV)/*/CVS ../pax-utils-$(PV)/make-tarball.sh
+	rsync -a --exclude=CVS . ../pax-utils-$(PV)
 	tar jcf ../pax-utils-$(PV).tar.bz2 -C .. pax-utils-$(PV)
 	rm -rf ../pax-utils-$(PV)
 	du -b ../pax-utils-$(PV).tar.bz2
