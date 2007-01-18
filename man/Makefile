@@ -7,4 +7,5 @@ man pdf txt xhtml xhtml-nochunks:
 clean distclean:
 	rm -f *.1 *.html
 
-.PHONY: all distclean xhtml man
+.PHONY: all clean distclean \
+        man pdf txt xhtml xhtml-nochunks
