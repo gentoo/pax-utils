@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.4 2006/01/14 01:39:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.5 2007/01/26 17:38:31 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -92,7 +92,7 @@ close_and_ret:
 	if ((s=strchr(ret.name+len, '/')) != NULL)
 		*s = '\0';
 	else
-		ret.name[len+sizeof(ret.name)-1] = '\0';
+		ret.name[len+sizeof(ret.buf.formated.name)-1] = '\0';
 	ret.date = atoi(ret.buf.formated.date);
 	ret.uid = atoi(ret.buf.formated.uid);
 	ret.gid = atoi(ret.buf.formated.gid);
