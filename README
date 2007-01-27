@@ -1,5 +1,5 @@
 HOMEPAGE: http://hardened.gentoo.org/pax-utils.xml
-CVS: cvs://anoncvs.gentoo.org
+CVS: cvs -d :pserver:anonymous@anoncvs.gentoo.org:/var/cvsroot co gentoo-projects/pax-utils
 VIEWVCS: http://sources.gentoo.org/viewcvs.py/gentoo-projects/pax-utils/
 
 pax-utils is a small set of various PaX aware and related utilities for 
