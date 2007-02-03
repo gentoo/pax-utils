@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.20 2006/12/11 03:31:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.21 2007/02/03 00:14:36 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.20 2006/12/11 03:31:54 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.21 2007/02/03 00:14:36 solar Exp $";
 #define argv0 "dumpelf"
 
 /* prototypes */
@@ -42,6 +42,8 @@ static void dumpelf(const char *filename, long file_cnt)
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL)
 		return;
+
+	printf("#include <elf.h>\n");
 
 	printf(
 		"\n"
@@ -332,7 +334,7 @@ static void parseargs(int argc, char *argv[])
 
 	{
 	long file_cnt = 0;
-	printf("#include <elf.h>\n");
+
 	while (optind < argc)
 		dumpelf(argv[optind++], file_cnt++);
 	}
