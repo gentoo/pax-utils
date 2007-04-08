@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.175 2007/01/18 08:15:16 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.176 2007/04/08 19:14:31 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.175 2007/01/18 08:15:16 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.176 2007/04/08 19:14:31 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -64,7 +64,7 @@ static char *find_section = NULL;
 static char *out_format = NULL;
 static char *search_path = NULL;
 static char fix_elf = 0;
-static char gmatch = 0;
+static char g_match = 0;
 static char use_ldcache = 0;
 
 static char **qa_textrels = NULL;
@@ -513,7 +513,7 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 			if (fstat(elf->fd, &st) != -1)
 				if ((st.st_mode & S_ISUID) || (st.st_mode & S_ISGID))
 					warnf("Security problem with %s='%s' in %s with mode set of %o",
-					      dt_type, item, elf->filename, st.st_mode & 07777);
+					      dt_type, item, elf->filename, (unsigned int) st.st_mode & 07777);
 			break;
 		default:
 			warnf("Maybe? sec problem with %s='%s' in %s", dt_type, item, elf->filename);
@@ -825,7 +825,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						} \
 						*found_needed = 1; \
 					} else { \
-						if (!strncmp(find_lib, needed, strlen( !gmatch ? needed : find_lib))) { \
+						if (!strncmp(find_lib, needed, strlen( !g_match ? needed : find_lib))) { \
 							*found_lib = 1; \
 							return (be_wewy_wewy_quiet ? NULL : needed); \
 						} \
@@ -985,7 +985,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					continue; \
 				} \
 				/* debug display ... show all symbols and some extra info */ \
-				if (gmatch ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
+				if (g_match ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
 					printf("%s(%s) %5lX %15s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \
@@ -1765,7 +1765,7 @@ static int parseargs(int argc, char *argv[])
 					setpax = flags;
 			break;
 		}
-		case 'g': gmatch = 1; break;
+		case 'g': g_match = 1; break;
 		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
