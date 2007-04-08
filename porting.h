@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.27 2007/04/08 20:25:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.28 2007/04/08 20:38:45 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -117,6 +117,15 @@
 /* fall back case for non-Linux hosts ... so lame */
 #if !defined(ELF_DATA)
 # undef __PAX_UTILS_BO
+# if !defined(LITTLE_ENDIAN) && defined(_LITTLE_ENDIAN)
+#  define LITTLE_ENDIAN _LITTLE_ENDIAN
+# endif
+# if !defined(BIG_ENDIAN) && defined(_BIG_ENDIAN)
+#  define BIG_ENDIAN _BIG_ENDIAN
+# endif
+# if !defined(LITTLE_ENDIAN) || !defined(BIG_ENDIAN)
+#  error "i need LITTLE_ENDIAN/BIG_ENDIAN"
+# endif
 # if defined(BYTE_ORDER)
 #  define __PAX_UTILS_BO BYTE_ORDER
 # elif defined(__BYTE_ORDER)
