@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.29 2007/04/08 20:42:43 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.30 2007/04/08 21:04:39 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -116,36 +116,33 @@
 
 /* fall back case for non-Linux hosts ... so lame */
 #if !defined(ELF_DATA)
-# undef __PAX_UTILS_BO
-# if !defined(LITTLE_ENDIAN) && defined(_LITTLE_ENDIAN)
-#  define LITTLE_ENDIAN _LITTLE_ENDIAN
-# endif
-# if !defined(BIG_ENDIAN) && defined(_BIG_ENDIAN)
-#  define BIG_ENDIAN _BIG_ENDIAN
-# endif
 # if defined(BYTE_ORDER)
-#  define __PAX_UTILS_BO BYTE_ORDER
+#  if BYTE_ORDER == LITTLE_ENDIAN
+#   define ELF_DATA ELFDATA2LSB
+#  elif BYTE_ORDER == BIG_ENDIAN
+#   define ELF_DATA ELFDATA2MSB
+#  else
+#   error "BYTE_ORDER: you fail"
+#  endif
 # elif defined(__BYTE_ORDER)
-#  define __PAX_UTILS_BO __BYTE_ORDER
+#  if __BYTE_ORDER == __LITTLE_ENDIAN
+#   define ELF_DATA ELFDATA2LSB
+#  elif __BYTE_ORDER == __BIG_ENDIAN
+#   define ELF_DATA ELFDATA2BSB
+#  else
+#   error "__BYTE_ORDER: you fail"
+#  endif
 # elif defined(WORDS_LITTLENDIAN)
-#  define __PAX_UTILS_BO LITTLE_ENDIAN
+#  define ELF_DATA ELFDATA2LSB
 # elif defined(WORDS_BIGENDIAN)
-#  define __PAX_UTILS_BO BIG_ENDIAN
+#  define ELF_DATA ELFDATA2MSB
 # elif defined(_LITTLE_ENDIAN)
-#  define __PAX_UTILS_BO LITTLE_ENDIAN
+#  define ELF_DATA ELFDATA2LSB
 # elif defined(_BIG_ENDIAN)
-#  define __PAX_UTILS_BO BIG_ENDIAN
+#  define ELF_DATA ELFDATA2MSB
 # else
 #  error "no idea what the native byte order is"
 # endif
-# if defined(LITTLE_ENDIAN) && __PAX_UTILS_BO == LITTLE_ENDIAN
-#  define ELF_DATA ELFDATA2LSB
-# elif defined(BIG_ENDIAN) && __PAX_UTILS_BO == BIG_ENDIAN
-#  define ELF_DATA ELFDATA2MSB
-# else
-#  error "still cant calculate native byte order"
-# endif
-# undef __PAX_UTILS_BO
 #endif
 
 /*
