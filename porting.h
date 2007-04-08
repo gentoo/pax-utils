@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.25 2007/04/08 19:14:31 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.26 2007/04/08 19:42:46 solar Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -122,9 +122,9 @@
 #  define __PAX_UTILS_BO LITTLE_ENDIAN
 # elif defined(WORDS_BIGENDIAN)
 #  define __PAX_UTILS_BO BIG_ENDIAN
-# elif defined( __sun__) && defined(i386)
+# elif defined( __svr4__) && defined(__sun__) && defined(i386)
 #  define __PAX_UTILS_BO LITTLE_ENDIAN
-# elif defined( __sun__) && defined(sparc)
+# elif defined( __svr4__) && defined(__sun__) && defined(sparc)
 #  define __PAX_UTILS_BO BIG_ENDIAN
 # else
 #  error "no idea what the native byte order is"
