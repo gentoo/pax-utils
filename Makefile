@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.60 2007/04/08 19:42:46 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.61 2007/04/08 23:22:22 solar Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -39,8 +39,7 @@ override CPPFLAGS  += -DVERSION=\"$(PV)\"
 endif
 
 ####################################################################
-ELF_TARGETS  = scanelf dumpelf
-ELF_TARGETS  += $(shell echo | $(CC) -dM -E - | grep -q __svr4__ || echo pspax)
+ELF_TARGETS  = scanelf dumpelf $(shell echo | $(CC) -dM -E - | grep -q __svr4__ || echo pspax)
 ELF_OBJS     = $(ELF_TARGETS:%=%.o) paxelf.o
 MACH_TARGETS = scanmacho
 MACH_OBJS    = $(MACH_TARGETS:%=%.o) paxmacho.o
