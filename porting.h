@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.26 2007/04/08 19:42:46 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.27 2007/04/08 20:25:01 vapier Exp $
  *
  * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -41,6 +41,8 @@
 # include <byteswap.h>
 #elif defined(__FreeBSD__)
 # include <sys/endian.h>
+#elif defined(__sun__)
+# include <sys/isa_defs.h>
 #elif defined(__MACH__)
 # include <machine/endian.h>
 #endif
@@ -112,6 +114,7 @@
 # define __PAX_UTILS_PATH_MAX PATH_MAX
 #endif
 
+/* fall back case for non-Linux hosts ... so lame */
 #if !defined(ELF_DATA)
 # undef __PAX_UTILS_BO
 # if defined(BYTE_ORDER)
@@ -122,18 +125,21 @@
 #  define __PAX_UTILS_BO LITTLE_ENDIAN
 # elif defined(WORDS_BIGENDIAN)
 #  define __PAX_UTILS_BO BIG_ENDIAN
-# elif defined( __svr4__) && defined(__sun__) && defined(i386)
+# elif defined(_LITTLE_ENDIAN)
 #  define __PAX_UTILS_BO LITTLE_ENDIAN
-# elif defined( __svr4__) && defined(__sun__) && defined(sparc)
+# elif defined(_BIG_ENDIAN)
 #  define __PAX_UTILS_BO BIG_ENDIAN
 # else
 #  error "no idea what the native byte order is"
 # endif
 # if __PAX_UTILS_BO == LITTLE_ENDIAN
 #  define ELF_DATA ELFDATA2LSB
-# else
+# elif __PAX_UTILS_BO == BIG_ENDIAN
 #  define ELF_DATA ELFDATA2MSB
+# else
+#  error "still cant calculate native byte order"
 # endif
+# undef __PAX_UTILS_BO
 #endif
 
 /*
