@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2006 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.176 2007/04/08 19:14:31 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.177 2007/05/20 23:20:46 solar Exp $
  *
  * Copyright 2003-2006 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2006 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.176 2007/04/08 19:14:31 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.177 2007/05/20 23:20:46 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -954,6 +954,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 
 	return NULL;
 }
+
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
@@ -986,12 +987,12 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 				} \
 				/* debug display ... show all symbols and some extra info */ \
 				if (g_match ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
-					printf("%s(%s) %5lX %15s %s\n", \
+					printf("%s(%s) %5lX %15s %s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \
 					       (unsigned long)sym->st_size, \
 					       get_elfstttype(sym->st_info), \
-					       symname); \
+					       sym->st_shndx == SHN_UNDEF ? "U" : "D", symname); \
 					*found_sym = 1; \
 				} else { \
 					/* allow the user to specify a comma delimited list of symbols to search for */ \
