@@ -1,10 +1,10 @@
 /*
- * Copyright 2005-2006 Gentoo Foundation
+ * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.30 2007/04/08 21:04:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.31 2007/05/23 22:27:27 solar Exp $
  *
- * Copyright 2005-2006 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005-2006 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  *
  * Make sure all of the common elf stuff is setup as we expect
  */
