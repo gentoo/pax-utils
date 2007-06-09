@@ -99,6 +99,10 @@
    <listitem><para>Print only ELF files matching specified numeric bits (like 32/64)</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
+   <listitem><para>Print only ELF files with matching specified octal bits (like 755)</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-m</option>, <option>--mount</option></term>
    <listitem><para>Don't recursively cross mount points</para></listitem>
   </varlistentry>

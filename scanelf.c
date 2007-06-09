@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.179 2007/06/09 18:54:44 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.180 2007/06/09 21:43:53 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.179 2007/06/09 18:54:44 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.180 2007/06/09 21:43:53 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -45,6 +45,7 @@ static char scan_archives = 0;
 static char dir_recurse = 0;
 static char dir_crossmount = 1;
 static char show_pax = 0;
+static char show_perms = 0;
 static char show_phdr = 0;
 static char show_textrel = 0;
 static char show_rpath = 0;
@@ -72,11 +73,25 @@ static char **qa_execstack = NULL;
 static char **qa_wx_load = NULL;
 
 int match_bits = 0;
+unsigned int match_perms = 0;
 caddr_t ldcache = 0;
 size_t ldcache_size = 0;
 unsigned long setpax = 0UL;
 
 int has_objdump = 0;
+
+static char *getstr_perms(const char *fname);
+static char *getstr_perms(const char *fname) {
+	struct stat st;
+	static char buf[8];
+
+	if ((stat(fname, &st)) == (-1))
+		return (char *) "";
+
+	snprintf(buf, sizeof(buf), "%o", st.st_mode);
+
+	return (char *) buf + 2;
+}
 
 /* find the path to a file by name */
 static char *which(const char *fname)
@@ -364,6 +379,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	else
 		return "   -   ";
 }
+
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
 	unsigned long s, r, rmax;
@@ -1136,6 +1152,7 @@ static int scanelf_elfobj(elfobj *elf)
 			case 'T': prints("TEXTRELS "); break;
 			case 'k': prints("SECTION "); break;
 			case 'a': prints("ARCH "); break;
+			case 'O': prints("PERM "); break;
 			default: warnf("'%c' has no title ?", out_format[i]);
 			}
 		}
@@ -1196,6 +1213,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'T': out = scanelf_file_textrels(elf, &found_textrels, &found_textrel); break;
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'M': out = get_elfeitype(EI_CLASS, elf->data[EI_CLASS]); break;
+		case 'O': out = getstr_perms(elf->filename); break;
 		case 'n':
 		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
@@ -1320,6 +1338,10 @@ static int scanelf_file(const char *filename, const struct stat *st_cache)
 		return 1;
 	}
 
+	if (match_perms) {
+		if ((st->st_mode | match_perms) != st->st_mode)
+			return 1;
+	}
 	if ((fd=open(filename, (fix_elf ? O_RDWR : O_RDONLY))) == -1)
 		return 1;
 
@@ -1565,7 +1587,7 @@ static void scanelf_envpath()
 }
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:BhV"
+#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:O:BhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1592,6 +1614,7 @@ static struct option const long_opts[] = {
 	{"textrels",  no_argument, NULL, 'T'},
 	{"etype",      a_argument, NULL, 'E'},
 	{"bits",       a_argument, NULL, 'M'},
+	{"perms",      a_argument, NULL, 'O'},
 	{"all",       no_argument, NULL, 'a'},
 	{"quiet",     no_argument, NULL, 'q'},
 	{"verbose",   no_argument, NULL, 'v'},
@@ -1629,6 +1652,7 @@ static const char *opts_help[] = {
 	"Locate cause of TEXTREL",
 	"Print only ELF files matching etype ET_DYN,ET_EXEC ...",
 	"Print only ELF files matching numeric bits",
+	"Print only ELF files matching octal permissions",
 	"Print all scanned info (-x -e -t -r -b)\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
@@ -1695,6 +1719,10 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
+			break;
+		case 'O':
+			if (sscanf(optarg, "%o", &match_perms) == (-1))
+				match_bits = 0;
 			break;
 		case 'o': {
 			if (freopen(optarg, "w", stdout) == NULL)
@@ -1787,7 +1815,7 @@ static int parseargs(int argc, char *argv[])
 		case 'T': show_textrels = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_pax = show_phdr = show_textrel = show_rpath = show_bind = 1; break;
+		case 'a': show_perms = show_pax = show_phdr = show_textrel = show_rpath = show_bind = 1; break;
 
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
@@ -1805,7 +1833,7 @@ static int parseargs(int argc, char *argv[])
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
 		show_needed = show_interp = show_bind = show_soname = \
-		show_textrels = 0;
+		show_textrels = show_perms = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (!IS_MODIFIER(out_format[i])) continue;
 
@@ -1822,6 +1850,7 @@ static int parseargs(int argc, char *argv[])
 			case 'o': break;
 			case 'a': break;
 			case 'M': break;
+			case 'O': show_perms = 1; break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_phdr = 1; break;
 			case 't': show_textrel = 1; break;
@@ -1843,6 +1872,7 @@ static int parseargs(int argc, char *argv[])
 		out_format = (char*)xmalloc(sizeof(char) * fmt_len);
 		if (!be_quiet)     xstrcat(&out_format, "%o ", &fmt_len);
 		if (show_pax)      xstrcat(&out_format, "%x ", &fmt_len);
+		if (show_perms)    xstrcat(&out_format, "%O ", &fmt_len);
 		if (show_phdr)     xstrcat(&out_format, "%e ", &fmt_len);
 		if (show_textrel)  xstrcat(&out_format, "%t ", &fmt_len);
 		if (show_rpath)    xstrcat(&out_format, "%r ", &fmt_len);
