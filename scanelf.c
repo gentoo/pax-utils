@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.182 2007/06/29 18:48:47 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.183 2007/06/29 19:49:26 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.182 2007/06/29 18:48:47 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.183 2007/06/29 19:49:26 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1827,7 +1827,7 @@ static int parseargs(int argc, char *argv[])
 		case 'T': show_textrels = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
-		case 'a': show_perms = show_pax = show_phdr = show_textrel = show_rpath = show_bind = 1; break;
+		case 'a': show_perms = show_pax = show_phdr = show_textrel = show_rpath = show_bind = show_endian = 1; break;
 		case 'D': show_endian = 1; break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
