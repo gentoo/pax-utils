@@ -241,9 +241,8 @@
  <title>ELF ETYPES</title>
  <para>
   You can narrow your search by specifying the ELF object file type (ETYPE).
-  The commandline option actually takes the numeric value rather than the
-  symbolic type.  In other words, you would specify <replaceable>2</replaceable>
-  rather than <replaceable>ET_EXEC</replaceable>.
+  The commandline option takes the numeric value and or symbolic type.
+  Multiple values can be passed comma separated. Example -E ET_EXEC,ET_DYN,1
  </para>
  <para>
   Here is the normal list available for your pleasure.  You of course are free
@@ -262,7 +261,7 @@
  <title>ELF BITS</title>
  <para>
   You can also narrow your search by specifying the ELF bitsize.  Again, specify
-  the numeric value rather than the symbolic define.
+  the numeric value or the symbolic define.
   <itemizedlist>
    <listitem><para><emphasis remap='B'>32 - ELFCLASS32</emphasis> - 32bit ELFs</para></listitem>
    <listitem><para><emphasis remap='B'>64 - ELFCLASS64</emphasis> - 64bit ELFs</para></listitem>

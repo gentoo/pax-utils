@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.181 2007/06/29 17:09:12 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.182 2007/06/29 18:48:47 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.181 2007/06/29 17:09:12 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.182 2007/06/29 18:48:47 solar Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1725,6 +1725,12 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
+			if (match_bits == 0) {
+				if (strcmp(optarg, "ELFCLASS32") == 0)
+					match_bits = 32;
+				if (strcmp(optarg, "ELFCLASS64") == 0)
+					match_bits = 64;
+			}
 			break;
 		case 'O':
 			if (sscanf(optarg, "%o", &match_perms) == (-1))
