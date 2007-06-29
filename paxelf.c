@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.54 2007/06/09 18:54:44 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.55 2007/06/29 17:09:12 solar Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -106,6 +106,15 @@ int get_etype(elfobj *elf)
 const char *get_elfetype(elfobj *elf)
 {
 	return find_pairtype(elf_etypes, get_etype(elf));
+}
+
+const char *get_endian(elfobj *elf)
+{
+	if (elf->data[EI_DATA] == ELFDATA2LSB)
+		return (char *) "LE";
+	if (elf->data[EI_DATA] == ELFDATA2MSB)
+		return (char *) "BE";
+	return (char *) "??";
 }
 
 void print_etypes(FILE *stream)

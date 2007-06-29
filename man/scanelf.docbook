@@ -82,6 +82,7 @@
    <term><option>-i</option>, <option>--interp</option></term>
    <listitem><para>Print INTERP information</para></listitem>
   </varlistentry>
+
   <varlistentry>
    <term><option>-k</option>, <option>--section</option> <replaceable>SECTION</replaceable></term>
    <listitem><para>Find the specified section</para></listitem>
@@ -97,6 +98,10 @@
   <varlistentry>
    <term><option>-M</option>, <option>--bits</option> <replaceable>BITS</replaceable></term>
    <listitem><para>Print only ELF files matching specified numeric bits (like 32/64)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-D</option>, <option>--endian</option> </term>
+   <listitem><para>Print Endianness</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
@@ -211,6 +216,7 @@
    <listitem><para><emphasis remap='B'>a</emphasis> - machine (EM) type</para></listitem>
    <listitem><para><emphasis remap='B'>b</emphasis> - bind flags</para></listitem>
    <listitem><para><emphasis remap='B'>e</emphasis> - program headers</para></listitem>
+   <listitem><para><emphasis remap='B'>D</emphasis> - endian</para></listitem>
    <listitem><para><emphasis remap='B'>F</emphasis> - long filename</para></listitem>
    <listitem><para><emphasis remap='B'>f</emphasis> - short filename</para></listitem>
    <listitem><para><emphasis remap='B'>i</emphasis> - interp</para></listitem>
@@ -220,6 +226,7 @@
    <listitem><para><emphasis remap='B'>n</emphasis> - needed libraries</para></listitem>
    <listitem><para><emphasis remap='B'>p</emphasis> - filename (minus search)</para></listitem>
    <listitem><para><emphasis remap='B'>o</emphasis> - etype</para></listitem>
+   <listitem><para><emphasis remap='B'>O</emphasis> - perms</para></listitem>
    <listitem><para><emphasis remap='B'>r</emphasis> - runpaths</para></listitem>
    <listitem><para><emphasis remap='B'>S</emphasis> - SONAME</para></listitem>
    <listitem><para><emphasis remap='B'>s</emphasis> - symbol</para></listitem>
