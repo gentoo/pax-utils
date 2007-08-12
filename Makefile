@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.62 2007/06/29 19:49:26 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.63 2007/08/12 20:06:57 grobian Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -105,7 +105,7 @@ ifeq ($(S),)
 	$(CP) README BUGS TODO $(PREFIX)/share/doc/pax-utils/
 endif
 	for mpage in $(MPAGES) ; do \
-		[ -e $$mpage ] \
+		[ -f $$mpage ] \
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
 	done
 
