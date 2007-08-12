@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.183 2007/06/29 19:49:26 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.184 2007/08/12 16:35:25 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.183 2007/06/29 19:49:26 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.184 2007/08/12 16:35:25 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -1548,7 +1548,7 @@ static int load_ld_cache_config(int i, const char *fname)
 #endif
 
 /* scan /etc/ld.so.conf for paths */
-static void scanelf_ldpath()
+static void scanelf_ldpath(void)
 {
 	char scan_l, scan_ul, scan_ull;
 	int i = 0;
@@ -1572,7 +1572,7 @@ static void scanelf_ldpath()
 }
 
 /* scan env PATH for paths */
-static void scanelf_envpath()
+static void scanelf_envpath(void)
 {
 	char *path, *p;
 
@@ -1964,7 +1964,7 @@ static char **get_split_env(const char *envvar)
 	return envvals;
 }
 
-static void parseenv()
+static void parseenv(void)
 {
 	qa_textrels = get_split_env("QA_TEXTRELS");
 	qa_execstack = get_split_env("QA_EXECSTACK");
@@ -1972,7 +1972,7 @@ static void parseenv()
 }
 
 #ifdef __PAX_UTILS_CLEANUP
-static void cleanup()
+static void cleanup(void)
 {
 	free(out_format);
 	free(qa_textrels);
