@@ -7,6 +7,8 @@ due to:
 	rel = REL ## B (elf->data + EGET(shdr[s].sh_offset)); \
 	rela = RELA ## B (elf->data + EGET(shdr[s].sh_offset)); \
 	sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+perhaps we need to just force the alignment of the data member in the struct to
+the size of something large ?  or just ignore the warning ...
 
 pspax -u 0
 errno = 0; uid = strtol(optarg, NULL, 10); if (uid == 0 && errno != 0) error("invalid value");
@@ -18,3 +20,11 @@ care though ?  this would be an issue if:
  - host is 32bit
  - object being analyzed is 64bit
  - object has symbols which is larger than 32bits
+
+scanelf does not check offsets of DT's when scanning PT_DYNAMIC ... if a bogus
+ELF had a PHDR of type PT_DYNAMIC which claimed to be of size say 1 and had an
+offset just shy of the end of the file, we'll probably crash ...
+
+dumpelf does not do string checking in very very verbose mode.  it assumes the
+strings are sane when dumping the sections.  only way around this is to check
+everything single byte and print it out a character at a time ... sucks ...
