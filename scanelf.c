@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.184 2007/08/12 16:35:25 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.185 2007/08/18 04:59:32 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,7 @@
 
 #include "paxinc.h"
 
-static const char *rcsid = "$Id: scanelf.c,v 1.184 2007/08/12 16:35:25 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.185 2007/08/18 04:59:32 vapier Exp $";
 #define argv0 "scanelf"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
@@ -358,7 +358,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Off offset; \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 		offset = EGET(phdr[i].p_offset); \
 		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 		dyn = DYN ## B (elf->data + offset); \
@@ -560,7 +560,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		/* Scan all the program headers */ \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			/* Just scan dynamic headers */ \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			/* Just scan dynamic RPATH/RUNPATH headers */ \
@@ -820,7 +820,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			dyn = DYN ## B (elf->data + offset); \
@@ -895,7 +895,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			dynamic = 1; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
@@ -947,7 +947,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 		if (ehdr->e_type != ET_DYN) \
 			return NULL; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC) continue; \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			dyn = DYN ## B (elf->data + offset); \
