@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.7 2007/06/09 18:54:44 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.8 2007/08/20 09:54:15 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -11,8 +11,6 @@
 
 #define IN_paxinc
 #include "paxinc.h"
-
-#define argv0 "paxinc"
 
 char do_reverse_endian;
 
@@ -73,31 +71,31 @@ close_and_ret:
 		read(ar->fd, ret.buf.raw+59, 1);
 	}
 
-	if ((ret.buf.formated.magic[0] != '`') || (ret.buf.formated.magic[1] != '\n')) {
+	if ((ret.buf.formatted.magic[0] != '`') || (ret.buf.formatted.magic[1] != '\n')) {
 		warn("Invalid ar entry");
 		goto close_and_ret;
 	}
 
-	if (ret.buf.formated.name[0] == '/' && ret.buf.formated.name[1] == '/') {
+	if (ret.buf.formatted.name[0] == '/' && ret.buf.formatted.name[1] == '/') {
 		warn("Sorry, long names not yet supported; output will be incomplete for %s", ar->filename);
-		ar->skip = atoi(ret.buf.formated.size);
+		ar->skip = atoi(ret.buf.formatted.size);
 		return ar_next(ar);
 	}
 
 	len = strlen(ar->filename);
-	assert(len < sizeof(ret.name)-sizeof(ret.buf.formated.name)-1);
+	assert(len < sizeof(ret.name)-sizeof(ret.buf.formatted.name)-1);
 	memcpy(ret.name, ar->filename, len);
 	ret.name[len++] = ':';
-	memcpy(ret.name+len, ret.buf.formated.name, sizeof(ret.buf.formated.name));
+	memcpy(ret.name+len, ret.buf.formatted.name, sizeof(ret.buf.formatted.name));
 	if ((s=strchr(ret.name+len, '/')) != NULL)
 		*s = '\0';
 	else
-		ret.name[len+sizeof(ret.buf.formated.name)-1] = '\0';
-	ret.date = atoi(ret.buf.formated.date);
-	ret.uid = atoi(ret.buf.formated.uid);
-	ret.gid = atoi(ret.buf.formated.gid);
-	ret.mode = strtol(ret.buf.formated.mode, NULL, 8);
-	ret.size = atoi(ret.buf.formated.size);
+		ret.name[len+sizeof(ret.buf.formatted.name)-1] = '\0';
+	ret.date = atoi(ret.buf.formatted.date);
+	ret.uid = atoi(ret.buf.formatted.uid);
+	ret.gid = atoi(ret.buf.formatted.gid);
+	ret.mode = strtol(ret.buf.formatted.mode, NULL, 8);
+	ret.size = atoi(ret.buf.formatted.size);
 	ar->skip = ret.size;
 
 	return &ret;

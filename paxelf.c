@@ -1,15 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.55 2007/06/29 17:09:12 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.56 2007/08/20 09:54:15 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 #include "paxinc.h"
-
-#define argv0 "paxelf"
 
 /*
  * Setup a bunch of helper functions to translate
@@ -405,7 +403,7 @@ elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 	if (buffer == NULL || buffer_len < EI_NIDENT)
 		return NULL;
 
-	elf = (elfobj*)malloc(sizeof(*elf));
+	elf = xmalloc(sizeof(*elf));
 	if (elf == NULL)
 		return NULL;
 	memset(elf, 0x00, sizeof(*elf));
@@ -607,7 +605,7 @@ unsigned long pax_pf2hf_flags(unsigned long paxflags)
 	char *pf_flags = pax_short_pf_flags(paxflags);
 	size_t x, len = strlen(pf_flags);
 	for (x = 0; x < len; x++) {
-		switch(pf_flags[x]) {
+		switch (pf_flags[x]) {
 			case 'p':
 				flags |= HF_PAX_PAGEEXEC;
 				break;

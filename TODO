@@ -28,3 +28,6 @@ offset just shy of the end of the file, we'll probably crash ...
 dumpelf does not do string checking in very very verbose mode.  it assumes the
 strings are sane when dumping the sections.  only way around this is to check
 everything single byte and print it out a character at a time ... sucks ...
+
+we look at the section named ".text" for TEXTRELs when we should look at the
+PT_LOAD program headers which are marked Executable.

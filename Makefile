@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.63 2007/08/12 20:06:57 grobian Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.64 2007/08/20 09:54:15 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -43,7 +43,8 @@ ELF_TARGETS  = scanelf dumpelf $(shell echo | $(CC) -dM -E - | grep -q __svr4__ 
 ELF_OBJS     = $(ELF_TARGETS:%=%.o) paxelf.o
 MACH_TARGETS = scanmacho
 MACH_OBJS    = $(MACH_TARGETS:%=%.o) paxmacho.o
-OBJS         = $(ELF_OBJS) $(MACH_OBJS) paxinc.o
+COMMON_OBJS  = paxinc.o xfuncs.o
+OBJS         = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS)
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
 MPAGES       = $(TARGETS:%=man/%.1)
 SOURCES      = $(OBJS:%.o=%.c)
@@ -74,11 +75,11 @@ ifeq ($(V),)
 endif
 	$(Q)$(compile.c) $(WFLAGS)
 
-$(ELF_TARGETS): $(ELF_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxelf.o -o $@ $@.o $(LIBS) $(LIBS-$@)
+$(ELF_TARGETS): $(ELF_OBJS) $(COMMON_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(COMMON_OBJS) paxelf.o -o $@ $@.o $(LIBS) $(LIBS-$@)
 
-$(MACH_TARGETS): $(MACH_OBJS) paxinc.o
-	$(CC) $(CFLAGS) $(LDFLAGS) paxinc.o paxmacho.o -o $@ $@.o $(LIBS) $(LIBS-$@)
+$(MACH_TARGETS): $(MACH_OBJS) $(COMMON_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(COMMON_OBJS) paxmacho.o -o $@ $@.o $(LIBS) $(LIBS-$@)
 
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
@@ -130,3 +131,8 @@ dist: distclean
 	du -b ../pax-utils-$(PV).tar.bz2
 
 -include .depend
+
+check test:
+	$(MAKE) -C tests
+
+.PHONY: all check clean dist install test

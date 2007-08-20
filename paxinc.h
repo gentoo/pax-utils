@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.9 2007/05/23 22:27:27 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.10 2007/08/20 09:54:15 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -13,6 +13,7 @@
 #define _PAX_INC_H
 
 #include "porting.h"
+#include "xfuncs.h"
 
 #ifndef VERSION
 # define VERSION "cvs"
@@ -56,7 +57,7 @@ typedef struct {
 			char mode[8];
 			char size[10];
 			char magic[2];
-		} formated;
+		} formatted;
 	} buf;
 #endif
 } archive_member;
@@ -94,6 +95,9 @@ archive_member *ar_next(archive_handle *);
 #define NORM      COLOR("00", "00")
 #define RED       COLOR("31", "01")
 #define YELLOW    COLOR("33", "01")
+
+/* constant pointer to a constant buffer ... each program needs to set this */
+extern const char * const argv0;
 
 /* we need the space before the last comma or we trigger a bug in gcc-2 :( */
 #define warn(fmt, args...) \

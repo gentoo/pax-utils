@@ -12,6 +12,9 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
+static const char *rcsid = "$Id: pspax.c,v 1.38 2007/08/20 09:54:15 vapier Exp $";
+const char * const argv0 = "pspax";
+
 #include "paxinc.h"
 #include <grp.h>
 
@@ -24,8 +27,6 @@
 #endif
 
 #define PROC_DIR "/proc"
-static const char *rcsid = "$Id: pspax.c,v 1.37 2006/12/12 23:34:34 solar Exp $";
-#define argv0 "pspax"
 
 
 
@@ -79,8 +80,8 @@ static int get_proc_maps(pid_t pid)
 				continue;
 			/* 0x0-0x0 rwxp fffff000 00:00 0 */
 			/* 0x0-0x0 R+W+XP fffff000 00:00 0 */
-			++p; // ' '
-			++p; // r
+			++p; /* ' ' */
+			++p; /*  r  */
 			if (*p == '+')
 				++p;
 			/* FIXME: all of wx, w+, +x, ++ indicate w|x */
@@ -116,8 +117,8 @@ static int print_executable_mappings(pid_t pid)
 				continue;
 			/* 0x0-0x0 rwxp fffff000 00:00 0 */
 			/* 0x0-0x0 R+W+XP fffff000 00:00 0 */
-			++p; // ' '
-			++p; // r
+			++p; /* ' ' */
+			++p; /*  r  */
 			if (*p == '+')
 				++p;
 			/* FIXME: all of wx, w+, +x, ++ indicate w|x */

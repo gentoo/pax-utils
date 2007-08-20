@@ -1,16 +1,16 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.185 2007/08/18 04:59:32 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.186 2007/08/20 09:54:15 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-#include "paxinc.h"
+static const char *rcsid = "$Id: scanelf.c,v 1.186 2007/08/20 09:54:15 vapier Exp $";
+const char * const argv0 = "scanelf";
 
-static const char *rcsid = "$Id: scanelf.c,v 1.185 2007/08/18 04:59:32 vapier Exp $";
-#define argv0 "scanelf"
+#include "paxinc.h"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
 
@@ -27,12 +27,6 @@ static void usage(int status);
 static char **get_split_env(const char *envvar);
 static void parseenv(void);
 static int parseargs(int argc, char *argv[]);
-static char *xstrdup(const char *s);
-static void *xmalloc(size_t size);
-static void *xrealloc(void *ptr, size_t size);
-static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
-#define xstrcat(dst,src,curr_len) xstrncat(dst,src,curr_len,0)
-static inline void xchrcat(char **dst, const char append, size_t *curr_len);
 static int rematch(const char *regex, const char *match, int cflags);
 
 /* variables to control behavior */
@@ -82,7 +76,8 @@ unsigned long setpax = 0UL;
 int has_objdump = 0;
 
 static char *getstr_perms(const char *fname);
-static char *getstr_perms(const char *fname) {
+static char *getstr_perms(const char *fname)
+{
 	struct stat st;
 	static char buf[8];
 
@@ -341,6 +336,10 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		return ret;
 }
 
+/*
+ * See if this ELF contains a DT_TEXTREL tag in any of its
+ * PT_DYNAMIC sections.
+ */
 static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
 	static const char *ret = "TEXTREL";
@@ -381,6 +380,11 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 		return "   -   ";
 }
 
+/*
+ * Scan the .text section to see if there are any relocations in it.
+ * Should rewrite this to check PT_LOAD sections that are marked
+ * Executable rather than the section named '.text'.
+ */
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
 	unsigned long s, r, rmax;
@@ -1122,7 +1126,7 @@ static int scanelf_elfobj(elfobj *elf)
 	/* init output buffer */
 	if (!out_buffer) {
 		out_len = sizeof(char) * 80;
-		out_buffer = (char*)xmalloc(out_len);
+		out_buffer = xmalloc(out_len);
 	}
 	*out_buffer = '\0';
 
@@ -1280,7 +1284,7 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 		strncpy(sbuf, match_etypes, sizeof(sbuf));
 		if (strchr(match_etypes, ',') != NULL) {
 			char *p;
-			while((p = strrchr(sbuf, ',')) != NULL) {
+			while ((p = strrchr(sbuf, ',')) != NULL) {
 				*p = 0;
 				if (etype_lookup(p+1) == get_etype(elf))
 					goto label_ret;
@@ -1451,7 +1455,7 @@ static int load_ld_cache_config(int i, const char *fname)
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
 #ifdef __linux__
-		// recursive includes of the same file will make this segfault.
+		/* recursive includes of the same file will make this segfault. */
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob64_t gl;
 			size_t x;
@@ -1516,7 +1520,7 @@ static int load_ld_cache_config(int i, const char *fname)
 		return i;
 	}
 
-	b = (char*)malloc(hdr.dirlistlen+1);
+	b = xmalloc(hdr.dirlistlen + 1);
 	if (fread(b, 1, hdr.dirlistlen+1, fp) != hdr.dirlistlen+1) {
 		fclose(fp);
 		free(b);
@@ -1748,7 +1752,7 @@ static int parseargs(int argc, char *argv[])
 		case 's': {
 			if (find_sym) warn("You prob don't want to specify -s twice");
 			find_sym = optarg;
-			versioned_symname = (char*)xmalloc(sizeof(char) * (strlen(find_sym)+1+1));
+			versioned_symname = xmalloc(sizeof(char) * (strlen(find_sym)+1+1));
 			sprintf(versioned_symname, "%s@", find_sym);
 			break;
 		}
@@ -1767,8 +1771,8 @@ static int parseargs(int argc, char *argv[])
 			unsigned long flags = (PF_NOEMUTRAMP | PF_NORANDEXEC);
 			size_t x;
 
-			for (x = 0 ; x < strlen(optarg); x++) {
-				switch(optarg[x]) {
+			for (x = 0; x < strlen(optarg); x++) {
+				switch (optarg[x]) {
 					case 'p':
 					case 'P':
 						do_pax_state(optarg[x], PAGEEXEC);
@@ -1882,7 +1886,7 @@ static int parseargs(int argc, char *argv[])
 	/* construct our default format */
 	} else {
 		size_t fmt_len = 30;
-		out_format = (char*)xmalloc(sizeof(char) * fmt_len);
+		out_format = xmalloc(sizeof(char) * fmt_len);
 		if (!be_quiet)     xstrcat(&out_format, "%o ", &fmt_len);
 		if (show_pax)      xstrcat(&out_format, "%x ", &fmt_len);
 		if (show_perms)    xstrcat(&out_format, "%O ", &fmt_len);
@@ -1999,51 +2003,6 @@ int main(int argc, char *argv[])
 	return ret;
 }
 
-
-
-/* utility funcs */
-static char *xstrdup(const char *s)
-{
-	char *ret = strdup(s);
-	if (!ret) err("Could not strdup(): %s", strerror(errno));
-	return ret;
-}
-static void *xmalloc(size_t size)
-{
-	void *ret = malloc(size);
-	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
-	return ret;
-}
-static void *xrealloc(void *ptr, size_t size)
-{
-	void *ret = realloc(ptr, size);
-	if (!ret) err("Could not realloc() %li bytes", (unsigned long)size);
-	return ret;
-}
-static void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
-{
-	size_t new_len;
-
-	new_len = strlen(*dst) + strlen(src);
-	if (*curr_len <= new_len) {
-		*curr_len = new_len + (*curr_len / 2);
-		*dst = realloc(*dst, *curr_len);
-		if (!*dst)
-			err("could not realloc() %li bytes", (unsigned long)*curr_len);
-	}
-
-	if (n)
-		strncat(*dst, src, n);
-	else
-		strcat(*dst, src);
-}
-static inline void xchrcat(char **dst, const char append, size_t *curr_len)
-{
-	static char my_app[2];
-	my_app[0] = append;
-	my_app[1] = '\0';
-	xstrcat(dst, my_app, curr_len);
-}
 
 /* Match filename against entries in matchlist, return TRUE
  * if the file is listed */
