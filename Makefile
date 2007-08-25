@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.64 2007/08/20 09:54:15 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.65 2007/08/25 02:39:42 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -110,25 +110,22 @@ endif
 			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
 	done
 
-dist: distclean
-	@tempfiles=`ls .#* *.o 2>/dev/null` ; \
-	if [ -n "$$tempfiles" ] ; then \
-		echo "Please remove these files first:" ; \
-		echo "$$tempfiles" ; \
-		exit 1 ; \
-	fi
+dist:
 	@if [ "$(PV)" = "" ] ; then \
 		echo "Please run 'make dist PV=<ver>'" ; \
 		exit 1 ; \
 	fi
-	$(MAKE) -s distclean
-	echo "<releaseinfo>$(PV)</releaseinfo>" > man/fragment/version
-	$(MAKE) -C man
-	rm -rf ../pax-utils-$(PV)*
-	rsync -a --exclude=CVS --exclude='*macho*' . ../pax-utils-$(PV)
-	tar jcf ../pax-utils-$(PV).tar.bz2 -C .. pax-utils-$(PV)
-	rm -rf ../pax-utils-$(PV)
-	du -b ../pax-utils-$(PV).tar.bz2
+	rm -rf pax-utils-$(PV)
+	mkdir pax-utils-$(PV)
+	cp -a CVS pax-utils-$(PV)/
+	cd pax-utils-$(PV) && cvs up && rm -f *macho*
+	echo "<releaseinfo>$(PV)</releaseinfo>" > pax-utils-$(PV)/man/fragment/version
+	$(MAKE) -C pax-utils-$(PV)/man
+	tar jcf pax-utils-$(PV).tar.bz2 pax-utils-$(PV) --exclude=CVS
+	@printf "\n ..... Making sure clean cvs build works ..... \n\n"
+	$(MAKE) -C pax-utils-$(PV)
+	rm -rf pax-utils-$(PV)
+	du -b pax-utils-$(PV).tar.bz2
 
 -include .depend
 
