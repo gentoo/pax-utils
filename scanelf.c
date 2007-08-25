@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.186 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.187 2007/08/25 02:46:18 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.186 2007/08/20 09:54:15 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.187 2007/08/25 02:46:18 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -485,26 +485,24 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
 			if (be_verbose && has_objdump) { \
+				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
 				size_t syslen; \
 				const char sysfmt[] = "objdump -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
 				syslen = sizeof(sysfmt) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
 				sysbuf = xmalloc(syslen); \
-				if (sysbuf) { \
-					Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
-					if (end_addr < r_offset) \
-						/* not uncommon when things are optimized out */ \
-						end_addr = r_offset + 0x100; \
-					snprintf(sysbuf, syslen, sysfmt, \
-						(unsigned long)offset_tmp, \
-						(unsigned long)end_addr, \
-						elf->filename, \
-						(unsigned long)r_offset); \
-					fflush(stdout); \
-					system(sysbuf); \
-					fflush(stdout); \
-					free(sysbuf); \
-				} \
+				if (end_addr < r_offset) \
+					/* not uncommon when things are optimized out */ \
+					end_addr = r_offset + 0x100; \
+				snprintf(sysbuf, syslen, sysfmt, \
+					(unsigned long)offset_tmp, \
+					(unsigned long)end_addr, \
+					elf->filename, \
+					(unsigned long)r_offset); \
+				fflush(stdout); \
+				system(sysbuf); \
+				fflush(stdout); \
+				free(sysbuf); \
 			} \
 		} \
 	} }

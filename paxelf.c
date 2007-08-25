@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.56 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.57 2007/08/25 02:46:18 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -404,8 +404,6 @@ elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
 		return NULL;
 
 	elf = xmalloc(sizeof(*elf));
-	if (elf == NULL)
-		return NULL;
 	memset(elf, 0x00, sizeof(*elf));
 
 	elf->fd = -1;
