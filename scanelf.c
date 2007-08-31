@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.187 2007/08/25 02:46:18 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.188 2007/08/31 17:45:24 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.187 2007/08/25 02:46:18 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.188 2007/08/31 17:45:24 solar Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -268,7 +268,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				offset = 4; \
 				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-				if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) \
+				if (EGET(ehdr->e_type) == ET_DYN || EGET(ehdr->e_type) == ET_EXEC) \
 					if (multi_load++ > max_pt_load) \
 						warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 				if (file_matches_list(elf->filename, qa_wx_load)) \
@@ -946,7 +946,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 		Elf ## B ## _Off offset; \
 		/* only look for soname in shared objects */ \
-		if (ehdr->e_type != ET_DYN) \
+		if (EGET(ehdr->e_type) != ET_DYN) \
 			return NULL; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
