@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.38 2007/08/20 09:54:15 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.39 2007/09/18 05:22:48 solar Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -35,6 +35,7 @@ static char show_all = 0;
 static char verbose = 0;
 static char show_banner = 1;
 static char show_phdr = 0;
+static char show_addr = 0;
 static char noexec = 1;
 static char writeexec = 1;
 
@@ -201,6 +202,25 @@ static char *get_pid_attr(pid_t pid)
 	return buf;
 }
 
+static char *get_pid_addr(pid_t pid)
+{
+	FILE *fp;
+	char *p;
+	char str[32];
+	static char buf[BUFSIZ];
+
+	memset(buf, 0, sizeof(buf));
+
+	snprintf(str, sizeof(str), PROC_DIR "/%u/ipaddr", pid);
+	if ((fp = fopen(str, "r")) == NULL)
+		return NULL;
+	if (fgets(buf, sizeof(buf), fp) != NULL)
+		if ((p = strchr(buf, '\n')) != NULL)
+			*p = 0;
+	fclose(fp);
+	return buf;
+}
+
 static const char *get_proc_type(pid_t pid)
 {
 	char fname[32];
@@ -273,10 +293,10 @@ static void pspax(const char *find_name)
 	register struct dirent *de;
 	pid_t pid;
 	pid_t ppid = show_pid;
-	int have_attr, wx;
+	int have_attr, have_addr, wx;
 	struct passwd *pwd;
 	struct stat st;
-	const char *pax, *type, *name, *caps, *attr;
+	const char *pax, *type, *name, *caps, *attr, *addr;
 	WRAP_SYSCAP(ssize_t length; cap_t cap_d;);
 
 	WRAP_SYSCAP(cap_d = cap_init());
@@ -294,9 +314,15 @@ static void pspax(const char *find_name)
 	else
 		have_attr = 0;
 
+	if ((access("/proc/self/ipaddr", R_OK) != (-1)) && show_addr)
+		have_addr = 1;
+	else
+		have_addr = 0;
+
 	if (show_banner)
-		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s %s\n",
-		       "USER", "PID", "PAX", "MAPS", "ETYPE", "NAME", "CAPS", "ATTR", show_phdr ? "STACK LOAD" : "");
+		printf("%-8s %-6s %-6s %-4s %-10s %-16s %-4s %-4s %s %s\n",
+		       "USER", "PID", "PAX", "MAPS", "ETYPE", "NAME", "CAPS", have_attr ? "ATTR" : "",
+			have_addr ? "IPADDR" : "", show_phdr ? "STACK LOAD" : "");
 
 	while ((de = readdir(dir))) {
 		errno = 0;
@@ -327,6 +353,7 @@ static void pspax(const char *find_name)
 			type = get_proc_type(pid);
 			name = get_proc_name(pid);
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
+			addr = (have_addr ? get_pid_addr(pid) : NULL);
 
 			if (show_uid != (-1) && pwd)
 				if (pwd->pw_uid != show_uid)
@@ -341,7 +368,7 @@ static void pspax(const char *find_name)
 			WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
 
 			if (show_all || type) {
-				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s\n",
+				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s %s\n",
 				       pwd  ? pwd->pw_name : "--------",
 				       pid,
 				       pax  ? pax  : "---",
@@ -349,7 +376,9 @@ static void pspax(const char *find_name)
 				       type ? type : "-------",
 				       name ? name : "-----",
 				       caps ? caps : " = ",
-				       attr ? attr : "-", show_phdr ? get_proc_phdr(pid) : "");
+				       attr ? attr : "",
+				       addr ? addr : "",
+				       show_phdr ? get_proc_phdr(pid) : "");
 				if (verbose && wx)
 					print_executable_mappings(pid);
 			}
@@ -366,11 +395,12 @@ static void pspax(const char *find_name)
 
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aep:u:g:nwvBhV"
+#define PARSE_FLAGS "aeip:u:g:nwvBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
 	{"header",    no_argument, NULL, 'e'},
+	{"ipaddr",    no_argument, NULL, 'i'},
 	{"pid",        a_argument, NULL, 'p'},
 	{"user",       a_argument, NULL, 'u'},
 	{"group",      a_argument, NULL, 'g'},
@@ -385,6 +415,7 @@ static struct option const long_opts[] = {
 static const char *opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
+	"Print ipaddr info if supported",
 	"Process ID/pid #",
 	"Process user/uid #",
 	"Process group/gid #",
@@ -437,6 +468,7 @@ static void parseargs(int argc, char *argv[])
 		case 'B': show_banner = 0; break;
 		case 'a': show_all = 1; break;
 		case 'e': show_phdr = 1; break;
+		case 'i': show_addr = 1; break;
 		case 'p': show_pid = atoi(optarg); break;
 		case 'n': noexec = 1; writeexec = 0; break;
 		case 'w': noexec = 0; writeexec = 1; break;
