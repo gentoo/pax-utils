@@ -61,6 +61,7 @@ find_elf() {
 		}
 		check_paths "${elf}" $(scanelf -qF '#F%r' "${needed_by}") && return 0
 		check_paths "${elf}" $(sed -e 's:^[[:space:]]*#.*::' /etc/ld.so.conf) && return 0
+		check_paths "${elf}" /lib* /usr/lib* /usr/local/lib* && return 0
 	fi
 	return 1
 }
