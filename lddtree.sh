@@ -79,7 +79,7 @@ show_elf() {
 	parent_elfs="${parent_elfs},${elf}"
 	printf "${resolved:-not found}"
 	if [[ ${indent} -eq 0 ]] ; then
-		interp=$(scanelf -qF '#F%i' "${elf}")
+		interp=$(scanelf -qF '#F%i' "${resolved}")
 		printf " (interpreter => ${interp:-none})"
 		interp=${interp##*/}
 	fi
