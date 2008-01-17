@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.188 2007/08/31 17:45:24 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.189 2008/01/17 04:37:19 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.188 2007/08/31 17:45:24 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.189 2008/01/17 04:37:19 solar Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -121,7 +121,6 @@ static int rematch(const char *regex, const char *match, int cflags)
 	if ((match == NULL) || (regex == NULL))
 		return EXIT_FAILURE;
 
-
 	if ((ret = regcomp(&preg, regex, cflags))) {
 		char err[256];
 
@@ -199,7 +198,6 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	SHOW_PAX(32)
 	SHOW_PAX(64)
 	}
-
 
 	if (fix_elf && setpax) {
 		/* set the chpax settings */
@@ -1069,7 +1067,6 @@ break_out:
 		return (char *)" - ";
 }
 
-
 static char *scanelf_file_sections(elfobj *elf, char *found_section)
 {
 	if (!find_section)
@@ -1591,7 +1588,6 @@ static void scanelf_envpath(void)
 	free(path);
 }
 
-
 /* usage / invocation handling functions */ /* Free Flags: c d j u w C G H I J K P Q U W Y Z */
 #define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DO:BhV"
 #define a_argument required_argument
@@ -1983,7 +1979,6 @@ static void cleanup(void)
 }
 #endif
 
-
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -2000,7 +1995,6 @@ int main(int argc, char *argv[])
 #endif
 	return ret;
 }
-
 
 /* Match filename against entries in matchlist, return TRUE
  * if the file is listed */

@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.23 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.24 2008/01/17 04:37:19 solar Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.23 2007/08/20 09:54:15 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.24 2008/01/17 04:37:19 solar Exp $";
 const char * const argv0 = "dumpelf";
 
 #include "paxinc.h"
@@ -26,12 +26,8 @@ static void dump_rela(elfobj *elf, void *rela);
 static void usage(int status);
 static void parseargs(int argc, char *argv[]);
 
-
-
 /* variables to control behavior */
 static char be_verbose = 0;
-
-
 
 /* dump all internal elf info */
 static void dumpelf(const char *filename, long file_cnt)
@@ -266,8 +262,6 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	DUMP_SHDR(64)
 }
 
-
-
 /* usage / invocation handling functions */
 #define PARSE_FLAGS "vhV"
 #define a_argument required_argument
@@ -339,8 +333,6 @@ static void parseargs(int argc, char *argv[])
 		dumpelf(argv[optind++], file_cnt++);
 	}
 }
-
-
 
 int main(int argc, char *argv[])
 {

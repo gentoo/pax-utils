@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.57 2007/08/25 02:46:18 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.58 2008/01/17 04:37:19 solar Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -141,7 +141,6 @@ int etype_lookup(const char *str)
 	return atoi(str);
 }
 
-
 /* translate elf EM_ defines */
 static pairtype elf_emtypes[] = {
 	QUERY(EM_NONE),
@@ -253,7 +252,6 @@ const char *get_elfemtype(elfobj *elf)
 {
 	return find_pairtype(elf_emtypes, get_emtype(elf));
 }
-
 
 /* translate elf PT_ defines */
 static pairtype elf_ptypes[] = {

@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.39 2007/09/18 05:22:48 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.40 2008/01/17 04:37:19 solar Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -27,8 +27,6 @@ const char * const argv0 = "pspax";
 #endif
 
 #define PROC_DIR "/proc"
-
-
 
 /* variables to control behavior */
 static char show_all = 0;
@@ -286,7 +284,6 @@ static const char *get_proc_phdr(pid_t pid)
 	return ret;
 }
 
-
 static void pspax(const char *find_name)
 {
 	register DIR *dir;
@@ -391,8 +388,6 @@ static void pspax(const char *find_name)
 	}
 	closedir(dir);
 }
-
-
 
 /* usage / invocation handling functions */
 #define PARSE_FLAGS "aeip:u:g:nwvBhV"
@@ -504,8 +499,6 @@ static void parseargs(int argc, char *argv[])
 		}
 	}
 }
-
-
 
 int main(int argc, char *argv[])
 {

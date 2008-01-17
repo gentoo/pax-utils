@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.5 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.6 2008/01/17 04:37:19 solar Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -44,7 +44,6 @@ const char *get_machomhtype(int mh_type)
 {
 	return find_pairtype(macho_mh_type, mh_type);
 }
-
 
 /* Read a macho into memory */
 #define IS_MACHO_MAGIC(m) \

@@ -54,7 +54,6 @@ typedef uint16_t Elf64_Section;
 typedef Elf32_Half Elf32_Versym;
 typedef Elf64_Half Elf64_Versym;
 
-
 /* The ELF file header.  This appears at the start of every ELF file.  */
 
 #define EI_NIDENT (16)
@@ -433,7 +432,6 @@ typedef struct
 #define SYMINFO_CURRENT		1
 #define SYMINFO_NUM		2
 
-
 /* How to extract and insert information held in the st_info field.  */
 
 #define ELF32_ST_BIND(val)		(((unsigned char) (val)) >> 4)
@@ -471,13 +469,11 @@ typedef struct
 #define STT_LOPROC	13		/* Start of processor-specific */
 #define STT_HIPROC	15		/* End of processor-specific */
 
-
 /* Symbol table indices are found in the hash buckets and chain table
    of a symbol hash table section.  This special index value indicates
    the end of a chain, meaning no further symbols are found in that bucket.  */
 
 #define STN_UNDEF	0		/* End of a chain.  */
-
 
 /* How to extract and insert information held in the st_other field.  */
 
@@ -491,7 +487,6 @@ typedef struct
 #define STV_INTERNAL	1		/* Processor specific hidden class */
 #define STV_HIDDEN	2		/* Sym unavailable in other modules */
 #define STV_PROTECTED	3		/* Not preemptible, not exported */
-
 
 /* Relocation table entry without addend (in section of type SHT_REL).  */
 
@@ -617,7 +612,6 @@ typedef struct
 /* Legal values for the note segment descriptor types for object files.  */
 
 #define NT_VERSION	1		/* Contains a version string.  */
-
 
 /* Dynamic section entry.  */
 
@@ -809,7 +803,6 @@ typedef struct
 					   entry */
 } Elf64_Verdef;
 
-
 /* Legal values for vd_version (version revision).  */
 #define VER_DEF_NONE	0		/* No version */
 #define VER_DEF_CURRENT	1		/* Current version */
@@ -841,7 +834,6 @@ typedef struct
 					   entry */
 } Elf64_Verdaux;
 
-
 /* Version dependency section.  */
 
 typedef struct
@@ -865,7 +857,6 @@ typedef struct
   Elf64_Word	vn_next;		/* Offset in bytes to next verneed
 					   entry */
 } Elf64_Verneed;
-
 
 /* Legal values for vn_version (version revision).  */
 #define VER_NEED_NONE	 0		/* No version */
@@ -894,10 +885,8 @@ typedef struct
 					   entry */
 } Elf64_Vernaux;
 
-
 /* Legal values for vna_flags.  */
 #define VER_FLG_WEAK	0x2		/* Weak version identifier */
-
 
 /* Auxiliary vector.  */
 
@@ -1008,12 +997,10 @@ typedef struct
 /* Note entries for GNU systems have this name.  */
 #define ELF_NOTE_GNU		"GNU"
 
-
 /* Defined types of notes for Solaris.  */
 
 /* Value of descriptor (one word) is desired pagesize for the binary.  */
 #define ELF_NOTE_PAGESIZE_HINT	1
-
 
 /* Defined note types for GNU systems.  */
 
@@ -1031,7 +1018,6 @@ typedef struct
 #define ELF_NOTE_OS_GNU		1
 #define ELF_NOTE_OS_SOLARIS2	2
 #define ELF_NOTE_OS_FREEBSD	3
-
 
 /* Move records.  */
 typedef struct
@@ -1060,7 +1046,6 @@ typedef struct
 #define ELF64_M_SYM(info)	ELF32_M_SYM (info)
 #define ELF64_M_SIZE(info)	ELF32_M_SIZE (info)
 #define ELF64_M_INFO(sym, size)	ELF32_M_INFO (sym, size)
-
 
 /* Motorola 68k specific definitions.  */
 
@@ -1364,7 +1349,6 @@ typedef struct
 #define SHF_MIPS_NAMES	 0x02000000
 #define SHF_MIPS_NODUPE	 0x01000000
 
-
 /* Symbol tables.  */
 
 /* MIPS specific values for `st_other'.  */
@@ -1625,7 +1609,6 @@ typedef struct
   Elf64_Word l_flags;		/* Flags */
 } Elf64_Lib;
 
-
 /* Legal values for l_flags.  */
 
 #define LL_NONE		  0
@@ -1639,7 +1622,6 @@ typedef struct
 /* Entries found in sections of type SHT_MIPS_CONFLICT.  */
 
 typedef Elf32_Addr Elf32_Conflict;
-
 
 /* HPPA specific definitions.  */
 
@@ -1808,7 +1790,6 @@ typedef Elf32_Addr Elf32_Conflict;
 #define PF_HP_MODIFY		0x02000000
 #define PF_HP_LAZYSWAP		0x04000000
 #define PF_HP_SBP		0x08000000
-
 
 /* Alpha specific definitions.  */
 
@@ -2124,7 +2105,6 @@ typedef Elf32_Addr Elf32_Conflict;
 #define DT_PPC64_OPD	(DT_LOPROC + 1)
 #define DT_PPC64_OPDSZ	(DT_LOPROC + 2)
 #define DT_PPC64_NUM    3
-
 
 /* ARM specific declarations */
 
@@ -2465,7 +2445,6 @@ typedef Elf32_Addr Elf32_Conflict;
 /* Keep this the last entry.  */
 #define R_390_NUM		61
 
-
 /* CRIS relocations.  */
 #define R_CRIS_NONE		0
 #define R_CRIS_8		1
@@ -2489,7 +2468,6 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_CRIS_32_PLT_PCREL	19
 
 #define R_CRIS_NUM		20
-
 
 /* AMD x86-64 relocations.  */
 #define R_X86_64_NONE		0	/* No reloc */
@@ -2523,7 +2501,6 @@ typedef Elf32_Addr Elf32_Conflict;
 
 #define R_X86_64_NUM		24
 
-
 /* AM33 relocations.  */
 #define R_MN10300_NONE		0	/* No reloc.  */
 #define R_MN10300_32		1	/* Direct 32 bit.  */
@@ -2551,7 +2528,6 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_MN10300_RELATIVE	23	/* Adjust by program base.  */
 
 #define R_MN10300_NUM		24
-
 
 /* M32R relocs.  */
 #define R_M32R_NONE		0	/* No reloc. */

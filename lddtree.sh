@@ -19,6 +19,7 @@ usage() {
 SHOW_ALL=false
 SET_X=false
 
+([[ $1 == "" ]] || [[ $1 == --help ]]) && usage 1
 opts="hax"
 getopt -Q -- "${opts}" "$@" || exit 1
 eval set -- $(getopt -- "${opts}" "$@")
