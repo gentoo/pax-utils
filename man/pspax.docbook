@@ -42,28 +42,48 @@
    <listitem><para>Show all processes</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-B</option>, <option>--banner</option></term>
-   <listitem><para>Don't display the header</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-e</option>, <option>--header</option></term>
+   <term><option>-h</option>, <option>--header</option></term>
    <listitem><para>Print GNU_STACK/PT_LOAD markings</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-h</option>, <option>--help</option></term>
-   <listitem><para>Show condensed usage and exit</para></listitem>
+   <term><option>-i</option>, <option>--ipaddr</option></term>
+   <listitem><para>Print ipaddr info if supported</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-p</option>, <option>--pid</option> <replaceable>PID</replaceable></term>
    <listitem><para>Only process specified process id</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-V</option>, <option>--version</option></term>
-   <listitem><para>Print version and exit</para></listitem>
+   <term><option>-u</option>, <option>--uid</option> <replaceable>UID</replaceable></term>
+   <listitem><para>Process user/uid #</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-g</option>, <option>--group</option> <replaceable>GID</replaceable></term>
+   <listitem><para>Process group/gid #</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-n</option>, <option>--nx</option></term>
+   <listitem><para>Only display w^x processes</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-w</option>, <option>--wx</option></term>
+   <listitem><para>Only display w|x processes</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-v</option>, <option>--verbose</option></term>
    <listitem><para>Be verbose (can be used more than once)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-B</option>, <option>--banner</option></term>
+   <listitem><para>Don't display the header</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-h</option>, <option>--help</option></term>
+   <listitem><para>Show condensed usage and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-V</option>, <option>--version</option></term>
+   <listitem><para>Print version and exit</para></listitem>
   </varlistentry>
  </variablelist>
 </refsect1>
