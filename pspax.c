@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.40 2008/01/17 04:37:19 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.41 2008/03/20 19:08:16 solar Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -363,6 +363,9 @@ static void pspax(const char *find_name)
 			/* this is a non-POSIX function */
 			WRAP_SYSCAP(capgetp(pid, cap_d));
 			WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
+
+			if (pwd && strlen(pwd->pw_name) >= 8)
+				pwd->pw_name[8] = 0;
 
 			if (show_all || type) {
 				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s %s\n",
