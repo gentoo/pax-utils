@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.66 2008/01/17 06:37:44 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.67 2008/04/19 22:31:49 solar Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -13,6 +13,7 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wchar-subscripts -Wcast-align -Wno-format-nonliteral \
              $(call check_gcc, -Wdeclaration-after-statement) \
              $(call check-gcc, -Wsequence-point) \
+             $(call check-gcc, -Wstrict-overflow) \
              $(call check-gcc, -Wextra)
 
 CFLAGS    ?= -O2 -pipe

@@ -108,6 +108,10 @@
    <listitem><para>Print only ELF files with matching specified octal bits (like 755)</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
+   <listitem><para>Print ELF file size</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-m</option>, <option>--mount</option></term>
    <listitem><para>Don't recursively cross mount points</para></listitem>
   </varlistentry>
