@@ -2118,6 +2118,9 @@ typedef Elf32_Addr Elf32_Conflict;
 #define EF_ARM_ALIGN8      0x40		/* 8-bit structure alignment is in use */
 #define EF_ARM_NEW_ABI     0x80
 #define EF_ARM_OLD_ABI     0x100
+#define EF_ARM_SOFT_FLOAT  0x200
+#define EF_ARM_VFP_FLOAT   0x400
+#define EF_ARM_MAVERICK_FLOAT 0x800
 
 /* Other constants defined in the ARM ELF spec. version B-01.  */
 /* NB. These conflict with values defined above.  */
@@ -2130,6 +2133,12 @@ typedef Elf32_Addr Elf32_Conflict;
 #define EF_ARM_EABI_UNKNOWN  0x00000000
 #define EF_ARM_EABI_VER1     0x01000000
 #define EF_ARM_EABI_VER2     0x02000000
+#define EF_ARM_EABI_VER3     0x03000000
+#define EF_ARM_EABI_VER4     0x04000000
+#define EF_ARM_EABI_VER5     0x05000000
+
+/* EI_OSABI values */
+#define ELFOSABI_ARM_AEABI	64	/* Contains symbol versioning. */
 
 /* Additional symbol types for Thumb */
 #define STT_ARM_TFUNC      0xd

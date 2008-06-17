@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.58 2008/01/17 04:37:19 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.59 2008/06/17 17:07:57 solar Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -113,6 +113,52 @@ const char *get_endian(elfobj *elf)
 	if (elf->data[EI_DATA] == ELFDATA2MSB)
 		return (char *) "BE";
 	return (char *) "??";
+}
+
+
+
+static int arm_eabi_poker(elfobj *elf);
+static int arm_eabi_poker(elfobj *elf)
+{
+	unsigned int eflags = 0;
+	static char eabi[26];
+
+	if (ELFOSABI_NONE != elf->data[EI_OSABI])
+		return -1;
+
+	memset(eabi, 0, sizeof(eabi));
+
+	if (elf->elf_class == ELFCLASS32) {
+		if ((int)EGET(EHDR32(elf->ehdr)->e_machine) != EM_ARM)
+			return -1;
+		eflags = EF_ARM_EABI_VERSION(EGET(EHDR32(elf->ehdr)->e_flags));
+	} else {
+		if ((int)EGET(EHDR64(elf->ehdr)->e_machine) != EM_ARM)
+			return -1;
+		eflags = EF_ARM_EABI_VERSION(EGET(EHDR64(elf->ehdr)->e_flags));
+	}
+	return (eflags >> 24);
+}
+
+
+const char *get_elf_eabi(elfobj *elf)
+{
+	static char buf[26];
+	int eabi = arm_eabi_poker(elf);
+	memset(buf, 0, sizeof(buf));
+	if (eabi >= 0) {
+		sprintf(buf, "%d", eabi);
+	}
+	return buf;
+}
+
+const char *get_elfosabi(elfobj *elf)
+{
+	const char *str = get_elfeitype(EI_OSABI, elf->data[EI_OSABI]);
+	if (str)
+		if (strlen(str) > 9)
+			return str + 9;
+	return (char *) "";
 }
 
 void print_etypes(FILE *stream)

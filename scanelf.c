@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.190 2008/04/19 22:31:49 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.191 2008/06/17 17:07:57 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.190 2008/04/19 22:31:49 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.191 2008/06/17 17:07:57 solar Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -51,6 +51,8 @@ static char show_soname = 0;
 static char show_textrels = 0;
 static char show_banner = 1;
 static char show_endian = 0;
+static char show_osabi = 0;
+static char show_eabi = 0;
 static char be_quiet = 0;
 static char be_verbose = 0;
 static char be_wewy_wewy_quiet = 0;
@@ -1154,6 +1156,8 @@ static int scanelf_elfobj(elfobj *elf)
 			case 'T': prints("TEXTRELS "); break;
 			case 'k': prints("SECTION "); break;
 			case 'a': prints("ARCH "); break;
+			case 'I': prints("OSABI "); break;
+			case 'Y': prints("EABI "); break;
 			case 'O': prints("PERM "); break;
 			case 'D': prints("ENDIAN "); break;
 			default: warnf("'%c' has no title ?", out_format[i]);
@@ -1226,6 +1230,8 @@ static int scanelf_elfobj(elfobj *elf)
 		case 's': out = scanelf_file_sym(elf, &found_sym); break;
 		case 'k': out = scanelf_file_sections(elf, &found_section); break;
 		case 'a': out = get_elfemtype(elf); break;
+		case 'I': out = get_elfosabi(elf); break;
+		case 'Y': out = get_elf_eabi(elf); break;
 		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", elf->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
@@ -1591,8 +1597,8 @@ static void scanelf_envpath(void)
 	free(path);
 }
 
-/* usage / invocation handling functions */ /* Free Flags: c d j u w C G H I J K P Q U W Y */
-#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DO:ZBhV"
+/* usage / invocation handling functions */ /* Free Flags: c d j u w C G H J K P Q U W */
+#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1620,6 +1626,8 @@ static struct option const long_opts[] = {
 	{"etype",      a_argument, NULL, 'E'},
 	{"bits",       a_argument, NULL, 'M'},
 	{"endian",    no_argument, NULL, 'D'},
+	{"osabi",     no_argument, NULL, 'I'},
+	{"eabi",      no_argument, NULL, 'Y'},
 	{"perms",      a_argument, NULL, 'O'},
 	{"size",      no_argument, NULL, 'Z'},
 	{"all",       no_argument, NULL, 'a'},
@@ -1660,6 +1668,8 @@ static const char *opts_help[] = {
 	"Print only ELF files matching etype ET_DYN,ET_EXEC ...",
 	"Print only ELF files matching numeric bits",
 	"Print Endianness",
+	"Print OSABI",
+	"Print EABI (EM_ARM Only)",
 	"Print only ELF files matching octal permissions",
 	"Print ELF file size",
 	"Print all scanned info (-x -e -t -r -b)\n",
@@ -1833,6 +1843,8 @@ static int parseargs(int argc, char *argv[])
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
 		case 'a': show_perms = show_pax = show_phdr = show_textrel = show_rpath = show_bind = show_endian = 1; break;
 		case 'D': show_endian = 1; break;
+		case 'I': show_osabi = 1; break;
+		case 'Y': show_eabi = 1; break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':
@@ -1849,7 +1861,8 @@ static int parseargs(int argc, char *argv[])
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
 		show_needed = show_interp = show_bind = show_soname = \
-		show_textrels = show_perms = show_endian = show_size = 0;
+		show_textrels = show_perms = show_endian = show_size = \
+		show_osabi = show_eabi = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (!IS_MODIFIER(out_format[i])) continue;
 
@@ -1868,6 +1881,8 @@ static int parseargs(int argc, char *argv[])
 			case 'M': break;
 			case 'Z': show_size = 1; break;
 			case 'D': show_endian = 1; break;
+			case 'I': show_osabi = 1; break;
+			case 'Y': show_eabi = 1; break;
 			case 'O': show_perms = 1; break;
 			case 'x': show_pax = 1; break;
 			case 'e': show_phdr = 1; break;
@@ -1893,6 +1908,8 @@ static int parseargs(int argc, char *argv[])
 		if (show_perms)    xstrcat(&out_format, "%O ", &fmt_len);
 		if (show_size)     xstrcat(&out_format, "%Z ", &fmt_len);
 		if (show_endian)   xstrcat(&out_format, "%D ", &fmt_len);
+		if (show_osabi)    xstrcat(&out_format, "%I ", &fmt_len);
+		if (show_eabi)     xstrcat(&out_format, "%Y ", &fmt_len);
 		if (show_phdr)     xstrcat(&out_format, "%e ", &fmt_len);
 		if (show_textrel)  xstrcat(&out_format, "%t ", &fmt_len);
 		if (show_rpath)    xstrcat(&out_format, "%r ", &fmt_len);

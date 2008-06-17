@@ -104,6 +104,14 @@
    <listitem><para>Print Endianness</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-I</option>, <option>--osabi</option> </term>
+   <listitem><para>Print OSABI</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-Y</option>, <option>--eabi</option> </term>
+   <listitem><para>Print EABI (EM_ARM Only)</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
    <listitem><para>Print only ELF files with matching specified octal bits (like 755)</para></listitem>
   </varlistentry>
@@ -221,6 +229,8 @@
    <listitem><para><emphasis remap='B'>b</emphasis> - bind flags</para></listitem>
    <listitem><para><emphasis remap='B'>e</emphasis> - program headers</para></listitem>
    <listitem><para><emphasis remap='B'>D</emphasis> - endian</para></listitem>
+   <listitem><para><emphasis remap='B'>I</emphasis> - osabi</para></listitem>
+   <listitem><para><emphasis remap='B'>Y</emphasis> - eabi</para></listitem>
    <listitem><para><emphasis remap='B'>F</emphasis> - long filename</para></listitem>
    <listitem><para><emphasis remap='B'>f</emphasis> - short filename</para></listitem>
    <listitem><para><emphasis remap='B'>i</emphasis> - interp</para></listitem>
