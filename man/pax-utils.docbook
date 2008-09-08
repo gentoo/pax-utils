@@ -8,9 +8,10 @@
 
 	<!ENTITY project "pax-utils">
 
-	<!ENTITY dumpelf SYSTEM "dumpelf.docbook">
-	<!ENTITY pspax   SYSTEM   "pspax.docbook">
-	<!ENTITY scanelf SYSTEM "scanelf.docbook">
+	<!ENTITY dumpelf   SYSTEM   "dumpelf.docbook">
+	<!ENTITY pspax     SYSTEM     "pspax.docbook">
+	<!ENTITY scanelf   SYSTEM   "scanelf.docbook">
+	<!ENTITY scanmacho SYSTEM "scanmacho.docbook">
 ]>
 
 <book id="pax-utils" lang="en">
@@ -31,6 +32,12 @@
    <authorblurb><para>Maintainer</para></authorblurb>
    <email>vapier@gentoo.org</email>
   </author>
+  <author>
+   <firstname>Fabian</firstname>
+   <surname>Groffen</surname>
+   <authorblurb><para>Mach-O Maintainer</para></authorblurb>
+   <email>grobian@gentoo.org</email>
+  </author>
  </authorgroup>
 
  &version;
@@ -40,5 +47,6 @@
 &dumpelf;
 &pspax;
 &scanelf;
+&scanmacho;
 
 </book>

@@ -1,0 +1,238 @@
+<chapter>
+<refentry id='scanmacho.1'>
+
+<refmeta>
+ <refentrytitle>scanmacho</refentrytitle>
+ <manvolnum>1</manvolnum>
+ <refmiscinfo class='source'>&project;</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+ <refname>scanmacho</refname>
+ <refpurpose>user-space utility to scan Mach-O files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+ <cmdsynopsis>
+  <command>scanmacho</command>
+  <arg choice='opt'>
+   <replaceable>options</replaceable>
+  </arg>
+  <arg choice='plain'>
+   <replaceable>Mach-Os</replaceable>
+   or
+   <replaceable>directories</replaceable>
+  </arg>
+ </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'>
+ <title>DESCRIPTION</title>
+ <para>
+  <command>scanmacho</command> is a user-space utility to quickly scan given
+  Mach-Os, directories, or common system paths for different information.  This
+  may include Mach-O types, their install_names, etc...
+ </para>
+ <para>
+  Because Mach-O files can be "fat", it is possible for a single file
+  to return multiple lines.  Each line represents a single architecture,
+  contained in the fat (universal) file.  While there are no real
+  restrictions, in practice, the entries can be distinguished by their
+  arch type, e.g. ppc, ppc64, i386, x86_64, arm, ...
+ </para>
+</refsect1>
+
+<refsect1 id='options'>
+ <title>OPTIONS</title>
+ <variablelist>
+  <varlistentry>
+   <term><option>-A</option>, <option>--archives</option></term>
+   <listitem><para>Scan archives (.a files)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-a</option>, <option>--all</option></term>
+   <listitem><para>Print all scanned info (<option>-F"%o %O %D %b %F"</option>)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-B</option>, <option>--banner</option></term>
+   <listitem><para>Don't display the header</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-b</option>, <option>--bind</option></term>
+   <listitem><para>Print flags from mach_header</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-E</option>, <option>--etype</option> <replaceable>filetype</replaceable></term>
+   <listitem><para>Print only Mach-O files matching specified etype (like MH_EXECUTABLE, MH_DYLIB, etc...)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-F</option>, <option>--format</option> <replaceable>FORMAT</replaceable></term>
+   <listitem><para>Use specified format for output; see the <emphasis remap='B'>FORMAT</emphasis> section</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-f</option>, <option>--from</option> <replaceable>FILE</replaceable></term>
+   <listitem><para>Read input stream from specified filename</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-g</option>, <option>--gmatch</option></term>
+   <listitem><para>Use strncmp to match libraries (use with <option>-N</option>). Or regexp with symbol matching</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-h</option>, <option>--help</option></term>
+   <listitem><para>Show condensed usage and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-i</option>, <option>--interp</option></term>
+   <listitem><para>Print LC_LOAD_DYLINKER information</para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+   <term><option>-M</option>, <option>--bits</option> <replaceable>BITS</replaceable></term>
+   <listitem><para>Print only Mach-O files matching specified numeric bits (like 32/64)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-D</option>, <option>--endian</option> </term>
+   <listitem><para>Print Endianness</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
+   <listitem><para>Print only Mach-O files with matching specified octal bits (like 755)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
+   <listitem><para>Print Mach-O file size</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-m</option>, <option>--mount</option></term>
+   <listitem><para>Don't recursively cross mount points</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-N</option>, <option>--lib</option> <replaceable>INSTALLNAME</replaceable></term>
+   <listitem><para>Find Mach-Os that need the specified INSTALL_NAME</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-n</option>, <option>--needed</option></term>
+   <listitem><para>Print LC_LOAD_DYLIB information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-o</option>, <option>--file</option> <replaceable>FILE</replaceable></term>
+   <listitem><para>Write output stream to specified filename</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-p</option>, <option>--path</option></term>
+   <listitem><para>Scan all directories in PATH environment</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-q</option>, <option>--quiet</option></term>
+   <listitem><para>Only output 'bad' things.</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-R</option>, <option>--recursive</option></term>
+   <listitem><para>Scan directories recursively</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-S</option>, <option>--soname</option></term>
+   <listitem><para>Print install_name information</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-V</option>, <option>--version</option></term>
+   <listitem><para>Print version and exit</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-v</option>, <option>--verbose</option></term>
+   <listitem><para>Be verbose (can be used more than once)</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-y</option>, <option>--symlink</option></term>
+   <listitem><para>Don't scan symlinks</para></listitem>
+  </varlistentry>
+ </variablelist>
+</refsect1>
+
+<refsect1 id='format'>
+ <title>FORMAT</title>
+ <para>
+  The format string is much like a printf string in that it is a literal string
+  with flags requesting different information.  For example, you could use
+  a format string and expect the following results.
+ </para>
+ <programlisting>
+  # <command>scanmacho</command> <option>-BF</option> 'file %f needs %n; funky time!' /bin/bash
+  file bash needs /usr/lib/libncurses.5.4.dylib,/usr/lib/libSystem.B.dylib; funky time!
+ </programlisting>
+ <para>
+  Note that when you use a format string, generally information related flags
+  should be omitted.  In other words, you do not want to try and request NEEDED
+  output (<option>-n</option>) and try to specify a format output at the sametime
+  as these operations are mutually exclusive.  Each information related flag has
+  an equivalent conversion specifier, so use those instead.  You can of course
+  continue to use non-information related flags (such as <option>--verbose</option>).
+ </para>
+ <para>
+  There are three characters that introduce conversion specifiers.
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>%</emphasis> - replace with info</para></listitem>
+   <listitem><para><emphasis remap='B'>#</emphasis> - silent boolean match</para></listitem>
+   <listitem><para><emphasis remap='B'>+</emphasis> - verbose match</para></listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  And there are a number of conversion specifiers.  We try to match up the
+  specifier with corresponding option.
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>a</emphasis> - arch type</para></listitem>
+   <listitem><para><emphasis remap='B'>b</emphasis> - mach_header flags</para></listitem>
+   <listitem><para><emphasis remap='B'>D</emphasis> - endian</para></listitem>
+   <listitem><para><emphasis remap='B'>F</emphasis> - long filename</para></listitem>
+   <listitem><para><emphasis remap='B'>f</emphasis> - short filename</para></listitem>
+   <listitem><para><emphasis remap='B'>i</emphasis> - dyld</para></listitem>
+   <listitem><para><emphasis remap='B'>M</emphasis> - CPU_TYPE class</para></listitem>
+   <listitem><para><emphasis remap='B'>N</emphasis> - specified needed</para></listitem>
+   <listitem><para><emphasis remap='B'>n</emphasis> - needed libraries</para></listitem>
+   <listitem><para><emphasis remap='B'>p</emphasis> - filename (minus search)</para></listitem>
+   <listitem><para><emphasis remap='B'>o</emphasis> - mh_type</para></listitem>
+   <listitem><para><emphasis remap='B'>O</emphasis> - perms</para></listitem>
+   <listitem><para><emphasis remap='B'>S</emphasis> - install_name</para></listitem>
+  </itemizedlist>
+ </para>
+</refsect1>
+
+<refsect1 id='Mach-O-types'>
+ <title>MACH-O FILETYPES</title>
+ <para>
+  You can narrow your search by specifying the Mach-O object file type.
+  The commandline option takes the symbolic type name.
+  Multiple values can be passed comma separated. Example -E MH_EXECUTABLE,MH_DYLIB
+ </para>
+ <para>
+  Here is the normal list available for your pleasure.
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>MH_OBJECT</emphasis> - intermediate object file (.o)</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_EXECUTE</emphasis> - standard executable program</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_BUNDLE</emphasis> - dlopen plugin (.bundle)</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_DYLIB</emphasis> - dynamic shared library (.dylib)</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_PRELOAD</emphasis> - executable not loaded by Mac OS X kernel (ROM)</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_CORE</emphasis> - program crash core file</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_DYLINKER</emphasis> - dynamic linker shared library (dyld)</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_DYLIB_STUB</emphasis> - shared library stub for static only, no sections</para></listitem>
+   <listitem><para><emphasis remap='B'>MH_DSYM</emphasis> - debug symbols file (in .dSYM dir)</para></listitem>
+  </itemizedlist>
+ </para>
+</refsect1>
+
+<refsect1 id='Mach-O-bits'>
+ <title>MACH-O BITS</title>
+ <para>
+  You can also narrow your search by specifying the Mach-O bitsize.  Specify
+  the numeric value.
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>32</emphasis> - 32bit mach_header</para></listitem>
+   <listitem><para><emphasis remap='B'>64</emphasis> - 64bit mach_header_64</para></listitem>
+  </itemizedlist>
+ </para>
+</refsect1>
+
+&reftail;
+
+</refentry>
+</chapter>
