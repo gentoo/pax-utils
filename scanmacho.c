@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.1 2008/09/08 07:02:56 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.2 2008/09/08 08:01:35 grobian Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.1 2008/09/08 07:02:56 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.2 2008/09/08 08:01:35 grobian Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -330,7 +330,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 	return 0;
 }
 
-/* scan a single elf */
+/* scan a single Mach-O */
 static int scanmacho_fat(const char *filename, int fd, size_t len)
 {
 	int ret = 1;
@@ -357,24 +357,22 @@ static int scanmacho_fat(const char *filename, int fd, size_t len)
 		default:
 			break;
 	}
-	/* TODO: match match_etypes against fobj->mhdr.hdr32.filetype */
-#if 0
 	if (strlen(match_etypes)) {
-		char sbuf[126];
-		strncpy(sbuf, match_etypes, sizeof(sbuf));
-		if (strchr(match_etypes, ',') != NULL) {
-			char *p;
-			while ((p = strrchr(sbuf, ',')) != NULL) {
-				*p = 0;
-				if (etype_lookup(p+1) == get_etype(elf))
-					goto label_ret;
+		char sbuf[128];
+		char ftype[32];
+
+		snprintf(sbuf, 128, ",%s,", match_etypes);
+
+		walk = fobj;
+		do {
+			snprintf(ftype, 32, ",%s,", get_machomhtype(walk));
+			if (strstr(sbuf, ftype) != NULL) {
+				ret = scanmacho_fatobj(walk);
 			}
-		}
-		if (etype_lookup(sbuf) != get_etype(elf))
-			goto label_done;
+		} while (walk->next != NULL && (walk = walk->next));
+		goto label_done;
 	}
-label_ret:
-#endif
+
 	walk = fobj;
 	do {
 		ret = scanmacho_fatobj(walk);
@@ -651,12 +649,6 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
-			if (match_bits == 0) {
-				if (strcmp(optarg, "ELFCLASS32") == 0)
-					match_bits = 32;
-				if (strcmp(optarg, "ELFCLASS64") == 0)
-					match_bits = 64;
-			}
 			break;
 		case 'O':
 			if (sscanf(optarg, "%o", &match_perms) == (-1))
