@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.2 2008/09/08 08:01:35 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.3 2008/09/08 10:16:31 grobian Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.2 2008/09/08 08:01:35 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.3 2008/09/08 10:16:31 grobian Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -730,6 +730,7 @@ static int parseargs(int argc, char *argv[])
 		size_t fmt_len = 30;
 		out_format = xmalloc(sizeof(char) * fmt_len);
 		*out_format = '\0';
+		if (!be_quiet)     xstrcat(&out_format, "%a ", &fmt_len);
 		if (!be_quiet)     xstrcat(&out_format, "%o ", &fmt_len);
 		if (show_perms)    xstrcat(&out_format, "%O ", &fmt_len);
 		if (show_size)     xstrcat(&out_format, "%Z ", &fmt_len);
