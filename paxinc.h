@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.10 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.11 2008/09/08 07:02:56 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -23,11 +23,10 @@
 #include "elf.h"
 #include "paxelf.h"
 
-/* MACH-O sucks */
-/*
- * #include "macho.h"
- * #include "paxmacho.h"
-*/
+/* Mach-O love */
+#include "macho.h"
+#include "paxmacho.h"
+
 extern char do_reverse_endian;
 
 #ifdef IN_paxinc

@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.67 2008/04/19 22:31:49 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.68 2008/09/08 07:02:56 grobian Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -49,11 +49,6 @@ OBJS         = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS)
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
 MPAGES       = $(TARGETS:%=man/%.1)
 SOURCES      = $(OBJS:%.o=%.c)
-
-ifneq ($(MACH),1)
-MACH_TARGETS = 
-MACH_OBJS    = 
-endif
 
 all: $(OBJS) $(TARGETS)
 	@:
