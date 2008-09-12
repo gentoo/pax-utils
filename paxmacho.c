@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.7 2008/09/08 07:02:56 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.8 2008/09/12 19:59:26 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -307,6 +307,8 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 				fobj->filename = ret->filename;
 				fobj->base_filename = ret->base_filename;
 				fobj->len = ret->len;
+			} else {
+				fobj->next = NULL;
 			}
 			dptr += sizeof(struct fat_arch);
 		}

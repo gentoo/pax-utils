@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.3 2008/09/08 10:16:31 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.4 2008/09/12 19:59:26 grobian Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.3 2008/09/08 10:16:31 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.4 2008/09/12 19:59:26 grobian Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -447,7 +447,7 @@ static int scanmacho_file(const char *filename, const struct stat *st_cache)
 	return 0;
 }
 
-/* scan a directory for ET_EXEC files and print when we find one */
+/* scan a directory for Mach-O files and print when we find one */
 static int scanmacho_dir(const char *path)
 {
 	register DIR *dir;
