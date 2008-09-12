@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.68 2008/09/08 07:02:56 grobian Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.69 2008/09/12 19:08:52 grobian Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -114,7 +114,7 @@ dist:
 	rm -rf pax-utils-$(PV)
 	mkdir pax-utils-$(PV)
 	cp -a CVS pax-utils-$(PV)/
-	cd pax-utils-$(PV) && cvs up && rm -f *macho*
+	cd pax-utils-$(PV) && cvs up
 	echo "<releaseinfo>$(PV)</releaseinfo>" > pax-utils-$(PV)/man/fragment/version
 	$(MAKE) -C pax-utils-$(PV)/man
 	tar jcf pax-utils-$(PV).tar.bz2 pax-utils-$(PV) --exclude=CVS
