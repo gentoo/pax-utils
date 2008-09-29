@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.192 2008/09/29 06:01:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.193 2008/09/29 06:03:26 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.192 2008/09/29 06:01:22 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.193 2008/09/29 06:03:26 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1234,7 +1234,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'a': out = get_elfemtype(elf); break;
 		case 'I': out = get_elfosabi(elf); break;
 		case 'Y': out = get_elf_eabi(elf); break;
-		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", elf->len); out = ubuf; break;;
+		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", (unsigned long)elf->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
 		if (out) {
