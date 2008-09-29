@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.191 2008/06/17 17:07:57 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.192 2008/09/29 06:01:22 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.191 2008/06/17 17:07:57 solar Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.192 2008/09/29 06:01:22 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -796,7 +796,9 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	return NULL;
 }
 #else
+#ifdef __ELF__
 #warning Cache support not implemented for your target
+#endif
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	return NULL;
@@ -1546,13 +1548,14 @@ static int load_ld_cache_config(int i, const char *fname)
 }
 
 #else
-
+#ifdef __ELF__
 #warning Cache config support not implemented for your target
+#endif
 static int load_ld_cache_config(int i, const char *fname)
 {
 	memset(ldpaths, 0x00, sizeof(ldpaths));
+	return 0;
 }
-
 #endif
 
 /* scan /etc/ld.so.conf for paths */
