@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.8 2007/08/20 09:54:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.9 2008/10/19 18:11:59 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -52,7 +52,7 @@ archive_handle *ar_open(const char *filename)
 archive_member *ar_next(archive_handle *ar)
 {
 	char *s;
-	size_t len;
+	size_t len = 0;
 	static archive_member ret;
 
 	if (ar->skip && lseek(ar->fd, ar->skip, SEEK_CUR) == -1) {
@@ -82,21 +82,29 @@ close_and_ret:
 		return ar_next(ar);
 	}
 
-	len = strlen(ar->filename);
-	assert(len < sizeof(ret.name)-sizeof(ret.buf.formatted.name)-1);
-	memcpy(ret.name, ar->filename, len);
-	ret.name[len++] = ':';
-	memcpy(ret.name+len, ret.buf.formatted.name, sizeof(ret.buf.formatted.name));
-	if ((s=strchr(ret.name+len, '/')) != NULL)
+	s = ret.buf.formatted.name;
+	if (s[0] == '#' && s[1] == '1' && s[2] == '/') {
+		/* BSD extended filename, always in use on Darwin */
+		len = atoi(s + 3);
+		if (len <= sizeof(ret.buf.formatted.name)) {
+			if (read(ar->fd, ret.buf.formatted.name, len) != len)
+				goto close_and_ret;
+		} else {
+			s = alloca(sizeof(char) * len);
+			if (read(ar->fd, s, len) != len)
+				goto close_and_ret;
+		}
+	}
+
+	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);
+	if ((s=strchr(ret.name+strlen(ar->filename), '/')) != NULL)
 		*s = '\0';
-	else
-		ret.name[len+sizeof(ret.buf.formatted.name)-1] = '\0';
 	ret.date = atoi(ret.buf.formatted.date);
 	ret.uid = atoi(ret.buf.formatted.uid);
 	ret.gid = atoi(ret.buf.formatted.gid);
 	ret.mode = strtol(ret.buf.formatted.mode, NULL, 8);
 	ret.size = atoi(ret.buf.formatted.size);
-	ar->skip = ret.size;
+	ar->skip = ret.size - len;
 
 	return &ret;
 }

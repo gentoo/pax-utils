@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.8 2008/09/12 19:59:26 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.9 2008/10/19 18:11:59 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -237,13 +237,13 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 
 	/* make sure we have enough bytes to scan */
 	if (len <= sizeof(struct fat_header))
-		goto close_fd_and_return;
+		return NULL;
 
 	data = (char*)mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (data == (char*)MAP_FAILED) {
 		warn("mmap on '%s' of %llu bytes failed :(",
 				filename, (unsigned long long)len);
-		goto close_fd_and_return;
+		return NULL;
 	}
 
 	ret = readmacho_buffer(filename, data, len);
@@ -254,8 +254,6 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 	}
 
 	munmap(data, len);
-close_fd_and_return:
-	close(fd);
 	return NULL;
 }
 
