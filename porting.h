@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.31 2007/05/23 22:27:27 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.32 2008/10/19 20:36:31 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -33,6 +33,7 @@
 #include <pwd.h>
 #include <fnmatch.h>
 #include <regex.h>
+#include <alloca.h>
 
 #include <sys/mman.h>
 #include "elf.h"
