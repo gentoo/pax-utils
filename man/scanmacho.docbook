@@ -54,7 +54,7 @@
    <listitem><para>Print all scanned info (<option>-F"%o %O %D %b %F"</option>)</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-B</option>, <option>--banner</option></term>
+   <term><option>-B</option>, <option>--nobanner</option></term>
    <listitem><para>Don't display the header</para></listitem>
   </varlistentry>
   <varlistentry>
