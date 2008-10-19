@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.9 2008/10/19 18:11:59 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.10 2008/10/19 18:55:33 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -26,6 +26,7 @@ archive_handle *ar_open_fd(const char *filename, int fd)
 	ret.filename = filename;
 	ret.fd = fd;
 	ret.skip = 0;
+	ret.extfn = NULL;
 
 	if (read(ret.fd, buf, AR_MAGIC_SIZE) != AR_MAGIC_SIZE)
 		return NULL;
@@ -77,8 +78,20 @@ close_and_ret:
 	}
 
 	if (ret.buf.formatted.name[0] == '/' && ret.buf.formatted.name[1] == '/') {
-		warn("Sorry, long names not yet supported; output will be incomplete for %s", ar->filename);
-		ar->skip = atoi(ret.buf.formatted.size);
+		if (ar->extfn != NULL) {
+			warn("Duplicate GNU extended filename section");
+			goto close_and_ret;
+		}
+		len = atoi(ret.buf.formatted.size);
+		/* we will leak this memory */
+		ar->extfn = malloc(sizeof(char) * (len + 1));
+		if (read(ar->fd, ar->extfn, len) != len)
+			goto close_and_ret;
+		ar->extfn[len--] = '\0';
+		for (; len > 0; len--)
+			if (ar->extfn[len] == '\n')
+				ar->extfn[len] = '\0';
+		ar->skip = 0;
 		return ar_next(ar);
 	}
 
@@ -94,6 +107,13 @@ close_and_ret:
 			if (read(ar->fd, s, len) != len)
 				goto close_and_ret;
 		}
+	} else if (s[0] == '/' && s[1] >= '0' && s[1] <= '9') {
+		/* GNU extended filename */
+		if (ar->extfn == NULL) {
+			warn("GNU extended filename without special data section");
+			goto close_and_ret;
+		}
+		s = ar->extfn + atoi(s + 1);
 	}
 
 	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);

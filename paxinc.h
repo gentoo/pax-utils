@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.11 2008/09/08 07:02:56 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.12 2008/10/19 18:55:33 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -34,6 +34,7 @@ typedef struct {
 	int fd;
 	const char *filename;
 	size_t skip;
+	char *extfn;
 } archive_handle;
 #else
 typedef void archive_handle;
