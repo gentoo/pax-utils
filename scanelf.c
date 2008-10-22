@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.195 2008/10/22 15:20:21 flameeyes Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.196 2008/10/22 17:03:17 flameeyes Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.195 2008/10/22 15:20:21 flameeyes Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.196 2008/10/22 17:03:17 flameeyes Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -999,7 +999,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
-			if ( (void*)sym > (void*)elf->data_end ) { \
+			if ((void*)sym > (void*)elf->data_end) { \
 				warnf("%s: corrupt ELF symbols - aborting", elf->filename); \
 				goto break_out;	\
 			} \
