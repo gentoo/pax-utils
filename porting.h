@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.33 2008/11/16 12:14:50 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.34 2008/11/16 12:16:21 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -15,26 +15,25 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(*arr))
 #undef __PAX_UTILS_CLEANUP
 
+#include <assert.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <fnmatch.h>
+#include <getopt.h>
+#include <inttypes.h>
+#include <libgen.h>
+#include <limits.h>
+#include <pwd.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <getopt.h>
-#include <libgen.h>
-#include <ctype.h>
-#include <pwd.h>
-#include <fnmatch.h>
-#include <regex.h>
-
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "elf.h"
 #if defined(__linux__)
 # include <alloca.h>
