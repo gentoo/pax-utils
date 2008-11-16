@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.32 2008/10/19 20:36:31 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.33 2008/11/16 12:14:50 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -33,13 +33,13 @@
 #include <pwd.h>
 #include <fnmatch.h>
 #include <regex.h>
-#include <alloca.h>
 
 #include <sys/mman.h>
 #include "elf.h"
 #if defined(__linux__)
-# include <endian.h>
+# include <alloca.h>
 # include <byteswap.h>
+# include <endian.h>
 #elif defined(__FreeBSD__)
 # include <sys/endian.h>
 #elif defined(__sun__)
