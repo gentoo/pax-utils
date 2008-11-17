@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.196 2008/10/22 17:03:17 flameeyes Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.197 2008/11/17 18:03:38 flameeyes Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.196 2008/10/22 17:03:17 flameeyes Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.197 2008/11/17 18:03:38 flameeyes Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -977,6 +977,22 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	return NULL;
 }
 
+static int scanelf_match_symname(const char *compare, const char *symname, const char *symname_ver) {
+	/* We do things differently when checking with regexp */
+	if (g_match) {
+		return rematch(symname, compare, REG_EXTENDED) == 0 ||
+			rematch(symname_ver, compare, REG_EXTENDED) == 0;
+	} else {
+		const size_t symname_len = strlen(symname);
+		if (strncmp(symname, compare, symname_len) == 0 &&
+		     /* Accept unversioned symbol names */
+		     (compare[symname_len] == '\0' || compare[symname_len] == '@'))
+			return 1;
+
+		return strcmp(symname_ver, symname) == 0;
+	}
+}
+
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
@@ -1012,7 +1028,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					continue; \
 				} \
 				/* debug display ... show all symbols and some extra info */ \
-				if (g_match ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
+				if (0 && g_match ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
 					printf("%s(%s) %5lX %15s %s %s\n", \
 					       ((*found_sym == 0) ? "\n\t" : "\t"), \
 					       elf->base_filename, \
@@ -1023,40 +1039,41 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 				} else { \
 					/* allow the user to specify a comma delimited list of symbols to search for */ \
 					char *this_sym, *this_sym_ver, *next_sym; \
-					this_sym = ret; \
+					next_sym = ret; \
 					this_sym_ver = versioned_symname; \
-					do { \
-						next_sym = strchr(this_sym, ','); \
-						if (next_sym == NULL) \
-							next_sym = this_sym + strlen(this_sym); \
+					while (next_sym) { \
+						this_sym = next_sym; \
+						if ((next_sym = strchr(this_sym, ','))) \
+							next_sym += 1; /* Skip the comma */ \
 						/* do we want a defined symbol ? */ \
 						if (*this_sym == '+') { \
 							if (sym->st_shndx == SHN_UNDEF) \
-								goto skip_this_sym##B; \
+								continue; \
 							++this_sym; \
 							++this_sym_ver; \
 						/* do we want an undefined symbol ? */ \
 						} else if (*this_sym == '-') { \
 							if (sym->st_shndx != SHN_UNDEF) \
-								goto skip_this_sym##B; \
+								continue; \
 							++this_sym; \
 							++this_sym_ver; \
 						} \
+						if (next_sym) /* Copy it so that we don't have to worry about the final , */ \
+							this_sym = strndup(this_sym, next_sym-this_sym); \
 						/* ok, lets compare the name now */ \
-						if ((strncmp(this_sym, symname, (next_sym-this_sym)) == 0 && symname[next_sym-this_sym] == '\0') || \
-						    (strncmp(this_sym_ver, symname, strlen(this_sym_ver)) == 0)) { \
+						if (scanelf_match_symname(symname, this_sym, this_sym_ver)) { \
 							if (be_semi_verbose) { \
 								char buf[126]; \
 								snprintf(buf, sizeof(buf), "%lX %s %s", \
 									(unsigned long)sym->st_size, get_elfstttype(sym->st_info), this_sym); \
 								ret = buf; \
 							} else \
-								ret = this_sym; \
+								ret = symname; \
 							(*found_sym)++; \
 							goto break_out; \
 						} \
-						skip_this_sym##B: this_sym = next_sym + 1; \
-					} while (*next_sym != '\0'); \
+						if (next_sym) free(this_sym); \
+					} \
 				} \
 			} \
 			++sym; \
