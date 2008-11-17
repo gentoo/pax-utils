@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.197 2008/11/17 18:03:38 flameeyes Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.198 2008/11/17 18:09:55 flameeyes Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.197 2008/11/17 18:03:38 flameeyes Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.198 2008/11/17 18:09:55 flameeyes Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -57,7 +57,7 @@ static char be_quiet = 0;
 static char be_verbose = 0;
 static char be_wewy_wewy_quiet = 0;
 static char be_semi_verbose = 0;
-static char *find_sym = NULL, *versioned_symname = NULL;
+static char *find_sym = NULL;
 static char *find_lib = NULL;
 static char *find_section = NULL;
 static char *out_format = NULL;
@@ -977,19 +977,15 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	return NULL;
 }
 
-static int scanelf_match_symname(const char *compare, const char *symname, const char *symname_ver) {
+static int scanelf_match_symname(const char *symname, const char *tomatch) {
 	/* We do things differently when checking with regexp */
 	if (g_match) {
-		return rematch(symname, compare, REG_EXTENDED) == 0 ||
-			rematch(symname_ver, compare, REG_EXTENDED) == 0;
+		return rematch(symname, tomatch, REG_EXTENDED) == 0;
 	} else {
 		const size_t symname_len = strlen(symname);
-		if (strncmp(symname, compare, symname_len) == 0 &&
-		     /* Accept unversioned symbol names */
-		     (compare[symname_len] == '\0' || compare[symname_len] == '@'))
-			return 1;
-
-		return strcmp(symname_ver, symname) == 0;
+		return (strncmp(symname, tomatch, symname_len) == 0 &&
+			/* Accept unversioned symbol names */
+			(tomatch[symname_len] == '\0' || tomatch[symname_len] == '@'));
 	}
 }
 
@@ -1038,9 +1034,8 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					*found_sym = 1; \
 				} else { \
 					/* allow the user to specify a comma delimited list of symbols to search for */ \
-					char *this_sym, *this_sym_ver, *next_sym; \
+					char *this_sym, *next_sym; \
 					next_sym = ret; \
-					this_sym_ver = versioned_symname; \
 					while (next_sym) { \
 						this_sym = next_sym; \
 						if ((next_sym = strchr(this_sym, ','))) \
@@ -1050,18 +1045,16 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							if (sym->st_shndx == SHN_UNDEF) \
 								continue; \
 							++this_sym; \
-							++this_sym_ver; \
 						/* do we want an undefined symbol ? */ \
 						} else if (*this_sym == '-') { \
 							if (sym->st_shndx != SHN_UNDEF) \
 								continue; \
 							++this_sym; \
-							++this_sym_ver; \
 						} \
 						if (next_sym) /* Copy it so that we don't have to worry about the final , */ \
 							this_sym = strndup(this_sym, next_sym-this_sym); \
 						/* ok, lets compare the name now */ \
-						if (scanelf_match_symname(symname, this_sym, this_sym_ver)) { \
+						if (scanelf_match_symname(this_sym, symname)) { \
 							if (be_semi_verbose) { \
 								char buf[126]; \
 								snprintf(buf, sizeof(buf), "%lX %s %s", \
@@ -1785,8 +1778,6 @@ static int parseargs(int argc, char *argv[])
 		case 's': {
 			if (find_sym) warn("You prob don't want to specify -s twice");
 			find_sym = optarg;
-			versioned_symname = xmalloc(sizeof(char) * (strlen(find_sym)+1+1));
-			sprintf(versioned_symname, "%s@", find_sym);
 			break;
 		}
 		case 'N': {
@@ -1969,7 +1960,6 @@ static int parseargs(int argc, char *argv[])
 	}
 
 	/* clean up */
-	free(versioned_symname);
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
 
