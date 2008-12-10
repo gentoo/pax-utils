@@ -202,7 +202,7 @@
  <para>
   You can narrow your search by specifying the Mach-O object file type.
   The commandline option takes the symbolic type name.
-  Multiple values can be passed comma separated. Example -E MH_EXECUTABLE,MH_DYLIB
+  Multiple values can be passed comma separated. Example -E MH_EXECUTE,MH_DYLIB
  </para>
  <para>
   Here is the normal list available for your pleasure.
