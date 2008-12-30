@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.1 2007/08/25 02:30:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.2 2008/12/30 12:58:08 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -23,6 +23,12 @@ void *xmalloc(size_t size)
 	void *ret = malloc(size);
 	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
 	return ret;
+}
+
+void *xzalloc(size_t size);
+void *xzalloc(size_t size)
+{
+	return memset(xmalloc(size), 0, size);
 }
 
 void *xrealloc(void *ptr, size_t size);
