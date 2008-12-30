@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.12 2008/10/19 18:55:33 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.13 2008/12/30 12:30:52 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -74,7 +74,7 @@ archive_member *ar_next(archive_handle *);
 		} else if (sizeof(X) == 2) { __res = bswap_16((X)); \
 		} else if (sizeof(X) == 4) { __res = bswap_32((X)); \
 		} else if (sizeof(X) == 8) { __res = bswap_64((X)); \
-		} else { errf("EGET failed ;( (sizeof(X) == %i)", (int)sizeof(X)); } \
+		} else { errf("EGET failed :( (sizeof(X) == %i)", (int)sizeof(X)); } \
 		__res; \
 	}))
 
@@ -86,7 +86,7 @@ archive_member *ar_next(archive_handle *);
 		} else if (sizeof(Y) == 2) { Y = bswap_16((uint16_t)(X)); \
 		} else if (sizeof(Y) == 4) { Y = bswap_32((uint32_t)(X)); \
 		} else if (sizeof(Y) == 8) { Y = bswap_64((uint64_t)(X)); \
-		} else { errf("ESET failed ;( (size(Y) == %i)", (int)sizeof(Y)); } \
+		} else { errf("ESET failed :( (size(Y) == %i)", (int)sizeof(Y)); } \
 	} while (0)
 
 /* helper functions for showing errors */

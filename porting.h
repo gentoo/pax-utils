@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.35 2008/11/16 20:54:45 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.36 2008/12/30 12:30:52 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -108,9 +108,9 @@
 # endif
 #endif
 
-#if !defined(_POSIX_PATH_MAX) && !defined(PATH_MAX)
+#if !defined(_POSIX_PATH_MAX) && !defined(PATH_MAX) /* __PAX_UTILS_PATH_MAX */
 # define __PAX_UTILS_PATH_MAX 8192
-#elif _POSIX_PATH_MAX > PATH_MAX
+#elif _POSIX_PATH_MAX > PATH_MAX /* __PAX_UTILS_PATH_MAX */
 # define __PAX_UTILS_PATH_MAX _POSIX_PATH_MAX
 #else
 # define __PAX_UTILS_PATH_MAX PATH_MAX
