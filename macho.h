@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.5 2008/09/08 07:02:56 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.6 2008/12/30 12:02:29 vapier Exp $
  */
 
 
@@ -94,7 +94,7 @@ struct mach_header
 								  all two-level namespace modules of its
 								  dependent libraries, used only when
 								  MH_PREBINDABLE and MH_TWOLEVEL are set
-								  */ 
+								  */
 #define MH_CANONICAL 0x4000  /* the file has been canonicalized by
 								unprebinding, clearing prebinding
 								information from the file */
