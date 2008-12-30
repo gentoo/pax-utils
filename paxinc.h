@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.13 2008/12/30 12:30:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.14 2008/12/30 13:34:46 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -64,6 +64,8 @@ typedef struct {
 archive_handle *ar_open_fd(const char *filename, int fd);
 archive_handle *ar_open(const char *filename);
 archive_member *ar_next(archive_handle *);
+
+const char *strfileperms(const char *fname);
 
 /* Get a value 'X', compensating for endianness. */
 #define EGET(X) \

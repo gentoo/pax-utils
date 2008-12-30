@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.205 2008/12/30 13:13:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.206 2008/12/30 13:34:46 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.205 2008/12/30 13:13:15 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.206 2008/12/30 13:34:46 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -77,19 +77,6 @@ static size_t ldcache_size = 0;
 static unsigned long setpax = 0UL;
 
 static int has_objdump = 0;
-
-static const char *getstr_perms(const char *fname)
-{
-	struct stat st;
-	static char buf[8];
-
-	if (stat(fname, &st) == -1)
-		return "";
-
-	snprintf(buf, sizeof(buf), "%o", st.st_mode);
-
-	return buf + 2;
-}
 
 /* find the path to a file by name */
 static char *which(const char *fname)
@@ -1236,7 +1223,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'r': scanelf_file_rpath(elf, &found_rpath, &out_buffer, &out_len); break;
 		case 'M': out = get_elfeitype(EI_CLASS, elf->data[EI_CLASS]); break;
 		case 'D': out = get_endian(elf); break;
-		case 'O': out = getstr_perms(elf->filename); break;
+		case 'O': out = strfileperms(elf->filename); break;
 		case 'n':
 		case 'N': out = scanelf_file_needed_lib(elf, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;

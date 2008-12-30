@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.12 2008/12/30 13:27:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.13 2008/12/30 13:34:46 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.12 2008/12/30 13:27:09 vapier Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.13 2008/12/30 13:34:46 vapier Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -52,19 +52,6 @@ static char g_match = 0;
 
 static int match_bits = 0;
 static unsigned int match_perms = 0;
-
-static const char *getstr_perms(const char *fname)
-{
-	struct stat st;
-	static char buf[8];
-
-	if (stat(fname, &st) == -1)
-		return "";
-
-	snprintf(buf, sizeof(buf), "%o", st.st_mode);
-
-	return buf + 2;
-}
 
 static const char *macho_file_needed_lib(
 		fatobj *fobj,
@@ -267,7 +254,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 		case 'o': out = get_machomhtype(fobj); break;
 		case 'M': out = get_machocputype(fobj); break;
 		case 'D': out = get_machoendian(fobj); break;
-		case 'O': out = getstr_perms(fobj->filename); break;
+		case 'O': out = strfileperms(fobj->filename); break;
 		case 'n':
 		case 'N': out = macho_file_needed_lib(fobj, &found_needed, &found_lib, (out_format[i]=='N'), &out_buffer, &out_len); break;
 		case 'i': out = macho_file_interp(fobj, &found_interp); break;
