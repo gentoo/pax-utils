@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.11 2008/12/30 12:15:32 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.12 2008/12/30 12:34:28 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -172,7 +172,6 @@ const char *get_machosubcputype(fatobj *fobj)
 	}
 }
 
-
 /* Determines the type of this object, and sets the right 32-bit or
  * 64-bits pointer.  The ismach64 flag is filled in appropriately.  The
  * return of this function is the read magic value, or 0 when the file
@@ -319,7 +318,6 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 
 	return(ret);
 }
-
 
 /* undo the readmacho() stuff */
 void unreadmacho(fatobj *macho)

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.60 2008/12/30 12:00:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.61 2008/12/30 12:34:28 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -115,8 +115,6 @@ const char *get_endian(elfobj *elf)
 	return (char *) "??";
 }
 
-
-
 static int arm_eabi_poker(elfobj *elf);
 static int arm_eabi_poker(elfobj *elf)
 {
@@ -139,7 +137,6 @@ static int arm_eabi_poker(elfobj *elf)
 	}
 	return (eflags >> 24);
 }
-
 
 const char *get_elf_eabi(elfobj *elf)
 {

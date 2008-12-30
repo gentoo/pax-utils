@@ -1,9 +1,8 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.6 2008/12/30 12:02:29 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.7 2008/12/30 12:34:28 vapier Exp $
  */
-
 
 #ifndef _MACHO_H
 #define	_MACHO_H 1
@@ -17,7 +16,6 @@
 #define CPU_ARCH_ABI64  0x01000000      /* 64 bit */
 typedef int   cpu_type_t;
 typedef int   cpu_subtype_t;
-
 
 struct mach_header
 {
@@ -113,7 +111,6 @@ struct mach_header
 								subimages, as a result the two-level
 								namespace hints can always be used */
 
-
 struct mach_header_64
 {
 	uint32_t magic;
@@ -132,7 +129,6 @@ struct mach_header_64
 /* cputype */
 #define CPU_TYPE_POWERPC64  (CPU_TYPE_POWERPC | CPU_ARCH_ABI64)
 #define CPU_TYPE_X86_64     (CPU_TYPE_I386 | CPU_ARCH_ABI64)
-
 
 struct load_command
 {
@@ -211,7 +207,6 @@ struct load_command
 							   framework or a client name for a bundle.
 							   */
 
-
 union lc_str
 {
 	uint32_t offset;
@@ -247,13 +242,11 @@ struct dylib_command
 /* cmdsize: set to sizeof(dylib_command) plus the size of the data
  * pointed to by the name field of the dylib field. */
 
-
 struct dylinker_command {
 	uint32_t cmd;
 	uint32_t cmdsize;
 	union lc_str name;
 };
-
 
 struct fat_header
 {
@@ -265,7 +258,6 @@ struct fat_header
 #define FAT_MAGIC   0xcafebabe  /* big endian, how it is stored */
 #define FAT_CIGAM   0xbebafeca  /* for intel dudes */
 /* nfat_arch: the number of far_arch structures following */
-
 
 struct fat_arch
 {
