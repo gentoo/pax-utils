@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.206 2008/12/30 13:34:46 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.207 2008/12/30 13:38:35 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.206 2008/12/30 13:34:46 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.207 2008/12/30 13:38:35 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -81,7 +81,7 @@ static int has_objdump = 0;
 /* find the path to a file by name */
 static char *which(const char *fname)
 {
-	static char fullpath[BUFSIZ];
+	static char fullpath[__PAX_UTILS_PATH_MAX];
 	char *path, *p;
 
 	path = getenv("PATH");
