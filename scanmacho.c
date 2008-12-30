@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.5 2008/10/19 18:11:59 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.6 2008/12/30 12:00:06 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.5 2008/10/19 18:11:59 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.6 2008/12/30 12:00:06 vapier Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -396,7 +396,7 @@ static int scanmacho_archive(const char *filename, int fd, size_t len)
 	if (ar == NULL)
 		return 1;
 
-	ar_buffer = (char*)mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
+	ar_buffer = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	while ((m = ar_next(ar)) != NULL) {
 		fobj = readmacho_buffer(m->name, ar_buffer + lseek(fd, 0, SEEK_CUR), m->size);
 		if (fobj) {

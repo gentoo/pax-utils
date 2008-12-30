@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.200 2008/12/10 20:06:20 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.201 2008/12/30 12:00:06 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.200 2008/12/10 20:06:20 grobian Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.201 2008/12/30 12:00:06 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1334,7 +1334,7 @@ static int scanelf_archive(const char *filename, int fd, size_t len)
 	if (ar == NULL)
 		return 1;
 
-	ar_buffer = (char*)mmap(0, len, PROT_READ | (fix_elf ? PROT_WRITE : 0), (fix_elf ? MAP_SHARED : MAP_PRIVATE), fd, 0);
+	ar_buffer = mmap(0, len, PROT_READ | (fix_elf ? PROT_WRITE : 0), (fix_elf ? MAP_SHARED : MAP_PRIVATE), fd, 0);
 	while ((m=ar_next(ar)) != NULL) {
 		elf = readelf_buffer(m->name, ar_buffer+lseek(fd,0,SEEK_CUR), m->size);
 		if (elf) {
