@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.13 2008/12/30 12:38:29 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.14 2008/12/30 13:27:09 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -28,8 +28,8 @@ typedef struct {
 
 static inline const char *find_pairtype(pairtype *pt, int type)
 {
-	int i;
-	for (i = 0; pt[i].str; i++)
+	size_t i;
+	for (i = 0; pt[i].str; ++i)
 		if (type == pt[i].value)
 			return pt[i].str;
 	return "UNKNOWN TYPE";
@@ -51,12 +51,7 @@ static pairtype macho_mh_type[] = {
 const char *get_machomhtype(fatobj *fobj)
 {
 	/* can use 32-bits header, since 64 and 32 are aligned here */
-	if (fobj->swapped) {
-		return find_pairtype(macho_mh_type,
-				bswap_32(fobj->mhdr.hdr32->filetype));
-	} else {
-		return find_pairtype(macho_mh_type, fobj->mhdr.hdr32->filetype);
-	}
+	return find_pairtype(macho_mh_type, MOBJGET(fobj, mhdr.hdr32->filetype));
 }
 
 /* translate misc mach-o MH_ flags */
@@ -84,20 +79,15 @@ void get_machomhflags(fatobj *fobj, char **ret, size_t *ret_len)
 	char first = 1;
 
 	/* can use 32-bits header, since 64 and 32 are aligned here */
-	if (fobj->swapped) {
-		flags = bswap_32(fobj->mhdr.hdr32->flags);
-	} else {
-		flags = fobj->mhdr.hdr32->flags;
-	}
+	flags = MOBJGET(fobj, mhdr.hdr32->flags);
 
-	for (i = 0; macho_mh_flag[i].str; i++) {
+	for (i = 0; macho_mh_flag[i].str; ++i)
 		if ((flags & macho_mh_flag[i].value) == macho_mh_flag[i].value) {
 			if (!first)
 				xchrcat(ret, ',', ret_len);
 			xstrcat(ret, macho_mh_flag[i].str, ret_len);
 			first = 0;
 		}
-	}
 }
 
 static pairtype macho_cputype[] = {
@@ -110,15 +100,11 @@ static pairtype macho_cputype[] = {
 };
 const char *get_machocputype(fatobj *fobj)
 {
-	const char *ret;
 	/* can use 32-bits header, since 64 and 32 are aligned here */
-	if (fobj->swapped) {
-		ret = find_pairtype(macho_cputype, bswap_32(fobj->mhdr.hdr32->cputype));
-	} else {
-		ret = find_pairtype(macho_cputype, fobj->mhdr.hdr32->cputype);
-	}
-	return(ret + sizeof("CPU_TYPE_") - 1);
+	const char *ret = find_pairtype(macho_cputype, MOBJGET(fobj, mhdr.hdr32->cputype));
+	return ret + sizeof("CPU_TYPE_") - 1;
 }
+
 /* translate cpusubtypes */
 static pairtype macho_cpusubtypeppc[] = {
 	QUERY(CPU_SUBTYPE_POWERPC_ALL),
@@ -151,25 +137,20 @@ const char *get_machosubcputype(fatobj *fobj)
 {
 	const char *ret;
 	/* can use 32-bits header, since 64 and 32 are aligned here */
-	uint32_t type = fobj->mhdr.hdr32->cputype;
-	if (fobj->swapped)
-		type = bswap_32(type);
+	uint32_t type = MOBJGET(fobj, mhdr.hdr32->cputype);
+	pairtype *pt = NULL;
 
-	if (type == CPU_TYPE_I386 || type == CPU_TYPE_X86_64) {
-		type = fobj->mhdr.hdr32->cpusubtype;
-		if (fobj->swapped)
-			type = bswap_32(type);
-		ret = find_pairtype(macho_cpusubtypex86, type);
-		return(ret + sizeof("CPU_SUBTYPE_") - 1);
-	} else if (type == CPU_TYPE_POWERPC || type == CPU_TYPE_POWERPC64) {
-		type = fobj->mhdr.hdr32->cpusubtype;
-		if (fobj->swapped)
-			type = bswap_32(type);
-		ret = find_pairtype(macho_cpusubtypeppc, type);
-		return(ret + sizeof("CPU_SUBTYPE_") - 1);
-	} else {
-		return(STR_UNKNOWN);
-	}
+	if (type == CPU_TYPE_I386 || type == CPU_TYPE_X86_64)
+		pt = macho_cpusubtypex86;
+	else if (type == CPU_TYPE_POWERPC || type == CPU_TYPE_POWERPC64)
+		pt = macho_cpusubtypeppc;
+
+	if (pt) {
+		type = MOBJGET(fobj, mhdr.hdr32->cpusubtype);
+		ret = find_pairtype(pt, type);
+		return ret + sizeof("CPU_SUBTYPE_") - 1;
+	} else
+		return STR_UNKNOWN;
 }
 
 /* Determines the type of this object, and sets the right 32-bit or
@@ -178,8 +159,8 @@ const char *get_machosubcputype(fatobj *fobj)
  * is not recognised. */
 inline static uint32_t read_mach_header(fatobj *fobj, void *addr)
 {
-	struct mach_header *mhdr = (struct mach_header*)addr;
-	fobj->mhdata = (char *)addr;
+	struct mach_header *mhdr = addr;
+	fobj->mhdata = addr;
 	switch (mhdr->magic) {
 		case MH_CIGAM:
 			fobj->swapped = 1;
@@ -187,20 +168,18 @@ inline static uint32_t read_mach_header(fatobj *fobj, void *addr)
 			/* 32-bits */
 			fobj->ismach64 = 0;
 			fobj->mhdr.hdr32 = mhdr;
-			fobj->isbigendian =
-				(*fobj->mhdata == (char)(MH_MAGIC >> 24) ? 1 : 0);
-			return(mhdr->magic);
+			fobj->isbigendian = (*fobj->mhdata == (char)(MH_MAGIC >> 24) ? 1 : 0);
+			return mhdr->magic;
 		case MH_CIGAM_64:
 			fobj->swapped = 1;
 		case MH_MAGIC_64:
 			/* 64-bits */
 			fobj->ismach64 = 1;
-			fobj->mhdr.hdr64 = (struct mach_header_64*)addr;
-			fobj->isbigendian =
-				(*fobj->mhdata == (char)(MH_MAGIC_64 >> 24) ? 1 : 0);
-			return(mhdr->magic);
+			fobj->mhdr.hdr64 = addr;
+			fobj->isbigendian = (*fobj->mhdata == (char)(MH_MAGIC_64 >> 24) ? 1 : 0);
+			return mhdr->magic;
 		default:
-			return(0); /* unrecognised file */
+			return 0; /* unrecognised file */
 	}
 }
 
@@ -217,7 +196,7 @@ fatobj *readmacho(const char *filename)
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return NULL;
 
-	return(readmacho_fd(filename, fd, 0));
+	return readmacho_fd(filename, fd, st.st_size);
 }
 
 fatobj *readmacho_fd(const char *filename, int fd, size_t len)
@@ -240,16 +219,14 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 
 	data = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (data == MAP_FAILED) {
-		warn("mmap on '%s' of %llu bytes failed :(",
-				filename, (unsigned long long)len);
+		warn("mmap on '%s' of %zu bytes failed :(", filename, len);
 		return NULL;
 	}
 
 	ret = readmacho_buffer(filename, data, len);
-
 	if (ret != NULL) {
 		ret->fd = fd;
-		return(ret);
+		return ret;
 	}
 
 	munmap(data, len);
@@ -259,7 +236,7 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 {
 	struct fat_header *fhdr;
-	fatobj *ret = xmalloc(sizeof(fatobj));
+	fatobj *ret = xmalloc(sizeof(*ret));
 
 	ret->fd = -1;
 	ret->filename = filename;
@@ -270,7 +247,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 	ret->data = buffer;
 	ret->swapped = 0;
 
-	fhdr = (struct fat_header*)ret->data;
+	fhdr = (struct fat_header *)ret->data;
 	/* Check what kind of file this is.  Unfortunately we don't have
 	 * configure, so we don't know if we're on big or little endian, so
 	 * we cannot check if the fat_header is in bigendian like it should.
@@ -293,13 +270,12 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 		}
 
 		for (i = 1; i <= narchs; i++) {
-			farch = (struct fat_arch*)dptr;
-			offset = swapped ? bswap_32(farch->offset) : farch->offset;
+			farch = (struct fat_arch *)dptr;
+			offset = MGET(swapped, farch->offset);
 			if (read_mach_header(fobj, ret->data + offset) == 0)
-				return(NULL);
+				return NULL;
 			if (i < narchs) {
-				fobj = fobj->next = xmalloc(sizeof(fatobj));
-				memset(fobj, 0, sizeof(fatobj));
+				fobj = fobj->next = xzalloc(sizeof(*fobj));
 				/* filename and size are necessary for printing */
 				fobj->filename = ret->filename;
 				fobj->base_filename = ret->base_filename;
@@ -312,11 +288,11 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 	} else {
 		/* simple Mach-O file, treat as single arch FAT file */
 		if (read_mach_header(ret, ret->data) == 0)
-			return(NULL);
+			return NULL;
 		ret->next = NULL;
 	}
 
-	return(ret);
+	return ret;
 }
 
 /* undo the readmacho() stuff */
@@ -338,22 +314,18 @@ void unreadmacho(fatobj *macho)
  * until the end of the load section. */
 loadcmd *firstloadcmd(fatobj *fobj)
 {
-	loadcmd *ret = xmalloc(sizeof(loadcmd));
+	loadcmd *ret = xmalloc(sizeof(*ret));
 	ret->data = fobj->mhdata +
 		(fobj->ismach64 ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
-	ret->lcmd = (struct load_command*)ret->data;
-	ret->cleft = fobj->mhdr.hdr32->ncmds; /* 32 and 64 bits are aligned here */
+	ret->lcmd = (struct load_command *)ret->data;
+	ret->cleft = MOBJGET(fobj, mhdr.hdr32->ncmds); /* 32 and 64 bits are aligned here */
 	ret->align = (fobj->ismach64 ? 8 : 4);
 	ret->swapped = fobj->swapped;
-	if (ret->swapped)
-		ret->cleft = bswap_32(ret->cleft);
 	/* a bit useless, but a nice consistency check for ourselves now */
-	if (ret->lcmd->cmdsize % ret->align != 0) {
+	if (ret->lcmd->cmdsize % ret->align != 0)
 		warn("cmdsize isn't properly aligned on %d bytes boundary (%d)",
 				ret->align, ret->lcmd->cmdsize);
-	}
-
-	return(ret);
+	return ret;
 }
 
 /* Sets up the given loadcmd struct with the next load command, or frees
@@ -362,15 +334,13 @@ loadcmd *firstloadcmd(fatobj *fobj)
  * looping over all load commands, since firstloadcmd will allocate the
  * loadcmd struct, and nextloadcmd will free it once all load commands
  * have been seen. */
-int nextloadcmd(loadcmd* lcmd)
+int nextloadcmd(loadcmd *lcmd)
 {
-	uint32_t size = lcmd->lcmd->cmdsize;
-	if (lcmd->swapped)
-		size = bswap_32(size);
+	uint32_t size = MOBJGET(lcmd, lcmd->cmdsize);
 
 	if (--(lcmd->cleft) == 0) {
 		free(lcmd);
-		return(0);
+		return 0;
 	}
 
 	if (size % lcmd->align != 0) {
@@ -379,36 +349,24 @@ int nextloadcmd(loadcmd* lcmd)
 		size += lcmd->align - (size % lcmd->align);
 	}
 	lcmd->data += size;
-	lcmd->lcmd = (struct load_command*)lcmd->data;
+	lcmd->lcmd = (struct load_command *)lcmd->data;
 
-	return(1);
+	return 1;
 }
 
 const char *get_machoendian(fatobj *fobj)
 {
-	if (fobj->isbigendian)
-		return(STR_BE);
-	else
-		return(STR_LE);
+	return fobj->isbigendian ? STR_BE : STR_LE;
 }
 
 const char *get_machomtype(fatobj *fobj)
 {
-	uint32_t cputype = fobj->mhdr.hdr32->cputype;
-	if (fobj->swapped)
-		cputype = bswap_32(cputype);
-	switch (cputype) {
-		case CPU_TYPE_POWERPC:
-			return(STR_PPC);
-		case CPU_TYPE_I386:
-			return(STR_I386);
-		case CPU_TYPE_ARM:
-			return(STR_ARM);
-		case CPU_TYPE_POWERPC64:
-			return(STR_PPC64);
-		case CPU_TYPE_X86_64:
-			return(STR_X86_64);
-		default:
-			return(STR_UNKNOWN);
+	switch (MOBJGET(fobj, mhdr.hdr32->cputype)) {
+		case CPU_TYPE_POWERPC:   return STR_PPC;
+		case CPU_TYPE_I386:      return STR_I386;
+		case CPU_TYPE_ARM:       return STR_ARM;
+		case CPU_TYPE_POWERPC64: return STR_PPC64;
+		case CPU_TYPE_X86_64:    return STR_X86_64;
+		default:                 return STR_UNKNOWN;
 	}
 }

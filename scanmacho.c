@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.11 2008/12/30 13:13:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.12 2008/12/30 13:27:09 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.11 2008/12/30 13:13:15 vapier Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.12 2008/12/30 13:27:09 vapier Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -22,7 +22,7 @@ static int scanmacho_fatobj(fatobj *fobj);
 static int scanmacho_file(const char *filename, const struct stat *st_cache);
 static int scanmacho_from_file(const char *filename);
 static int scanmacho_dir(const char *path);
-static void scanelf_envpath(void);
+static void scanmacho_envpath(void);
 static void usage(int status);
 static int parseargs(int argc, char *argv[]);
 
@@ -74,28 +74,20 @@ static const char *macho_file_needed_lib(
 		char **ret,
 		size_t *ret_len
 ) {
-	char *needed;
 	loadcmd *lcmd;
-	struct dylib_command *dlcmd;
-	uint32_t lc_load_dylib = LC_LOAD_DYLIB;
+	uint32_t lc_load_dylib;
 
 	if ((op == 0 && !show_needed) || (op == 1 && !find_lib))
 		return NULL;
 
 	lcmd = firstloadcmd(fobj);
-
-	if (fobj->swapped)
-		lc_load_dylib = bswap_32(lc_load_dylib);
+	lc_load_dylib = MGET(fobj->swapped, LC_LOAD_DYLIB);
 
 	do {
 		if (lcmd->lcmd->cmd == lc_load_dylib) {
-			dlcmd = (struct dylib_command*)lcmd->data;
-			if (fobj->swapped) {
-				needed = (char *)(lcmd->data +
-						bswap_32(dlcmd->dylib.name.offset));
-			} else {
-				needed = (char *)(lcmd->data + dlcmd->dylib.name.offset);
-			}
+			struct dylib_command *dlcmd = (struct dylib_command*)lcmd->data;
+			char *needed;
+			needed = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset));
 			if (op == 0) {
 				if (!be_wewy_wewy_quiet) {
 					if (*found_needed)
@@ -124,27 +116,20 @@ static const char *macho_file_needed_lib(
 static char *macho_file_interp(fatobj *fobj, char *found_interp)
 {
 	loadcmd *lcmd;
-	uint32_t lc_load_dylinker = LC_LOAD_DYLINKER;
+	uint32_t lc_load_dylinker;
 
 	if (!show_interp)
 		return NULL;
 
 	lcmd = firstloadcmd(fobj);
-
-	if (fobj->swapped)
-		lc_load_dylinker = bswap_32(lc_load_dylinker);
+	lc_load_dylinker = MGET(fobj->swapped, LC_LOAD_DYLINKER);
 
 	do {
 		if (lcmd->lcmd->cmd == lc_load_dylinker) {
 			struct dylinker_command *dlcmd =
 				(struct dylinker_command*)lcmd->data;
 			char *dylinker;
-			if (fobj->swapped) {
-				dylinker = (char *)(lcmd->data +
-						bswap_32(dlcmd->name.offset));
-			} else {
-				dylinker = (char *)(lcmd->data + dlcmd->name.offset);
-			}
+			dylinker = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->name.offset));
 			*found_interp = 1;
 			free(lcmd);
 			return (be_wewy_wewy_quiet ? NULL : dylinker);
@@ -157,26 +142,19 @@ static char *macho_file_interp(fatobj *fobj, char *found_interp)
 static char *macho_file_soname(fatobj *fobj, char *found_soname)
 {
 	loadcmd *lcmd;
-	char *soname;
-	uint32_t lc_id_dylib = LC_ID_DYLIB;
+	uint32_t lc_id_dylib;
 
 	if (!show_soname)
 		return NULL;
 
 	lcmd = firstloadcmd(fobj);
-
-	if (fobj->swapped)
-		lc_id_dylib = bswap_32(lc_id_dylib);
+	lc_id_dylib = MGET(fobj->swapped, LC_ID_DYLIB);
 
 	do {
 		if (lcmd->lcmd->cmd == lc_id_dylib) {
 			struct dylib_command *dlcmd = (struct dylib_command*)lcmd->data;
-			if (fobj->swapped) {
-				soname = (char *)(lcmd->data +
-						bswap_32(dlcmd->dylib.name.offset));
-			} else {
-				soname = (char *)(lcmd->data + dlcmd->dylib.name.offset);
-			}
+			char *soname;
+			soname = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset));
 			*found_soname = 1;
 			free(lcmd);
 			return (be_wewy_wewy_quiet ? NULL : soname);
@@ -458,9 +436,8 @@ static int scanmacho_dir(const char *path)
 	}
 
 	/* ok, if it isn't a directory, assume we can open it */
-	if (!S_ISDIR(st_top.st_mode)) {
+	if (!S_ISDIR(st_top.st_mode))
 		return scanmacho_file(path, &st_top);
-	}
 
 	/* now scan the dir looking for fun stuff */
 	if ((dir = opendir(path)) == NULL) {
@@ -517,7 +494,7 @@ static int scanmacho_from_file(const char *filename)
 }
 
 /* scan env PATH for paths */
-static void scanelf_envpath(void)
+static void scanmacho_envpath(void)
 {
 	char *path, *p;
 
@@ -739,7 +716,7 @@ static int parseargs(int argc, char *argv[])
 
 	/* now lets actually do the scanning */
 	if (scan_envpath)
-		scanelf_envpath();
+		scanmacho_envpath();
 	if (!from_file && optind == argc && ttyname(0) == NULL && !scan_envpath)
 		from_file = "-";
 	if (from_file) {

@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.4 2008/09/08 07:02:56 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.5 2008/12/30 13:27:09 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -14,6 +14,9 @@
 #define _PAX_MACHO_H
 
 #include "macho.h"
+
+#define MGET(swapped, value) (swapped ? bswap_32(value) : value)
+#define MOBJGET(obj, member) MGET((obj)->swapped, (obj)->member)
 
 typedef struct _fatobj {
 	char *data;                 /* mmapped image of the whole file */
