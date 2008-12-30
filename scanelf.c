@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.204 2008/12/30 13:09:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.205 2008/12/30 13:13:15 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.204 2008/12/30 13:09:20 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.205 2008/12/30 13:13:15 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -105,7 +105,7 @@ static char *which(const char *fname)
 	while ((p = strrchr(path, ':')) != NULL) {
 		snprintf(fullpath, sizeof(fullpath), "%s/%s", p + 1, fname);
 		*p = 0;
-		if (access(fullpath, R_OK) != (-1)) {
+		if (access(fullpath, R_OK) != -1) {
 			free(path);
 			return fullpath;
 		}
@@ -1762,7 +1762,7 @@ static int parseargs(int argc, char *argv[])
 			}
 			break;
 		case 'O':
-			if (sscanf(optarg, "%o", &match_perms) == (-1))
+			if (sscanf(optarg, "%o", &match_perms) == -1)
 				match_bits = 0;
 			break;
 		case 'o': {

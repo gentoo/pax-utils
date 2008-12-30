@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.41 2008/03/20 19:08:16 solar Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.42 2008/12/30 13:13:15 vapier Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -151,7 +151,7 @@ static struct passwd *get_proc_passwd(pid_t pid)
 
 	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
 
-	if ((stat(str, &st)) != (-1))
+	if (stat(str, &st) != -1)
 		if ((pwd = getpwuid(st.st_uid)) != NULL)
 			return pwd;
 	return NULL;
@@ -306,12 +306,12 @@ static void pspax(const char *find_name)
 		exit(EXIT_FAILURE);
 	}
 
-	if (access("/proc/self/attr/current", R_OK) != (-1))
+	if (access("/proc/self/attr/current", R_OK) != -1)
 		have_attr = 1;
 	else
 		have_attr = 0;
 
-	if ((access("/proc/self/ipaddr", R_OK) != (-1)) && show_addr)
+	if ((access("/proc/self/ipaddr", R_OK) != -1) && show_addr)
 		have_addr = 1;
 	else
 		have_addr = 0;
@@ -328,11 +328,12 @@ static void pspax(const char *find_name)
 			pid = (pid_t) atoi((char *) basename((char *) de->d_name));
 			if (find_name && pid) {
 				char *str = get_proc_name(pid);
-	                        if (!str) continue;
+				if (!str)
+					continue;
 				if (strcmp(str, find_name) != 0)
 					pid = 0;
 			}
-			if (((ppid > 0) && (pid != ppid)) || (!pid))
+			if (((ppid > 0) && (pid != ppid)) || !pid)
 				continue;
 
 			wx = get_proc_maps(pid);
@@ -341,7 +342,7 @@ static void pspax(const char *find_name)
 				if ((wx == 1) && (writeexec != wx))
 					goto next_pid;
 
-				if ((wx == 0) && (writeexec))
+				if ((wx == 0) && writeexec)
 					goto next_pid;
 			}
 
@@ -352,11 +353,11 @@ static void pspax(const char *find_name)
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 			addr = (have_addr ? get_pid_addr(pid) : NULL);
 
-			if (show_uid != (-1) && pwd)
+			if (show_uid != -1 && pwd)
 				if (pwd->pw_uid != show_uid)
 					continue;
 
-			if (show_gid != (-1) && pwd)
+			if (show_gid != -1 && pwd)
 				if (pwd->pw_gid != show_gid)
 					continue;
 
@@ -383,7 +384,7 @@ static void pspax(const char *find_name)
 					print_executable_mappings(pid);
 			}
 
-			WRAP_SYSCAP(if (caps) cap_free((void *)caps));
+			WRAP_SYSCAP(if (caps) cap_free(caps));
 
 		next_pid:
 			continue;
