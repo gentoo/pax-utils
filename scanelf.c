@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.202 2008/12/30 12:38:04 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.203 2008/12/30 12:39:53 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.202 2008/12/30 12:38:04 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.203 2008/12/30 12:39:53 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -70,13 +70,13 @@ static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
 static char **qa_wx_load = NULL;
 
-int match_bits = 0;
-unsigned int match_perms = 0;
-caddr_t ldcache = 0;
-size_t ldcache_size = 0;
-unsigned long setpax = 0UL;
+static int match_bits = 0;
+static unsigned int match_perms = 0;
+static caddr_t ldcache = 0;
+static size_t ldcache_size = 0;
+static unsigned long setpax = 0UL;
 
-int has_objdump = 0;
+static int has_objdump = 0;
 
 static char *getstr_perms(const char *fname);
 static char *getstr_perms(const char *fname)

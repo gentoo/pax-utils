@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.8 2008/12/30 12:34:28 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.9 2008/12/30 12:39:53 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.8 2008/12/30 12:34:28 vapier Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.9 2008/12/30 12:39:53 vapier Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -50,13 +50,8 @@ static char *out_format = NULL;
 static char *search_path = NULL;
 static char g_match = 0;
 
-int match_bits = 0;
-unsigned int match_perms = 0;
-caddr_t ldcache = 0;
-size_t ldcache_size = 0;
-unsigned long setpax = 0UL;
-
-int has_objdump = 0;
+static int match_bits = 0;
+static unsigned int match_perms = 0;
 
 static char *getstr_perms(const char *fname);
 static char *getstr_perms(const char *fname)
