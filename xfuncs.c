@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.2 2008/12/30 12:58:08 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.3 2008/12/30 13:00:29 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -9,7 +9,6 @@
 
 #include "paxinc.h"
 
-char *xstrdup(const char *s);
 char *xstrdup(const char *s)
 {
 	char *ret = strdup(s);
@@ -17,7 +16,6 @@ char *xstrdup(const char *s)
 	return ret;
 }
 
-void *xmalloc(size_t size);
 void *xmalloc(size_t size)
 {
 	void *ret = malloc(size);
@@ -25,13 +23,11 @@ void *xmalloc(size_t size)
 	return ret;
 }
 
-void *xzalloc(size_t size);
 void *xzalloc(size_t size)
 {
 	return memset(xmalloc(size), 0, size);
 }
 
-void *xrealloc(void *ptr, size_t size);
 void *xrealloc(void *ptr, size_t size)
 {
 	void *ret = realloc(ptr, size);
@@ -39,7 +35,6 @@ void *xrealloc(void *ptr, size_t size)
 	return ret;
 }
 
-void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n);
 void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
 {
 	size_t new_len;
@@ -58,7 +53,6 @@ void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
 		strcat(*dst, src);
 }
 
-void xchrcat(char **dst, const char append, size_t *curr_len);
 void xchrcat(char **dst, const char append, size_t *curr_len)
 {
 	static char my_app[2];
