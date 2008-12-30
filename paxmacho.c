@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.10 2008/12/30 12:00:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.11 2008/12/30 12:15:32 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -260,7 +260,7 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 {
 	struct fat_header *fhdr;
-	fatobj *ret = malloc(sizeof(fatobj));
+	fatobj *ret = xmalloc(sizeof(fatobj));
 
 	ret->fd = -1;
 	ret->filename = filename;
@@ -299,7 +299,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 			if (read_mach_header(fobj, ret->data + offset) == 0)
 				return(NULL);
 			if (i < narchs) {
-				fobj = fobj->next = malloc(sizeof(fatobj));
+				fobj = fobj->next = xmalloc(sizeof(fatobj));
 				memset(fobj, 0, sizeof(fatobj));
 				/* filename and size are necessary for printing */
 				fobj->filename = ret->filename;
@@ -340,7 +340,7 @@ void unreadmacho(fatobj *macho)
  * until the end of the load section. */
 loadcmd *firstloadcmd(fatobj *fobj)
 {
-	loadcmd *ret = malloc(sizeof(loadcmd));
+	loadcmd *ret = xmalloc(sizeof(loadcmd));
 	ret->data = fobj->mhdata +
 		(fobj->ismach64 ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
 	ret->lcmd = (struct load_command*)ret->data;

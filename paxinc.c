@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.10 2008/10/19 18:55:33 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.11 2008/12/30 12:15:32 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -84,7 +84,7 @@ close_and_ret:
 		}
 		len = atoi(ret.buf.formatted.size);
 		/* we will leak this memory */
-		ar->extfn = malloc(sizeof(char) * (len + 1));
+		ar->extfn = xmalloc(sizeof(char) * (len + 1));
 		if (read(ar->fd, ar->extfn, len) != len)
 			goto close_and_ret;
 		ar->extfn[len--] = '\0';
