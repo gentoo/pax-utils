@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.42 2008/12/30 13:13:15 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.43 2008/12/30 13:50:04 vapier Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -41,17 +41,21 @@ static pid_t show_pid = 0;
 static uid_t show_uid = -1;
 static gid_t show_gid = -1;
 
+static FILE *proc_fopen(pid_t pid, const char *file)
+{
+	char path[__PAX_UTILS_PATH_MAX];
+	snprintf(path, sizeof(path), PROC_DIR "/%u/%s", pid, file);
+	path[sizeof(path) - 1] = '\0';
+	return fopen(path, "r");
+}
+
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
-	static char str[__PAX_UTILS_PATH_MAX];
-	memset(&str, 0, sizeof(str));
+	static char str[BUFSIZ];
 
-	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "stat")) == NULL)
 		return NULL;
-
-	memset(&str, 0, sizeof(str));
 
 	fscanf(fp, "%*d %s.16", str);
 	if (*str) {
@@ -59,17 +63,16 @@ static char *get_proc_name(pid_t pid)
 		str[16] = 0;
 	}
 	fclose(fp);
+
 	return (str+1);
 }
 
 static int get_proc_maps(pid_t pid)
 {
-	static char str[__PAX_UTILS_PATH_MAX];
 	FILE *fp;
+	static char str[BUFSIZ];
 
-	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
-
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -96,17 +99,16 @@ static int get_proc_maps(pid_t pid)
 		}
 	}
 	fclose(fp);
+
 	return 0;
 }
 
 static int print_executable_mappings(pid_t pid)
 {
-	static char str[__PAX_UTILS_PATH_MAX];
 	FILE *fp;
+	static char str[BUFSIZ];
 
-	snprintf(str, sizeof(str), PROC_DIR "/%u/maps", pid);
-
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -131,6 +133,7 @@ static int print_executable_mappings(pid_t pid)
 		}
 	}
 	fclose(fp);
+
 	return 0;
 }
 
@@ -147,13 +150,14 @@ static struct passwd *get_proc_passwd(pid_t pid)
 {
 	struct stat st;
 	struct passwd *pwd;
-	static char str[__PAX_UTILS_PATH_MAX];
+	char path[__PAX_UTILS_PATH_MAX];
 
-	snprintf(str, sizeof(str), PROC_DIR "/%u/stat", pid);
+	snprintf(path, sizeof(path), PROC_DIR "/%u/stat", pid);
 
-	if (stat(str, &st) != -1)
+	if (stat(path, &st) != -1)
 		if ((pwd = getpwuid(st.st_uid)) != NULL)
 			return pwd;
+
 	return NULL;
 }
 
@@ -161,10 +165,9 @@ static char *get_proc_status(pid_t pid, const char *name)
 {
 	FILE *fp;
 	size_t len;
-	static char str[__PAX_UTILS_PATH_MAX];
+	static char str[BUFSIZ];
 
-	snprintf(str, sizeof(str), PROC_DIR "/%u/status", pid);
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "status")) == NULL)
 		return NULL;
 
 	len = strlen(name);
@@ -178,6 +181,7 @@ static char *get_proc_status(pid_t pid, const char *name)
 		}
 	}
 	fclose(fp);
+
 	return NULL;
 }
 
@@ -185,18 +189,16 @@ static char *get_pid_attr(pid_t pid)
 {
 	FILE *fp;
 	char *p;
-	char str[32];
 	static char buf[BUFSIZ];
 
-	memset(buf, 0, sizeof(buf));
-
-	snprintf(str, sizeof(str), PROC_DIR "/%u/attr/current", pid);
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "attr/current")) == NULL)
 		return NULL;
+
 	if (fgets(buf, sizeof(buf), fp) != NULL)
 		if ((p = strchr(buf, '\n')) != NULL)
 			*p = 0;
 	fclose(fp);
+
 	return buf;
 }
 
@@ -204,31 +206,29 @@ static char *get_pid_addr(pid_t pid)
 {
 	FILE *fp;
 	char *p;
-	char str[32];
 	static char buf[BUFSIZ];
 
-	memset(buf, 0, sizeof(buf));
-
-	snprintf(str, sizeof(str), PROC_DIR "/%u/ipaddr", pid);
-	if ((fp = fopen(str, "r")) == NULL)
+	if ((fp = proc_fopen(pid, "ipaddr")) == NULL)
 		return NULL;
+
 	if (fgets(buf, sizeof(buf), fp) != NULL)
 		if ((p = strchr(buf, '\n')) != NULL)
 			*p = 0;
 	fclose(fp);
+
 	return buf;
 }
 
 static const char *get_proc_type(pid_t pid)
 {
 	char fname[32];
-	elfobj *elf = NULL;
-	char *ret = NULL;
+	elfobj *elf;
+	const char *ret;
 
 	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
 	if ((elf = readelf(fname)) == NULL)
-		return ret;
-	ret = (char *)get_elfetype(elf);
+		return NULL;
+	ret = get_elfetype(elf);
 	unreadelf(elf);
 	return ret;
 }
@@ -273,13 +273,13 @@ static char *scanelf_file_phdr(elfobj *elf)
 static const char *get_proc_phdr(pid_t pid)
 {
 	char fname[32];
-	elfobj *elf = NULL;
-	char *ret = NULL;
+	elfobj *elf;
+	const char *ret;
 
 	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
 	if ((elf = readelf(fname)) == NULL)
-		return ret;
-	ret = (char *) scanelf_file_phdr(elf);
+		return NULL;
+	ret = scanelf_file_phdr(elf);
 	unreadelf(elf);
 	return ret;
 }
