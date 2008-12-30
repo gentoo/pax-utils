@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.203 2008/12/30 12:39:53 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.204 2008/12/30 13:09:20 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.203 2008/12/30 12:39:53 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.204 2008/12/30 13:09:20 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -78,18 +78,17 @@ static unsigned long setpax = 0UL;
 
 static int has_objdump = 0;
 
-static char *getstr_perms(const char *fname);
-static char *getstr_perms(const char *fname)
+static const char *getstr_perms(const char *fname)
 {
 	struct stat st;
 	static char buf[8];
 
-	if ((stat(fname, &st)) == (-1))
-		return (char *) "";
+	if (stat(fname, &st) == -1)
+		return "";
 
 	snprintf(buf, sizeof(buf), "%o", st.st_mode);
 
-	return (char *) buf + 2;
+	return buf + 2;
 }
 
 /* find the path to a file by name */
@@ -108,7 +107,7 @@ static char *which(const char *fname)
 		*p = 0;
 		if (access(fullpath, R_OK) != (-1)) {
 			free(path);
-			return (char *) fullpath;
+			return fullpath;
 		}
 	}
 	free(path);
