@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.61 2008/12/30 12:34:28 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.62 2008/12/30 12:38:29 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -543,7 +543,7 @@ elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only)
 	}
 
 	buffer = mmap(0, len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
-	if (buffer == (char*)MAP_FAILED) {
+	if (buffer == MAP_FAILED) {
 		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)len);
 		return NULL;
 	}

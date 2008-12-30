@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.12 2008/12/30 12:34:28 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.13 2008/12/30 12:38:29 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -239,7 +239,7 @@ fatobj *readmacho_fd(const char *filename, int fd, size_t len)
 		return NULL;
 
 	data = mmap(0, len, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (data == (char*)MAP_FAILED) {
+	if (data == MAP_FAILED) {
 		warn("mmap on '%s' of %llu bytes failed :(",
 				filename, (unsigned long long)len);
 		return NULL;
