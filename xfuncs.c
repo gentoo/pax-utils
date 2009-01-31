@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.4 2009/01/31 17:58:37 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.5 2009/01/31 18:02:13 grobian Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -38,7 +38,7 @@ static inline char *my_strndup(const char *str, size_t n)
 char *xstrndup(const char *s, const size_t n)
 {
 	char *ret = strndup(s, n);
-	if (!ret) err("Could not strdup(): %s", strerror(errno));
+	if (!ret) err("Could not strndup(): %s", strerror(errno));
 	return ret;
 }
 
