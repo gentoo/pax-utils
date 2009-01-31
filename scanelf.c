@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.207 2008/12/30 13:38:35 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.208 2009/01/31 17:58:37 grobian Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.207 2008/12/30 13:38:35 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.208 2009/01/31 17:58:37 grobian Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1038,7 +1038,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 							++this_sym; \
 						} \
 						if (next_sym) /* Copy it so that we don't have to worry about the final , */ \
-							this_sym = strndup(this_sym, next_sym-this_sym); \
+							this_sym = xstrndup(this_sym, next_sym-this_sym); \
 						/* ok, lets compare the name now */ \
 						if (scanelf_match_symname(this_sym, symname)) { \
 							if (be_semi_verbose) { \
