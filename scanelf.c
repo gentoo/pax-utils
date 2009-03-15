@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.209 2009/03/15 08:53:29 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.210 2009/03/15 08:56:14 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.209 2009/03/15 08:53:29 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.210 2009/03/15 08:56:14 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1103,7 +1103,7 @@ static char *scanelf_file_sections(elfobj *elf, char *found_section)
 }
 
 /* scan an elf file and show all the fun stuff */
-#define prints(str) write(fileno(stdout), str, strlen(str))
+#define prints(str) ({ ssize_t ret = write(fileno(stdout), str, strlen(str)); ret; })
 static int scanelf_elfobj(elfobj *elf)
 {
 	unsigned long i;
