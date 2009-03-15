@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.210 2009/03/15 08:56:14 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.211 2009/03/15 09:01:48 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.210 2009/03/15 08:56:14 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.211 2009/03/15 09:01:48 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1505,7 +1505,7 @@ static int load_ld_cache_config(int i, const char *fname)
 	return i;
 }
 
-#elif defined(__FreeBSD__) || (__DragonFly__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 
 static int load_ld_cache_config(int i, const char *fname)
 {
@@ -1571,8 +1571,8 @@ static void scanelf_ldpath(void)
 	scan_l = scan_ul = scan_ull = 0;
 
 	while (ldpaths[i]) {
-		if (!scan_l   && !strcmp(ldpaths[i], "/lib")) scan_l = 1;
-		if (!scan_ul  && !strcmp(ldpaths[i], "/usr/lib")) scan_ul = 1;
+		if (!scan_l   && !strcmp(ldpaths[i], "/lib"))           scan_l   = 1;
+		if (!scan_ul  && !strcmp(ldpaths[i], "/usr/lib"))       scan_ul  = 1;
 		if (!scan_ull && !strcmp(ldpaths[i], "/usr/local/lib")) scan_ull = 1;
 		scanelf_dir(ldpaths[i]);
 		++i;
