@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.12 2008/12/30 13:34:46 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.13 2009/03/15 08:52:59 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -69,7 +69,8 @@ close_and_ret:
 	 * '\n' is used for padding */
 	if (ret.buf.raw[0] == '\n') {
 		memmove(ret.buf.raw, ret.buf.raw+1, 59);
-		read(ar->fd, ret.buf.raw+59, 1);
+		if (read(ar->fd, ret.buf.raw+59, 1) != 1)
+			goto close_and_ret;
 	}
 
 	if ((ret.buf.formatted.magic[0] != '`') || (ret.buf.formatted.magic[1] != '\n')) {
