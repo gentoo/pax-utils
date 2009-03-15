@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.70 2008/10/22 15:31:05 flameeyes Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.71 2009/03/15 09:23:11 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -25,6 +25,8 @@ PREFIX    := $(DESTDIR)/usr
 STRIP     := strip
 MKDIR     := mkdir -p
 CP        := cp
+INS_EXE   := install -m755
+INS_DATA  := install -m644
 
 # Some fun settings
 #CFLAGS   += -DEBUG -g
@@ -95,16 +97,16 @@ strip-more:
 	$(STRIP) --strip-unneeded $(TARGETS)
 
 install: all
-	-$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
-	$(CP) $(TARGETS) *.sh $(PREFIX)/bin/
+	$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
+	for sh in *.sh ; do $(INS_EXE) $$sh $(PREFIX)/bin/$${sh%.sh} || exit $$? ; done
+	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/
 ifeq ($(S),)
-	-$(MKDIR) $(PREFIX)/share/doc/pax-utils/
+	$(MKDIR) $(PREFIX)/share/doc/pax-utils/
 	$(CP) README BUGS TODO $(PREFIX)/share/doc/pax-utils/
+	-$(INS_DATA) $(MPAGES) $(PREFIX)/share/man/man1/
+else
+	$(INS_DATA) $(MPAGES) $(PREFIX)/share/man/man1/
 endif
-	for mpage in $(MPAGES) ; do \
-		[ -f $$mpage ] \
-			&& cp $$mpage $(PREFIX)/share/man/man1/ || : ;\
-	done
 
 dist:
 	@if [ "$(PV)" = "" ] ; then \
