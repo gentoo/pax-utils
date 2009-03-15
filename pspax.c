@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.44 2009/03/15 08:51:42 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.45 2009/03/15 09:23:30 vapier Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -298,12 +298,11 @@ static void pspax(const char *find_name)
 	int have_attr, have_addr, wx;
 	struct passwd *pwd;
 	struct stat st;
-	const char *pax, *type, *name, *caps, *attr, *addr;
-	WRAP_SYSCAP(ssize_t length; cap_t cap_d;);
+	const char *pax, *type, *name, *attr, *addr;
+	char *caps;
+	WRAP_SYSCAP(ssize_t length; cap_t cap_d;)
 
 	WRAP_SYSCAP(cap_d = cap_init());
-
-	caps = NULL;
 
 	dir = opendir(PROC_DIR);
 	if (dir == NULL || chdir(PROC_DIR))
@@ -365,6 +364,7 @@ static void pspax(const char *find_name)
 					continue;
 
 			/* this is a non-POSIX function */
+			caps = NULL;
 			WRAP_SYSCAP(capgetp(pid, cap_d));
 			WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
 
