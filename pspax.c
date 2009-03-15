@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.43 2008/12/30 13:50:04 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.44 2009/03/15 08:51:42 vapier Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -54,10 +54,15 @@ static char *get_proc_name(pid_t pid)
 	FILE *fp;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "stat")) == NULL)
+	fp = proc_fopen(pid, "stat");
+	if (fp == NULL)
 		return NULL;
 
-	fscanf(fp, "%*d %s.16", str);
+	if (fscanf(fp, "%*d %s.16", str) != 1) {
+		fclose(fp);
+		return NULL;
+	}
+
 	if (*str) {
 		str[strlen(str) - 1] = '\0';
 		str[16] = 0;
@@ -300,11 +305,9 @@ static void pspax(const char *find_name)
 
 	caps = NULL;
 
-	chdir(PROC_DIR);
-	if (!(dir = opendir(PROC_DIR))) {
-		perror(PROC_DIR);
-		exit(EXIT_FAILURE);
-	}
+	dir = opendir(PROC_DIR);
+	if (dir == NULL || chdir(PROC_DIR))
+		errp(PROC_DIR);
 
 	if (access("/proc/self/attr/current", R_OK) != -1)
 		have_attr = 1;
