@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.211 2009/03/15 09:01:48 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.212 2009/03/15 09:13:20 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.211 2009/03/15 09:01:48 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.212 2009/03/15 09:13:20 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -72,7 +72,7 @@ static char **qa_wx_load = NULL;
 
 static int match_bits = 0;
 static unsigned int match_perms = 0;
-static caddr_t ldcache = 0;
+static void *ldcache = NULL;
 static size_t ldcache_size = 0;
 static unsigned long setpax = 0UL;
 
@@ -694,10 +694,10 @@ static char *lookup_cache_lib(elfobj *, char *);
 
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
-	int fd = 0;
+	int fd;
 	char *strs;
 	static char buf[__PAX_UTILS_PATH_MAX] = "";
-	const char *cachefile = "/etc/ld.so.cache";
+	const char cachefile[] = "/etc/ld.so.cache";
 	struct stat st;
 
 	typedef struct {
@@ -717,35 +717,42 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	if (fname == NULL)
 		return NULL;
 
-	if (ldcache == 0) {
-		if (stat(cachefile, &st) || (fd = open(cachefile, O_RDONLY)) == -1)
+	if (ldcache == NULL) {
+		if (stat(cachefile, &st))
+			return NULL;
+
+		fd = open(cachefile, O_RDONLY);
+		if (fd == -1)
 			return NULL;
 
 		/* cache these values so we only map/unmap the cache file once */
 		ldcache_size = st.st_size;
-		ldcache = mmap(0, ldcache_size, PROT_READ, MAP_SHARED, fd, 0);
-
+		header = ldcache = mmap(0, ldcache_size, PROT_READ, MAP_SHARED, fd, 0);
 		close(fd);
 
 		if (ldcache == MAP_FAILED) {
-			ldcache = 0;
+			ldcache = NULL;
 			return NULL;
 		}
 
-		if (memcmp(((header_t *) ldcache)->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN))
+		if (memcmp(header->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN) ||
+		    memcmp(header->version, LDSO_CACHE_VER, LDSO_CACHE_VER_LEN))
+		{
+			munmap(ldcache, ldcache_size);
+			ldcache = NULL;
 			return NULL;
-		if (memcmp (((header_t *) ldcache)->version, LDSO_CACHE_VER, LDSO_CACHE_VER_LEN))
-			return NULL;
-	}
+		}
+	} else
+		header = ldcache;
 
-	header = (header_t *) ldcache;
-	libent = (libentry_t *) (ldcache + sizeof(header_t));
+	libent = ldcache + sizeof(header_t);
 	strs = (char *) &libent[header->nlibs];
 
-	for (fd = 0; fd < header->nlibs; fd++) {
-		/* this should be more fine grained, but for now we assume that
-		 * diff arches will not be cached together.  and we ignore the
-		 * the different multilib mips cases. */
+	for (fd = 0; fd < header->nlibs; ++fd) {
+		/* This should be more fine grained, but for now we assume that
+		 * diff arches will not be cached together, and we ignore the
+		 * the different multilib mips cases.
+		 */
 		if (elf->elf_class == ELFCLASS64 && !(libent[fd].flags & FLAG_REQUIRED_MASK))
 			continue;
 		if (elf->elf_class == ELFCLASS32 && (libent[fd].flags & FLAG_REQUIRED_MASK))
@@ -753,10 +760,15 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 
 		if (strcmp(fname, strs + libent[fd].sooffset) != 0)
 			continue;
+
+		/* Return first hit because that is how the ldso rolls */
 		strncpy(buf, strs + libent[fd].liboffset, sizeof(buf));
+		break;
 	}
+
 	return buf;
 }
+
 #elif defined(__NetBSD__)
 static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
