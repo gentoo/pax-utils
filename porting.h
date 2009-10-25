@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.36 2008/12/30 12:30:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.37 2009/10/25 20:42:34 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -140,7 +140,7 @@
 #  define ELF_DATA ELFDATA2MSB
 # elif defined(_LITTLE_ENDIAN)
 #  define ELF_DATA ELFDATA2LSB
-# elif defined(_BIG_ENDIAN)
+# elif defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN__)
 #  define ELF_DATA ELFDATA2MSB
 # else
 #  error "no idea what the native byte order is"
