@@ -16,27 +16,6 @@ usage() {
 	exit ${1:-0}
 }
 
-SHOW_ALL=false
-SET_X=false
-
-([[ $1 == "" ]] || [[ $1 == --help ]]) && usage 1
-opts="hax"
-getopt -Q -- "${opts}" "$@" || exit 1
-eval set -- $(getopt -- "${opts}" "$@")
-while [[ -n $1 ]] ; do
-	case $1 in
-		-a) SHOW_ALL=true;;
-		-x) SET_X=true;;
-		-h) usage;;
-		--) shift; break;;
-		-*) usage 1;;
-	esac
-	shift
-done
-
-${SET_X} && set -x
-
-ret=0
 error() {
 	echo "${argv0}: $*" 1>&2
 	ret=1
@@ -105,6 +84,30 @@ show_elf() {
 	done
 }
 
+# XXX: internal hack
+if [[ $1 != "/../..source.lddtree" ]] ; then
+
+SHOW_ALL=false
+SET_X=false
+
+([[ $1 == "" ]] || [[ $1 == --help ]]) && usage 1
+opts="hax"
+getopt -Q -- "${opts}" "$@" || exit 1
+eval set -- $(getopt -- "${opts}" "$@")
+while [[ -n $1 ]] ; do
+	case $1 in
+		-a) SHOW_ALL=true;;
+		-x) SET_X=true;;
+		-h) usage;;
+		--) shift; break;;
+		-*) usage 1;;
+	esac
+	shift
+done
+
+${SET_X} && set -x
+
+ret=0
 for elf in "$@" ; do
 	if [[ ! -e ${elf} ]] ; then
 		error "${elf}: file does not exist"
@@ -118,5 +121,6 @@ for elf in "$@" ; do
 		show_elf "${elf}" 0 ""
 	fi
 done
-
 exit ${ret}
+
+fi
