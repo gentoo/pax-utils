@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.66 2009/12/01 06:03:43 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.67 2009/12/01 10:14:30 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -24,7 +24,7 @@ static inline const char *find_pairtype(pairtype *pt, int type)
 	for (i = 0; pt[i].str; ++i)
 		if (type == pt[i].value)
 			return pt[i].str;
-	return "UNKNOWN TYPE";
+	return "UNKNOWN_TYPE";
 }
 
 /* translate misc elf EI_ defines */
@@ -73,7 +73,7 @@ const char *get_elfeitype(int ei_type, int type)
 		case EI_VERSION: return find_pairtype(elf_ei_version, type);
 		case EI_OSABI:   return find_pairtype(elf_ei_osabi, type);
 	}
-	return "UNKNOWN EI TYPE";
+	return "UNKNOWN_EI_TYPE";
 }
 
 /* translate elf ET_ defines */
@@ -416,7 +416,7 @@ static pairtype elf_stttypes[] = {
 };
 const char *get_elfstttype(int type)
 {
-	return find_pairtype(elf_stttypes, ELF32_ST_TYPE(type));
+	return find_pairtype(elf_stttypes, type);
 }
 
 /* translate elf STB_ defines */
@@ -430,7 +430,25 @@ static pairtype elf_stbtypes[] = {
 };
 const char *get_elfstbtype(int type)
 {
-	return find_pairtype(elf_stbtypes, ELF32_ST_BIND(type));
+	return find_pairtype(elf_stbtypes, type);
+}
+
+/* translate elf SHN_ defines */
+static pairtype elf_shntypes[] = {
+	QUERY(SHN_UNDEF),
+	QUERY(SHN_LORESERVE),
+	QUERY(SHN_LOPROC),
+	QUERY(SHN_HIPROC),
+	QUERY(SHN_ABS),
+	QUERY(SHN_COMMON),
+	QUERY(SHN_HIRESERVE),
+	{ 0, 0 }
+};
+const char *get_elfshntype(int type)
+{
+	if (type && type < SHN_LORESERVE)
+		return "DEFINED";
+	return find_pairtype(elf_shntypes, type);
 }
 
 /* Read an ELF into memory */
