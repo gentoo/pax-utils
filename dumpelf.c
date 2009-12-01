@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.24 2008/01/17 04:37:19 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.25 2009/12/01 05:48:18 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.24 2008/01/17 04:37:19 solar Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.25 2009/12/01 05:48:18 vapier Exp $";
 const char * const argv0 = "dumpelf";
 
 #include "paxinc.h"
@@ -206,19 +206,19 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 				break; \
 		} \
 		case SHT_STRTAB: { \
-			char bool; \
+			char b; \
 			printf("\n\t/%c section dump:\n", '*'); \
-			bool = 1; \
+			b = 1; \
 			if (type == SHT_PROGBITS) --data; \
 			for (i = 0; i < size; ++i) { \
 				++data; \
 				if (*data) { \
-					if (bool) printf("\t * "); \
+					if (b) printf("\t * "); \
 					printf("%c", *data); \
-					bool = 0; \
-				} else if (!bool) { \
+					b = 0; \
+				} else if (!b) { \
 					printf("\n"); \
-					bool = 1; \
+					b = 1; \
 				} \
 			} \
 			printf("\t */\n"); \
