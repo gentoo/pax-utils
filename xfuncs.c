@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.5 2009/01/31 18:02:13 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.6 2009/12/01 10:15:06 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -65,7 +65,7 @@ void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
 {
 	size_t new_len;
 
-	new_len = strlen(*dst) + strlen(src);
+	new_len = (*curr_len ? strlen(*dst) : 0) + strlen(src);
 	if (*curr_len <= new_len) {
 		*curr_len = new_len + (*curr_len / 2);
 		*dst = realloc(*dst, *curr_len);
