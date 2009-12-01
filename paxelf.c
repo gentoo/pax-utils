@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.65 2009/12/01 05:52:55 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.66 2009/12/01 06:03:43 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -108,44 +108,42 @@ const char *get_elfetype(elfobj *elf)
 
 const char *get_endian(elfobj *elf)
 {
-	if (elf->data[EI_DATA] == ELFDATA2LSB)
-		return (char *) "LE";
-	if (elf->data[EI_DATA] == ELFDATA2MSB)
-		return (char *) "BE";
-	return (char *) "??";
+	switch (elf->data[EI_DATA]) {
+		case ELFDATA2LSB: return "LE";
+		case ELFDATA2MSB: return "BE";
+		default:          return "??";
+	}
 }
 
-static int arm_eabi_poker(elfobj *elf);
 static int arm_eabi_poker(elfobj *elf)
 {
-	unsigned int eflags = 0;
-	static char eabi[26];
+	unsigned int emachine, eflags;
 
 	if (ELFOSABI_NONE != elf->data[EI_OSABI])
 		return -1;
 
-	memset(eabi, 0, sizeof(eabi));
-
 	if (elf->elf_class == ELFCLASS32) {
-		if ((int)EGET(EHDR32(elf->ehdr)->e_machine) != EM_ARM)
-			return -1;
-		eflags = EF_ARM_EABI_VERSION(EGET(EHDR32(elf->ehdr)->e_flags));
+		emachine = EHDR32(elf->ehdr)->e_machine;
+		eflags = EHDR32(elf->ehdr)->e_flags;
 	} else {
-		if ((int)EGET(EHDR64(elf->ehdr)->e_machine) != EM_ARM)
-			return -1;
-		eflags = EF_ARM_EABI_VERSION(EGET(EHDR64(elf->ehdr)->e_flags));
+		emachine = EHDR64(elf->ehdr)->e_machine;
+		eflags = EHDR64(elf->ehdr)->e_flags;
 	}
-	return (eflags >> 24);
+
+	if (EGET(emachine) == EM_ARM)
+		return EF_ARM_EABI_VERSION(EGET(eflags)) >> 24;
+	else
+		return -1;
 }
 
 const char *get_elf_eabi(elfobj *elf)
 {
 	static char buf[26];
 	int eabi = arm_eabi_poker(elf);
-	memset(buf, 0, sizeof(buf));
-	if (eabi >= 0) {
-		sprintf(buf, "%d", eabi);
-	}
+	if (eabi >= 0)
+		snprintf(buf, sizeof(buf), "%i", eabi);
+	else
+		strcpy(buf, "?");
 	return buf;
 }
 
@@ -155,7 +153,7 @@ const char *get_elfosabi(elfobj *elf)
 	if (str)
 		if (strlen(str) > 9)
 			return str + 9;
-	return (char *) "";
+	return "";
 }
 
 void print_etypes(FILE *stream)
