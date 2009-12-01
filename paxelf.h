@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.50 2008/06/17 17:07:57 solar Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.51 2009/12/01 05:50:11 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -57,6 +57,7 @@ extern const char *get_elf_eabi(elfobj *elf);
 extern const char *get_elfemtype(elfobj *elf);
 extern const char *get_elfptype(int type);
 extern const char *get_elfdtype(int type);
+extern const char *get_elfstbtype(int type);
 extern const char *get_elfshttype(int type);
 extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);

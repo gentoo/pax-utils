@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.63 2008/12/30 12:59:42 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.64 2009/12/01 05:50:11 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -414,6 +414,15 @@ static pairtype elf_stttypes[] = {
 	QUERY(STT_FILE),
 	QUERY(STT_LOPROC),
 	QUERY(STT_HIPROC),
+	{ 0, 0 }
+};
+const char *get_elfstttype(int type)
+{
+	return find_pairtype(elf_stttypes, ELF32_ST_TYPE(type));
+}
+
+/* translate elf STB_ defines */
+static pairtype elf_stbtypes[] = {
 	QUERY(STB_LOCAL),
 	QUERY(STB_GLOBAL),
 	QUERY(STB_WEAK),
@@ -421,9 +430,9 @@ static pairtype elf_stttypes[] = {
 	QUERY(STB_HIPROC),
 	{ 0, 0 }
 };
-const char *get_elfstttype(int type)
+const char *get_elfstbtype(int type)
 {
-	return find_pairtype(elf_stttypes, type & 0xF);
+	return find_pairtype(elf_stbtypes, ELF32_ST_BIND(type));
 }
 
 /* Read an ELF into memory */
