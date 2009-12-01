@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.213 2009/12/01 10:18:58 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.214 2009/12/01 10:19:42 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.213 2009/12/01 10:18:58 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.214 2009/12/01 10:19:42 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -979,7 +979,8 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	return NULL;
 }
 
-static int scanelf_match_symname(const char *symname, const char *tomatch) {
+static int scanelf_match_symname(const char *symname, const char *tomatch)
+{
 	/* We do things differently when checking with regexp */
 	if (g_match) {
 		return rematch(symname, tomatch, REG_EXTENDED) == 0;
@@ -998,7 +999,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 	void *symtab_void, *strtab_void;
 
 	if (!find_sym) return NULL;
-	ret = find_sym;
+	ret = NULL;
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
@@ -1010,6 +1011,7 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
 		unsigned long cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
+		size_t ret_len = 0; \
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
@@ -1018,6 +1020,8 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 				goto break_out;	\
 			} \
 			if (sym->st_name) { \
+				char *this_sym, *next_sym; \
+				bool all_syms; \
 				/* make sure the symbol name is in acceptable memory range */ \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 				if ((void*)symname > (void*)elf->data_end) { \
@@ -1025,51 +1029,118 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					++sym; \
 					continue; \
 				} \
-				/* debug display ... show all symbols and some extra info */ \
-				if (0 && g_match ? rematch(ret, symname, REG_EXTENDED) == 0 : *ret == '*') { \
-					printf("%s(%s) %5lX %15s %s %s\n", \
-					       ((*found_sym == 0) ? "\n\t" : "\t"), \
-					       elf->base_filename, \
-					       (unsigned long)sym->st_size, \
-					       get_elfstttype(sym->st_info), \
-					       sym->st_shndx == SHN_UNDEF ? "U" : "D", symname); \
-					*found_sym = 1; \
-				} else { \
-					/* allow the user to specify a comma delimited list of symbols to search for */ \
-					char *this_sym, *next_sym; \
-					next_sym = ret; \
-					while (next_sym) { \
+				/* allow the user to specify a comma delimited list of symbols to search for */ \
+				all_syms = false; \
+				next_sym = NULL; \
+				do { \
+					bool inc_notype, inc_object, inc_func, inc_file, \
+					     inc_local, inc_global, inc_weak, \
+					     inc_def, inc_undef, inc_abs, inc_common; \
+					unsigned int stt, stb, shn; \
+					char saved = saved; /* shut gcc up */ \
+					if (next_sym) { \
+						next_sym[-1] = saved; \
 						this_sym = next_sym; \
-						if ((next_sym = strchr(this_sym, ','))) \
-							next_sym += 1; /* Skip the comma */ \
-						/* do we want a defined symbol ? */ \
-						if (*this_sym == '+') { \
-							if (sym->st_shndx == SHN_UNDEF) \
-								continue; \
-							++this_sym; \
-						/* do we want an undefined symbol ? */ \
-						} else if (*this_sym == '-') { \
-							if (sym->st_shndx != SHN_UNDEF) \
-								continue; \
-							++this_sym; \
-						} \
-						if (next_sym) /* Copy it so that we don't have to worry about the final , */ \
-							this_sym = xstrndup(this_sym, next_sym-this_sym); \
-						/* ok, lets compare the name now */ \
-						if (scanelf_match_symname(this_sym, symname)) { \
-							if (be_semi_verbose) { \
-								char buf[126]; \
-								snprintf(buf, sizeof(buf), "%lX %s %s", \
-									(unsigned long)sym->st_size, get_elfstttype(sym->st_info), this_sym); \
-								ret = buf; \
-							} else \
-								ret = symname; \
-							(*found_sym)++; \
-							goto break_out; \
-						} \
-						if (next_sym) free(this_sym); \
+					} else \
+						this_sym = find_sym; \
+					if ((next_sym = strchr(this_sym, ','))) { \
+						saved = *next_sym; \
+						*next_sym = '\0'; /* make parsing easier */ \
+						next_sym += 1; /* Skip the comma */ \
 					} \
-				} \
+					/* symbol selection! */ \
+					inc_notype = inc_object = inc_func = inc_file = \
+					inc_local = inc_global = inc_weak = \
+					inc_def = inc_undef = inc_abs = inc_common = \
+					(*this_sym != '%'); \
+					if (!inc_notype) { \
+						if (this_sym[1] == '%') \
+							all_syms = true; /* %% hack */ \
+						while (*(this_sym++)) { \
+							if (*this_sym == '%') { \
+								++this_sym; \
+								break; \
+							} \
+							switch (*this_sym) { \
+								case 'n': inc_notype = true; break; \
+								case 'o': inc_object = true; break; \
+								case 'f': inc_func   = true; break; \
+								case 'F': inc_file   = true; break; \
+								case 'l': inc_local  = true; break; \
+								case 'g': inc_global = true; break; \
+								case 'w': inc_weak   = true; break; \
+								case 'd': inc_def    = true; break; \
+								case 'u': inc_undef  = true; break; \
+								case 'a': inc_abs    = true; break; \
+								case 'c': inc_common = true; break; \
+								default:  err("invalid symbol selector '%c'", *this_sym); \
+							} \
+						} \
+						if (!inc_notype && !inc_object && !inc_func && !inc_file) \
+							inc_notype = inc_object = inc_func = inc_file = true; \
+						if (!inc_local && !inc_global && !inc_weak) \
+							inc_local = inc_global = inc_weak = true; \
+						if (!inc_def && !inc_undef && !inc_abs && !inc_common) \
+							inc_def = inc_undef = inc_abs = inc_common = true; \
+					} else if (*this_sym == '+') { \
+						inc_undef = false; \
+						++this_sym; \
+					} else if (*this_sym == '-') { \
+						inc_def = inc_abs = inc_common = false; \
+						++this_sym; \
+					} \
+					/* filter symbols */ \
+					stt = ELF##B##_ST_TYPE(EGET(sym->st_info)); \
+					stb = ELF##B##_ST_BIND(EGET(sym->st_info)); \
+					shn = EGET(sym->st_shndx); \
+					if ((!inc_notype && stt == STT_NOTYPE) || \
+					    (!inc_object && stt == STT_OBJECT) || \
+					    (!inc_func   && stt == STT_FUNC  ) || \
+					    (!inc_file   && stt == STT_FILE  ) || \
+					    (!inc_local  && stb == STB_LOCAL ) || \
+					    (!inc_global && stb == STB_GLOBAL) || \
+					    (!inc_weak   && stb == STB_WEAK  ) || \
+					    (!inc_def    && shn && shn < SHN_LORESERVE) || \
+					    (!inc_undef  && shn == SHN_UNDEF ) || \
+					    (!inc_abs    && shn == SHN_ABS   ) || \
+					    (!inc_common && shn == SHN_COMMON)) \
+						continue; \
+					/* still here !? */ \
+					if (*this_sym == '*' || !*this_sym) { \
+						if (*this_sym == '*') \
+							printf("%s(%s) %5lX %15s %15s %15s %s\n", \
+							       ((*found_sym == 0) ? "\n\t" : "\t"), \
+							       elf->base_filename, \
+							       (unsigned long)EGET(sym->st_size), \
+							       get_elfstttype(stt), \
+							       get_elfstbtype(stb), \
+							       get_elfshntype(shn), \
+							       symname); \
+						else \
+							printf("%s%s", ((*found_sym == 0) ? "" : ","), symname); \
+						*found_sym = 1; \
+						if (next_sym) next_sym[-1] = saved; \
+						break; \
+					} else if (scanelf_match_symname(this_sym, symname)) { \
+						*found_sym = 1; \
+						if (be_semi_verbose) { \
+							char buf[1024]; \
+							snprintf(buf, sizeof(buf), "%lX %s %s", \
+								(unsigned long)EGET(sym->st_size), \
+								get_elfstttype(stt), \
+								this_sym); \
+							ret = xstrdup(buf); \
+						} else { \
+							if (ret) xchrcat(&ret, ',', &ret_len); \
+							xstrcat(&ret, symname, &ret_len); \
+						} \
+						if (next_sym) next_sym[-1] = saved; \
+						if (all_syms) \
+							break; \
+						else \
+							goto break_out; \
+					} \
+				} while (next_sym); \
 			} \
 			++sym; \
 		} }
@@ -1253,13 +1324,8 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", (unsigned long)elf->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
-		if (out) {
-			/* hack for comma delimited output like `scanelf -s sym1,sym2,sym3` */
-			if (out_format[i] == 's' && (tmp=strchr(out,',')) != NULL)
-				xstrncat(&out_buffer, out, &out_len, (tmp-out));
-			else
-				xstrcat(&out_buffer, out, &out_len);
-		}
+		if (out)
+			xstrcat(&out_buffer, out, &out_len);
 	}
 
 #define FOUND_SOMETHING() \
