@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.64 2009/12/01 05:50:11 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.65 2009/12/01 05:52:55 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -14,7 +14,7 @@
  * binary defines into readable strings.
  */
 #define QUERY(n) { #n, n }
-typedef struct {
+typedef const struct {
 	const char *str;
 	int value;
 } pairtype;
