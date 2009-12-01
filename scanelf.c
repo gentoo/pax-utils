@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.212 2009/03/15 09:13:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.213 2009/12/01 10:18:58 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.212 2009/03/15 09:13:20 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.213 2009/12/01 10:18:58 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -130,25 +130,28 @@ static int rematch(const char *regex, const char *match, int cflags)
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
 {
 	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
+
+	/* debug sections */
+	void *symtab = elf_findsecbyname(elf, ".symtab");
+	void *strtab = elf_findsecbyname(elf, ".strtab");
+	/* runtime sections */
+	void *dynsym = elf_findsecbyname(elf, ".dynsym");
+	void *dynstr = elf_findsecbyname(elf, ".dynstr");
+
 #define GET_SYMTABS(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-		Elf ## B ## _Shdr *symtab, *strtab, *dynsym, *dynstr; \
-		/* debug sections */ \
-		symtab = SHDR ## B (elf_findsecbyname(elf, ".symtab")); \
-		strtab = SHDR ## B (elf_findsecbyname(elf, ".strtab")); \
-		/* runtime sections */ \
-		dynsym = SHDR ## B (elf_findsecbyname(elf, ".dynsym")); \
-		dynstr = SHDR ## B (elf_findsecbyname(elf, ".dynstr")); \
-		if (symtab && dynsym) { \
-			*sym = (void*)((EGET(symtab->sh_size) > EGET(dynsym->sh_size)) ? symtab : dynsym); \
-		} else { \
-			*sym = (void*)(symtab ? symtab : dynsym); \
-		} \
-		if (strtab && dynstr) { \
-			*tab = (void*)((EGET(strtab->sh_size) > EGET(dynstr->sh_size)) ? strtab : dynstr); \
-		} else { \
-			*tab = (void*)(strtab ? strtab : dynstr); \
-		} \
+	if (symtab && dynsym) { \
+		Elf ## B ## _Shdr *esymtab = symtab; \
+		Elf ## B ## _Shdr *edynsym = dynsym; \
+		*sym = (EGET(esymtab->sh_size) > EGET(edynsym->sh_size)) ? symtab : dynsym; \
+	} else \
+		*sym = symtab ? symtab : dynsym; \
+	if (strtab && dynstr) { \
+		Elf ## B ## _Shdr *estrtab = strtab; \
+		Elf ## B ## _Shdr *edynstr = dynstr; \
+		*tab = (EGET(estrtab->sh_size) > EGET(edynstr->sh_size)) ? strtab : dynstr; \
+	} else \
+		*tab = strtab ? strtab : dynstr; \
 	}
 	GET_SYMTABS(32)
 	GET_SYMTABS(64)
