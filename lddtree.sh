@@ -39,8 +39,20 @@ find_elf() {
 			done
 			return 1
 		}
-		check_paths "${elf}" $(scanelf -qF '#F%r' "${needed_by}") && return 0
-		check_paths "${elf}" $(sed -e 's:^[[:space:]]*#.*::' /etc/ld.so.conf) && return 0
+		if [[ ${__last_needed_by} != ${needed_by} ]] ; then
+			__last_needed_by=${needed_by}
+			__last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | sed 's|:| |g')
+		fi
+		check_paths "${elf}" ${__last_needed_by_rpaths} && return 0
+		if [[ -z ${__ldso_paths} ]] ; then
+			if [[ -r /etc/ld.so.conf ]] ; then
+				__ldso_paths=$(sed -e 's:^[[:space:]]*#.*::' /etc/ld.so.conf)
+			fi
+			: ${__ldso_paths:= }
+		fi
+		if [[ ${__ldso_paths} != " " ]] ; then
+			check_paths "${elf}" ${__ldso_paths} && return 0
+		fi
 		check_paths "${elf}" /lib* /usr/lib* /usr/local/lib* && return 0
 	fi
 	return 1
