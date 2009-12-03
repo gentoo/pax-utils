@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.214 2009/12/01 10:19:42 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.215 2009/12/03 08:01:45 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.214 2009/12/01 10:19:42 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.215 2009/12/03 08:01:45 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -27,7 +27,6 @@ static void usage(int status);
 static char **get_split_env(const char *envvar);
 static void parseenv(void);
 static int parseargs(int argc, char *argv[]);
-static int rematch(const char *regex, const char *match, int cflags);
 
 /* variables to control behavior */
 static char match_etypes[126] = "";
@@ -979,17 +978,171 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	return NULL;
 }
 
-static int scanelf_match_symname(const char *symname, const char *tomatch)
+/*
+ * We support the symbol form:
+ *    [%[modifiers]%][[+-]<symbol name>][,[.....]]
+ * If the symbol name is empty, then all symbols are matched.
+ * If the symbol name is a glob ("*"), then all symbols are dumped (debug).
+ *    Do not rely on this output format at all.
+ * Otherwise the symbol name is used to search (either regex or string compare).
+ * If the first char of the symbol name is a plus ("+"), then only match
+ *    defined symbols.  If it's a minus ("-"), only match undefined symbols.
+ * Putting modifiers in between the percent signs allows for more in depth
+ *    filters.  There are groups of modifiers.  If you don't specify a member
+ *    of a group, then all types in that group are matched.  The current
+ *    groups and their types are:
+ *        STT group: STT_NOTYPE:n STT_OBJECT:o STT_FUNC:f SST_FILE:F
+ *        STB group: STB_LOCAL:l STB_GLOBAL:g STB_WEAK:w
+ *        SHN group: SHN_UNDEF:u SHN_ABS:a SHN_COMMON:c {defined}:d
+ *    The "defined" value in the SHN group does not correspond to a SHN_xxx define.
+ * You can search for multiple symbols at once by seperating with a comma (",").
+ *
+ * Some examples:
+ *    ELFs with a weak function "foo":
+ *        scanelf -s %wf%foo <ELFs>
+ *    ELFs that define the symbol "main":
+ *        scanelf -s +main <ELFs>
+ *        scanelf -s %d%main <ELFs>
+ *    ELFs that refer to the undefined symbol "brk":
+ *        scanelf -s -brk <ELFs>
+ *        scanelf -s %u%brk <ELFs>
+ *    All global defined objects in an ELF:
+ *        scanelf -s %ogd% <ELF>
+ */
+static void
+scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len, const char *symname,
+	unsigned int stt, unsigned int stb, unsigned int shn, unsigned long size)
 {
-	/* We do things differently when checking with regexp */
-	if (g_match) {
-		return rematch(symname, tomatch, REG_EXTENDED) == 0;
-	} else {
-		const size_t symname_len = strlen(symname);
-		return (strncmp(symname, tomatch, symname_len) == 0 &&
-			/* Accept unversioned symbol names */
-			(tomatch[symname_len] == '\0' || tomatch[symname_len] == '@'));
-	}
+	char *this_sym, *next_sym, saved = saved;
+
+	/* allow the user to specify a comma delimited list of symbols to search for */
+	next_sym = NULL;
+	do {
+		bool inc_notype, inc_object, inc_func, inc_file,
+		     inc_local, inc_global, inc_weak,
+		     inc_def, inc_undef, inc_abs, inc_common;
+
+		if (next_sym) {
+			next_sym[-1] = saved;
+			this_sym = next_sym;
+		} else
+			this_sym = find_sym;
+		if ((next_sym = strchr(this_sym, ','))) {
+			/* make parsing easier by killing the comma temporarily */
+			saved = *next_sym;
+			*next_sym = '\0';
+			next_sym += 1;
+		}
+
+		/* symbol selection! */
+		inc_notype = inc_object = inc_func = inc_file = \
+		inc_local = inc_global = inc_weak = \
+		inc_def = inc_undef = inc_abs = inc_common = \
+			(*this_sym != '%');
+
+		/* parse the contents of %...% */
+		if (!inc_notype) {
+			while (*(this_sym++)) {
+				if (*this_sym == '%') {
+					++this_sym;
+					break;
+				}
+				switch (*this_sym) {
+					case 'n': inc_notype = true; break;
+					case 'o': inc_object = true; break;
+					case 'f': inc_func   = true; break;
+					case 'F': inc_file   = true; break;
+					case 'l': inc_local  = true; break;
+					case 'g': inc_global = true; break;
+					case 'w': inc_weak   = true; break;
+					case 'd': inc_def    = true; break;
+					case 'u': inc_undef  = true; break;
+					case 'a': inc_abs    = true; break;
+					case 'c': inc_common = true; break;
+					default:  err("invalid symbol selector '%c'", *this_sym);
+				}
+			}
+
+			/* If no types are matched, not match all */
+			if (!inc_notype && !inc_object && !inc_func && !inc_file)
+				inc_notype = inc_object = inc_func = inc_file = true;
+			if (!inc_local && !inc_global && !inc_weak)
+				inc_local = inc_global = inc_weak = true;
+			if (!inc_def && !inc_undef && !inc_abs && !inc_common)
+				inc_def = inc_undef = inc_abs = inc_common = true;
+
+		/* backwards compat for defined/undefined short hand */
+		} else if (*this_sym == '+') {
+			inc_undef = false;
+			++this_sym;
+		} else if (*this_sym == '-') {
+			inc_def = inc_abs = inc_common = false;
+			++this_sym;
+		}
+
+		/* filter symbols */
+		if ((!inc_notype && stt == STT_NOTYPE) || \
+		    (!inc_object && stt == STT_OBJECT) || \
+		    (!inc_func   && stt == STT_FUNC  ) || \
+		    (!inc_file   && stt == STT_FILE  ) || \
+		    (!inc_local  && stb == STB_LOCAL ) || \
+		    (!inc_global && stb == STB_GLOBAL) || \
+		    (!inc_weak   && stb == STB_WEAK  ) || \
+		    (!inc_def    && shn && shn < SHN_LORESERVE) || \
+		    (!inc_undef  && shn == SHN_UNDEF ) || \
+		    (!inc_abs    && shn == SHN_ABS   ) || \
+		    (!inc_common && shn == SHN_COMMON))
+			continue;
+
+		if (*this_sym == '*') {
+			/* a "*" symbol gets you debug output */
+			printf("%s(%s) %5lX %15s %15s %15s %s\n",
+			       ((*found_sym == 0) ? "\n\t" : "\t"),
+			       elf->base_filename,
+			       size,
+			       get_elfstttype(stt),
+			       get_elfstbtype(stb),
+			       get_elfshntype(shn),
+			       symname);
+			goto matched;
+
+		} else {
+			if (g_match) {
+				/* regex match the symbol */
+				if (rematch(this_sym, symname, REG_EXTENDED) != 0)
+					continue;
+
+			} else if (*this_sym) {
+				/* give empty symbols a "pass", else do a normal compare */
+				const size_t len = strlen(this_sym);
+				if (!(strncmp(this_sym, symname, len) == 0 &&
+				      /* Accept unversioned symbol names */
+				      (symname[len] == '\0' || symname[len] == '@')))
+					continue;
+			}
+
+			if (be_semi_verbose) {
+				char buf[1024];
+				snprintf(buf, sizeof(buf), "%lX %s %s",
+					size,
+					get_elfstttype(stt),
+					this_sym);
+				*ret = xstrdup(buf);
+			} else {
+				if (*ret) xchrcat(ret, ',', ret_len);
+				xstrcat(ret, symname, ret_len);
+			}
+
+			goto matched;
+		}
+	} while (next_sym);
+
+	return;
+
+ matched:
+	*found_sym = 1;
+	if (next_sym)
+		next_sym[-1] = saved;
 }
 
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
@@ -1020,8 +1173,6 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 				goto break_out;	\
 			} \
 			if (sym->st_name) { \
-				char *this_sym, *next_sym; \
-				bool all_syms; \
 				/* make sure the symbol name is in acceptable memory range */ \
 				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 				if ((void*)symname > (void*)elf->data_end) { \
@@ -1029,118 +1180,13 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 					++sym; \
 					continue; \
 				} \
-				/* allow the user to specify a comma delimited list of symbols to search for */ \
-				all_syms = false; \
-				next_sym = NULL; \
-				do { \
-					bool inc_notype, inc_object, inc_func, inc_file, \
-					     inc_local, inc_global, inc_weak, \
-					     inc_def, inc_undef, inc_abs, inc_common; \
-					unsigned int stt, stb, shn; \
-					char saved = saved; /* shut gcc up */ \
-					if (next_sym) { \
-						next_sym[-1] = saved; \
-						this_sym = next_sym; \
-					} else \
-						this_sym = find_sym; \
-					if ((next_sym = strchr(this_sym, ','))) { \
-						saved = *next_sym; \
-						*next_sym = '\0'; /* make parsing easier */ \
-						next_sym += 1; /* Skip the comma */ \
-					} \
-					/* symbol selection! */ \
-					inc_notype = inc_object = inc_func = inc_file = \
-					inc_local = inc_global = inc_weak = \
-					inc_def = inc_undef = inc_abs = inc_common = \
-					(*this_sym != '%'); \
-					if (!inc_notype) { \
-						if (this_sym[1] == '%') \
-							all_syms = true; /* %% hack */ \
-						while (*(this_sym++)) { \
-							if (*this_sym == '%') { \
-								++this_sym; \
-								break; \
-							} \
-							switch (*this_sym) { \
-								case 'n': inc_notype = true; break; \
-								case 'o': inc_object = true; break; \
-								case 'f': inc_func   = true; break; \
-								case 'F': inc_file   = true; break; \
-								case 'l': inc_local  = true; break; \
-								case 'g': inc_global = true; break; \
-								case 'w': inc_weak   = true; break; \
-								case 'd': inc_def    = true; break; \
-								case 'u': inc_undef  = true; break; \
-								case 'a': inc_abs    = true; break; \
-								case 'c': inc_common = true; break; \
-								default:  err("invalid symbol selector '%c'", *this_sym); \
-							} \
-						} \
-						if (!inc_notype && !inc_object && !inc_func && !inc_file) \
-							inc_notype = inc_object = inc_func = inc_file = true; \
-						if (!inc_local && !inc_global && !inc_weak) \
-							inc_local = inc_global = inc_weak = true; \
-						if (!inc_def && !inc_undef && !inc_abs && !inc_common) \
-							inc_def = inc_undef = inc_abs = inc_common = true; \
-					} else if (*this_sym == '+') { \
-						inc_undef = false; \
-						++this_sym; \
-					} else if (*this_sym == '-') { \
-						inc_def = inc_abs = inc_common = false; \
-						++this_sym; \
-					} \
-					/* filter symbols */ \
-					stt = ELF##B##_ST_TYPE(EGET(sym->st_info)); \
-					stb = ELF##B##_ST_BIND(EGET(sym->st_info)); \
-					shn = EGET(sym->st_shndx); \
-					if ((!inc_notype && stt == STT_NOTYPE) || \
-					    (!inc_object && stt == STT_OBJECT) || \
-					    (!inc_func   && stt == STT_FUNC  ) || \
-					    (!inc_file   && stt == STT_FILE  ) || \
-					    (!inc_local  && stb == STB_LOCAL ) || \
-					    (!inc_global && stb == STB_GLOBAL) || \
-					    (!inc_weak   && stb == STB_WEAK  ) || \
-					    (!inc_def    && shn && shn < SHN_LORESERVE) || \
-					    (!inc_undef  && shn == SHN_UNDEF ) || \
-					    (!inc_abs    && shn == SHN_ABS   ) || \
-					    (!inc_common && shn == SHN_COMMON)) \
-						continue; \
-					/* still here !? */ \
-					if (*this_sym == '*' || !*this_sym) { \
-						if (*this_sym == '*') \
-							printf("%s(%s) %5lX %15s %15s %15s %s\n", \
-							       ((*found_sym == 0) ? "\n\t" : "\t"), \
-							       elf->base_filename, \
-							       (unsigned long)EGET(sym->st_size), \
-							       get_elfstttype(stt), \
-							       get_elfstbtype(stb), \
-							       get_elfshntype(shn), \
-							       symname); \
-						else \
-							printf("%s%s", ((*found_sym == 0) ? "" : ","), symname); \
-						*found_sym = 1; \
-						if (next_sym) next_sym[-1] = saved; \
-						break; \
-					} else if (scanelf_match_symname(this_sym, symname)) { \
-						*found_sym = 1; \
-						if (be_semi_verbose) { \
-							char buf[1024]; \
-							snprintf(buf, sizeof(buf), "%lX %s %s", \
-								(unsigned long)EGET(sym->st_size), \
-								get_elfstttype(stt), \
-								this_sym); \
-							ret = xstrdup(buf); \
-						} else { \
-							if (ret) xchrcat(&ret, ',', &ret_len); \
-							xstrcat(&ret, symname, &ret_len); \
-						} \
-						if (next_sym) next_sym[-1] = saved; \
-						if (all_syms) \
-							break; \
-						else \
-							goto break_out; \
-					} \
-				} while (next_sym); \
+				scanelf_match_symname(elf, found_sym, \
+			                          &ret, &ret_len, symname, \
+			                          ELF##B##_ST_TYPE(EGET(sym->st_info)), \
+			                          ELF##B##_ST_BIND(EGET(sym->st_info)), \
+			                          EGET(sym->st_shndx), \
+			    /* st_size can be 64bit, but no one is really that big, so screw em */ \
+			                          EGET(sym->st_size)); \
 			} \
 			++sym; \
 		} }

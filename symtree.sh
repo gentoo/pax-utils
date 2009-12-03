@@ -20,7 +20,7 @@ usage() {
 sym_list() {
 	# with large strings, bash is much slower than sed
 	local type=$1; shift
-	echo "%%~"`echo ",$@" | sed "s:,:,%${type}%:g"`
+	echo "%${type}%$@" | sed "s:,:,%${type}%:g"
 }
 show_elf() {
 	local elf=$1
@@ -32,7 +32,7 @@ show_elf() {
 	libs=$(scanelf -qF '#F%n' "${resolved}")
 
 	local u uu d dd
-	u=$(scanelf -q -F'#s#F' -s'%u%' "${elf}")
+	u=$(scanelf -q -F'%s#F' -s'%u%' "${elf}")
 	for lib in ${libs//,/ } ; do
 		lib=${lib##*/}
 		rlib=$(find_elf "${lib}" "${resolved}")
