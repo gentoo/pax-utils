@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.6 2009/12/01 10:15:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.7 2009/12/03 04:15:54 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -13,32 +13,6 @@ char *xstrdup(const char *s)
 {
 	char *ret = strdup(s);
 	if (!ret) err("Could not strdup(): %s", strerror(errno));
-	return ret;
-}
-
-#ifndef strndup
-static inline char *my_strndup(const char *str, size_t n)
-{
-	size_t r;
-	char *ret;
-	for (r = 0; r < n; ++r)
-		if (!str[r])
-			break;
-
-	ret = xmalloc(r + 1);
-	memcpy(ret, str, r);
-	ret[r] = '\0';
-	return ret;
-}
-/* do this to avoid warning: declaration of 'strndup' shadows a built-in
- * function */
-#define strndup(S, N) my_strndup(S, N)
-#endif
-
-char *xstrndup(const char *s, const size_t n)
-{
-	char *ret = strndup(s, n);
-	if (!ret) err("Could not strndup(): %s", strerror(errno));
 	return ret;
 }
 
