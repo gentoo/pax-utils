@@ -31,3 +31,9 @@ everything single byte and print it out a character at a time ... sucks ...
 
 we look at the section named ".text" for TEXTRELs when we should look at the
 PT_LOAD program headers which are marked Executable.
+
+we don't handle versioned symbols well.  take an ELF with debugging and do:
+	scanelf -s '' elf
+notice that glibc symbols generally have version info.  then search for that:
+	scanelf -s foo@@ver elf
+no hits as all of our symbol comparisons ignore the versioning info.
