@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.15 2009/12/20 20:33:31 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.16 2009/12/20 20:37:09 grobian Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.15 2009/12/20 20:33:31 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.16 2009/12/20 20:37:09 grobian Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -535,7 +535,7 @@ static const char *opts_help[] = {
 	"Scan directories recursively",
 	"Don't recursively cross mount points",
 	"Don't scan symlinks",
-	"Scan archives (.a files)",
+	"Scan archives (.a files)\n",
 	"Print LC_LOAD_DYLIB information (ELF: NEEDED)",
 	"Print LC_LOAD_DYLINKER information (ELF: INTERP)",
 	"Print flags from mach_header (ELF: BIND)",
@@ -548,7 +548,7 @@ static const char *opts_help[] = {
 	"Print Endianness",
 	"Print only Mach-O files matching octal permissions",
 	"Print Mach-O file size",
-	"Print all useful/simple info",
+	"Print all useful/simple info\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
