@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.215 2009/12/03 08:01:45 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.216 2009/12/20 20:25:04 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.215 2009/12/03 08:01:45 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.216 2009/12/20 20:25:04 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1803,7 +1803,7 @@ static const char *opts_help[] = {
 	"Print EABI (EM_ARM Only)",
 	"Print only ELF files matching octal permissions",
 	"Print ELF file size",
-	"Print all scanned info (-x -e -t -r -b)\n",
+	"Print all useful/simple info\n",
 	"Only output 'bad' things",
 	"Be verbose (can be specified more than once)",
 	"Use specified format for output",
