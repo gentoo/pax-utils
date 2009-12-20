@@ -1,6 +1,6 @@
 HOMEPAGE: http://hardened.gentoo.org/pax-utils.xml
 CVS: cvs -d :pserver:anonymous@anoncvs.gentoo.org:/var/cvsroot co gentoo-projects/pax-utils
-VIEWVCS: http://sources.gentoo.org/viewcvs.py/gentoo-projects/pax-utils/
+VIEWVCS: http://sources.gentoo.org/gentoo-projects/pax-utils/
 
 pax-utils is a small set of various PaX aware and related utilities for 
 ELF binaries. It was written for ELF Q/A on Gentoo systems but can be 
