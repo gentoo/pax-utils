@@ -44,15 +44,19 @@
   </varlistentry>
   <varlistentry>
    <term><option>-a</option>, <option>--all</option></term>
-   <listitem><para>Print all scanned info (<option>-x -e -t -r -n -i -b</option>)</para></listitem>
+   <listitem><para>Print all useful/simple info</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-B</option>, <option>--banner</option></term>
+   <term><option>-B</option>, <option>--nobanner</option></term>
    <listitem><para>Don't display the header</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-b</option>, <option>--bind</option></term>
-   <listitem><para>Print BIND information</para></listitem>
+   <listitem><para>Print symbol binding information (lazy or now).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-D</option>, <option>--endian</option> </term>
+   <listitem><para>Print ELF endianness (big/little/...).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-E</option>, <option>--etype</option> <replaceable>ETYPE</replaceable></term>
@@ -64,7 +68,7 @@
   </varlistentry>
   <varlistentry>
    <term><option>-F</option>, <option>--format</option> <replaceable>FORMAT</replaceable></term>
-   <listitem><para>Use specified format for output; see the <emphasis remap='B'>FORMAT</emphasis> section</para></listitem>
+   <listitem><para>Use specified format for output; see the <link><emphasis remap='B'>FORMAT</emphasis></link> section for more information.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-f</option>, <option>--from</option> <replaceable>FILE</replaceable></term>
@@ -79,13 +83,16 @@
    <listitem><para>Show condensed usage and exit</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-i</option>, <option>--interp</option></term>
-   <listitem><para>Print INTERP information</para></listitem>
+   <term><option>-I</option>, <option>--osabi</option> </term>
+   <listitem><para>Print OSABI</para></listitem>
   </varlistentry>
-
+  <varlistentry>
+   <term><option>-i</option>, <option>--interp</option></term>
+   <listitem><para>Print the interpreter information (.interp/PT_INTERP).</para></listitem>
+  </varlistentry>
   <varlistentry>
    <term><option>-k</option>, <option>--section</option> <replaceable>SECTION</replaceable></term>
-   <listitem><para>Find the specified section</para></listitem>
+   <listitem><para>Find ELFs with the specified section.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-L</option>, <option>--ldcache</option></term>
@@ -100,26 +107,6 @@
    <listitem><para>Print only ELF files matching specified numeric bits (like 32/64)</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-D</option>, <option>--endian</option> </term>
-   <listitem><para>Print Endianness</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-I</option>, <option>--osabi</option> </term>
-   <listitem><para>Print OSABI</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-Y</option>, <option>--eabi</option> </term>
-   <listitem><para>Print EABI (EM_ARM Only)</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
-   <listitem><para>Print only ELF files with matching specified octal bits (like 755)</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
-   <listitem><para>Print ELF file size</para></listitem>
-  </varlistentry>
-  <varlistentry>
    <term><option>-m</option>, <option>--mount</option></term>
    <listitem><para>Don't recursively cross mount points</para></listitem>
   </varlistentry>
@@ -129,15 +116,19 @@
   </varlistentry>
   <varlistentry>
    <term><option>-n</option>, <option>--needed</option></term>
-   <listitem><para>Print NEEDED information</para></listitem>
+   <listitem><para>Print libraries the ELF is linked against (DT_NEEDED).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
+   <listitem><para>Print only ELF files with matching specified octal bits (like 755).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-o</option>, <option>--file</option> <replaceable>FILE</replaceable></term>
-   <listitem><para>Write output stream to specified filename</para></listitem>
+   <listitem><para>Write output stream to specified filename.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-p</option>, <option>--path</option></term>
-   <listitem><para>Scan all directories in PATH environment</para></listitem>
+   <listitem><para>Scan all directories in PATH environment.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-q</option>, <option>--quiet</option></term>
@@ -149,19 +140,19 @@
   </varlistentry>
   <varlistentry>
    <term><option>-r</option>, <option>--rpath</option></term>
-   <listitem><para>Print RUNPATH information</para></listitem>
+   <listitem><para>Print runpaths encoded in the ELF (DT_RPATH/DT_RUNPATH).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-S</option>, <option>--soname</option></term>
-   <listitem><para>Print SONAME information</para></listitem>
+   <listitem><para>Print the ELF's shared library name (DT_SONAME).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-s</option>, <option>--symbol</option> <replaceable>SYMBOL</replaceable></term>
-   <listitem><para>Find the specified symbol; a <emphasis remap='B'>-</emphasis> prefix will only show undefined references while a <emphasis remap='B'>+</emphasis> prefix will only show defined references while no prefix will show both</para></listitem>
+   <listitem><para>Find the specified symbol; see <link><emphasis remap='B'>SYMBOL MATCHING</emphasis></link> for more info.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-T</option>, <option>--textrels</option></term>
-   <listitem><para>Locate cause of TEXTRELs</para></listitem>
+   <listitem><para>Locate cause of TEXTRELs via objdump.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-t</option>, <option>--textrel</option></term>
@@ -184,8 +175,16 @@
    <listitem><para>Print PaX markings</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-Y</option>, <option>--eabi</option> </term>
+   <listitem><para>Print EABI (only matters for a few architectures)</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-y</option>, <option>--symlink</option></term>
    <listitem><para>Don't scan symlinks</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
+   <listitem><para>Print ELF file size</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-z</option>, <option>--setpax</option> <replaceable>FLAGS</replaceable></term>
@@ -202,8 +201,8 @@
   a format string and expect the following results.
  </para>
  <programlisting>
-  # <command>scanelf</command> <option>-BF</option> 'file %f needs %n; funky time!' /bin/bash
-  file bash needs libncurses.so.5,libdl.so.2,libc.so.6; funky time!
+  # <command>scanelf</command> <option>-BF</option> "file %f needs %n; funky time" /bin/bash
+  file bash needs libncurses.so.5,libdl.so.2,libc.so.6; funky time
  </programlisting>
  <para>
   Note that when you use a format string, generally information related flags
@@ -215,6 +214,8 @@
  </para>
  <para>
   There are three characters that introduce conversion specifiers.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>%</emphasis> - replace with info</para></listitem>
    <listitem><para><emphasis remap='B'>#</emphasis> - silent boolean match</para></listitem>
@@ -224,6 +225,8 @@
  <para>
   And there are a number of conversion specifiers.  We try to match up the
   specifier with corresponding option.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>a</emphasis> - machine (EM) type</para></listitem>
    <listitem><para><emphasis remap='B'>b</emphasis> - bind flags</para></listitem>
@@ -252,6 +255,13 @@
 </refsect1>
 
 <refsect1 id='elf-etypes'>
+ <title>Symbol Matching</title>
+ <para>
+  A <emphasis remap='B'>-</emphasis> prefix will only show undefined references while a <emphasis remap='B'>+</emphasis> prefix will only show defined references while no prefix will show both.
+ </para>
+</refsect1>
+
+<refsect1 id='elf-etypes'>
  <title>ELF ETYPES</title>
  <para>
   You can narrow your search by specifying the ELF object file type (ETYPE).
@@ -261,6 +271,8 @@
  <para>
   Here is the normal list available for your pleasure.  You of course are free
   to specify any numeric value you want.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>0 - ET_NONE</emphasis> - unknown type</para></listitem>
    <listitem><para><emphasis remap='B'>1 - ET_REL</emphasis> - relocatable file</para></listitem>
