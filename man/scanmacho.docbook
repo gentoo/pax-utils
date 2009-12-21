@@ -62,12 +62,16 @@
    <listitem><para>Print flags from mach_header</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-D</option>, <option>--endian</option> </term>
+   <listitem><para>Print Mach-O endianness</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-E</option>, <option>--etype</option> <replaceable>filetype</replaceable></term>
    <listitem><para>Print only Mach-O files matching specified etype (like MH_EXECUTABLE, MH_DYLIB, etc...)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-F</option>, <option>--format</option> <replaceable>FORMAT</replaceable></term>
-   <listitem><para>Use specified format for output; see the <emphasis remap='B'>FORMAT</emphasis> section</para></listitem>
+   <listitem><para>Use specified format for output; see the <link><emphasis remap='B'>FORMAT</emphasis></link> section for more information.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-f</option>, <option>--from</option> <replaceable>FILE</replaceable></term>
@@ -83,24 +87,12 @@
   </varlistentry>
   <varlistentry>
    <term><option>-i</option>, <option>--interp</option></term>
-   <listitem><para>Print LC_LOAD_DYLINKER information</para></listitem>
+   <listitem><para>Print the interpreter information (LC_LOAD_DYLINKER)</para></listitem>
   </varlistentry>
 
   <varlistentry>
    <term><option>-M</option>, <option>--bits</option> <replaceable>BITS</replaceable></term>
    <listitem><para>Print only Mach-O files matching specified numeric bits (like 32/64)</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-D</option>, <option>--endian</option> </term>
-   <listitem><para>Print Endianness</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
-   <listitem><para>Print only Mach-O files with matching specified octal bits (like 755)</para></listitem>
-  </varlistentry>
-  <varlistentry>
-   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
-   <listitem><para>Print Mach-O file size</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-m</option>, <option>--mount</option></term>
@@ -112,15 +104,19 @@
   </varlistentry>
   <varlistentry>
    <term><option>-n</option>, <option>--needed</option></term>
-   <listitem><para>Print LC_LOAD_DYLIB information</para></listitem>
+   <listitem><para>Print libraries the Mach-O is linked against (LC_LOAD_DYLIB).</para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
+   <listitem><para>Print only Mach-O files with matching specified octal bits (like 755).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-o</option>, <option>--file</option> <replaceable>FILE</replaceable></term>
-   <listitem><para>Write output stream to specified filename</para></listitem>
+   <listitem><para>Write output stream to specified filename.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-p</option>, <option>--path</option></term>
-   <listitem><para>Scan all directories in PATH environment</para></listitem>
+   <listitem><para>Scan all directories in PATH environment.</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-q</option>, <option>--quiet</option></term>
@@ -132,7 +128,7 @@
   </varlistentry>
   <varlistentry>
    <term><option>-S</option>, <option>--soname</option></term>
-   <listitem><para>Print install_name information</para></listitem>
+   <listitem><para>Print the Mach-O's shared library name (install_name).</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-V</option>, <option>--version</option></term>
@@ -146,6 +142,10 @@
    <term><option>-y</option>, <option>--symlink</option></term>
    <listitem><para>Don't scan symlinks</para></listitem>
   </varlistentry>
+  <varlistentry>
+   <term><option>-Z</option>, <option>--size</option> <replaceable>SIZE</replaceable></term>
+   <listitem><para>Print Mach-O file size</para></listitem>
+  </varlistentry>
  </variablelist>
 </refsect1>
 
@@ -157,8 +157,8 @@
   a format string and expect the following results.
  </para>
  <programlisting>
-  # <command>scanmacho</command> <option>-BF</option> 'file %f needs %n; funky time!' /bin/bash
-  file bash needs /usr/lib/libncurses.5.4.dylib,/usr/lib/libSystem.B.dylib; funky time!
+  # <command>scanmacho</command> <option>-BF</option> "file %f needs %n; funky time" /bin/bash
+  file bash needs /usr/lib/libncurses.5.4.dylib,/usr/lib/libSystem.B.dylib; funky time
  </programlisting>
  <para>
   Note that when you use a format string, generally information related flags
@@ -170,6 +170,8 @@
  </para>
  <para>
   There are three characters that introduce conversion specifiers.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>%</emphasis> - replace with info</para></listitem>
    <listitem><para><emphasis remap='B'>#</emphasis> - silent boolean match</para></listitem>
@@ -179,6 +181,8 @@
  <para>
   And there are a number of conversion specifiers.  We try to match up the
   specifier with corresponding option.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>a</emphasis> - arch type</para></listitem>
    <listitem><para><emphasis remap='B'>b</emphasis> - mach_header flags</para></listitem>
@@ -206,6 +210,8 @@
  </para>
  <para>
   Here is the normal list available for your pleasure.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>MH_OBJECT</emphasis> - intermediate object file (.o)</para></listitem>
    <listitem><para><emphasis remap='B'>MH_EXECUTE</emphasis> - standard executable program</para></listitem>
@@ -225,6 +231,8 @@
  <para>
   You can also narrow your search by specifying the Mach-O bitsize.  Specify
   the numeric value.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>32</emphasis> - 32bit mach_header</para></listitem>
    <listitem><para><emphasis remap='B'>64</emphasis> - 64bit mach_header_64</para></listitem>
