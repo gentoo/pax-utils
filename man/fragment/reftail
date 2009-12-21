@@ -1,6 +1,6 @@
 <refsect1 id='homepage'>
  <title>HOMEPAGE</title>
- <para>http://hardened.gentoo.org/pax-utils.xml</para>
+ <para><ulink>http://hardened.gentoo.org/pax-utils.xml</ulink></para>
 </refsect1>
 
 <refsect1 id='report_bugs'>
@@ -8,7 +8,9 @@
  <para>
   Please include as much information as possible (using any available
   debugging options) and send bug reports to the maintainers (see the
-  <link><emphasis remap='B'>AUTHORS</emphasis></link> section).
+  <link><emphasis remap='B'>AUTHORS</emphasis></link> section).  Please
+  use the Gentoo bugzilla at <ulink>http://bugs.gentoo.org/</ulink> if
+  possible.
  </para>
 </refsect1>
 
