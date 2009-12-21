@@ -54,7 +54,7 @@
    <listitem><para>Only process specified process id</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-u</option>, <option>--uid</option> <replaceable>UID</replaceable></term>
+   <term><option>-u</option>, <option>--user</option> <replaceable>UID</replaceable></term>
    <listitem><para>Process user/uid #</para></listitem>
   </varlistentry>
   <varlistentry>
@@ -74,7 +74,7 @@
    <listitem><para>Be verbose (can be used more than once)</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-B</option>, <option>--banner</option></term>
+   <term><option>-B</option>, <option>--nobanner</option></term>
    <listitem><para>Don't display the header</para></listitem>
   </varlistentry>
   <varlistentry>
