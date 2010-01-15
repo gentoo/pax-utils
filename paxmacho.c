@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.15 2009/10/25 20:30:49 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.16 2010/01/15 10:29:17 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -258,7 +258,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 		int i;
 		fatobj *fobj = ret;
 		struct fat_arch *farch;
-		char *dptr = ret->data + sizeof(struct fat_header);
+		void *dptr = ret->data + sizeof(struct fat_header);
 		uint32_t bufleft = ret->len - sizeof(struct fat_header);
 		char swapped = 0;
 		uint32_t narchs = fhdr->nfat_arch;

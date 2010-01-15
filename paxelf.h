@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.52 2009/12/01 10:14:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.53 2010/01/15 10:29:17 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -16,7 +16,8 @@ typedef struct {
 	void *ehdr;
 	void *phdr;
 	void *shdr;
-	char *data, *data_end;
+	union { void *vdata; char *data; };
+	void *data_end;
 	char elf_class;
 	off_t len;
 	int fd;

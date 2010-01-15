@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.5 2008/12/30 13:27:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.6 2010/01/15 10:29:17 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -19,7 +19,7 @@
 #define MOBJGET(obj, member) MGET((obj)->swapped, (obj)->member)
 
 typedef struct _fatobj {
-	char *data;                 /* mmapped image of the whole file */
+	void *data;                 /* mmapped image of the whole file */
 	size_t len;                 /* length of data (file length) */
 	int fd;                     /* open filedescriptor to the file */
 	const char *filename;       /* full filename */
@@ -36,7 +36,7 @@ typedef struct _fatobj {
 } fatobj;
 
 typedef struct {
-	char *data;                 /* pointer to the current command header */
+	void *data;                 /* pointer to the current command header */
 	struct load_command* lcmd;  /* the load command */
 	uint32_t cleft;             /* load commands left */
 	uint32_t align;             /* alignment size in bytes */

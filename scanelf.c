@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.216 2009/12/20 20:25:04 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.217 2010/01/15 10:29:17 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.216 2009/12/20 20:25:04 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.217 2010/01/15 10:29:17 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -284,7 +284,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
 		char *str; \
-		if ((void*)strtbl > (void*)elf->data_end) \
+		if ((void*)strtbl > elf->data_end) \
 			goto skip_this_shdr##B; \
 		check_flags = SHF_WRITE|SHF_EXECINSTR; \
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
@@ -349,7 +349,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 		offset = EGET(phdr[i].p_offset); \
 		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-		dyn = DYN ## B (elf->data + offset); \
+		dyn = DYN ## B (elf->vdata + offset); \
 		while (EGET(dyn->d_tag) != DT_NULL) { \
 			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 				*found_textrel = 1; \
@@ -404,12 +404,12 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	for (s = 0; s < EGET(ehdr->e_shnum); ++s) { \
 		uint32_t sh_type = EGET(shdr[s].sh_type); \
 		if (sh_type == SHT_REL) { \
-			rel = REL ## B (elf->data + EGET(shdr[s].sh_offset)); \
+			rel = REL ## B (elf->vdata + EGET(shdr[s].sh_offset)); \
 			rela = NULL; \
 			rmax = EGET(shdr[s].sh_size) / sizeof(*rel); \
 		} else if (sh_type == SHT_RELA) { \
 			rel = NULL; \
-			rela = RELA ## B (elf->data + EGET(shdr[s].sh_offset)); \
+			rela = RELA ## B (elf->vdata + EGET(shdr[s].sh_offset)); \
 			rmax = EGET(shdr[s].sh_size) / sizeof(*rela); \
 		} else \
 			continue; \
@@ -434,8 +434,8 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			} else \
 				*found_textrels = 1; \
 			/* locate this relocation symbol name */ \
-			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-			if ((void*)sym > (void*)elf->data_end) { \
+			sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
+			if ((void*)sym > elf->data_end) { \
 				warn("%s: corrupt ELF symbol", elf->filename); \
 				continue; \
 			} \
@@ -448,12 +448,12 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			/* show the raw details about this reloc */ \
 			printf("  %s: ", elf->base_filename); \
 			if (sym && sym->st_name) \
-				printf("%s", (char*)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name))); \
+				printf("%s", elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 			else \
 				printf("(memory/data?)"); \
 			printf(" [0x%lX]", (unsigned long)r_offset); \
 			/* now try to find the closest symbol that this rel is probably in */ \
-			sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+			sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
 			func = NULL; \
 			offset_tmp = 0; \
 			while (sym_max--) { \
@@ -556,7 +556,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			/* Just scan dynamic RPATH/RUNPATH headers */ \
-			dyn = DYN ## B (elf->data + offset); \
+			dyn = DYN ## B (elf->vdata + offset); \
 			while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
 				if (word == DT_RPATH) { \
 					r = &rpath; \
@@ -570,7 +570,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
 				if (offset < (Elf ## B ## _Off)elf->len) { \
 					if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
-					*r = (char*)(elf->data + offset); \
+					*r = elf->data + offset; \
 					/* cache the length in case we need to nuke this section later on */ \
 					if (fix_elf) \
 						offset = strlen(*r); \
@@ -829,7 +829,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			dyn = DYN ## B (elf->data + offset); \
+			dyn = DYN ## B (elf->vdata + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
 					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
@@ -837,7 +837,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						++dyn; \
 						continue; \
 					} \
-					needed = (char*)(elf->data + offset); \
+					needed = elf->data + offset; \
 					if (op == 0) { \
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
@@ -905,7 +905,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 			dynamic = 1; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			dyn = DYN ## B (elf->data + offset); \
+			dyn = DYN ## B (elf->vdata + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_BIND_NOW || \
 				   (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) \
@@ -928,7 +928,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return NULL;
 	} else {
 		*found_bind = 1;
-		return (char *) (dynamic ? "LAZY" : "STATIC");
+		return (char *)(dynamic ? "LAZY" : "STATIC");
 	}
 }
 static char *scanelf_file_soname(elfobj *elf, char *found_soname)
@@ -956,7 +956,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			dyn = DYN ## B (elf->data + offset); \
+			dyn = DYN ## B (elf->vdata + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_SONAME) { \
 					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
@@ -964,7 +964,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 						++dyn; \
 						continue; \
 					} \
-					soname = (char*)(elf->data + offset); \
+					soname = elf->data + offset; \
 					*found_soname = 1; \
 					return (be_wewy_wewy_quiet ? NULL : soname); \
 				} \
@@ -1161,21 +1161,21 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
-		Elf ## B ## _Sym *sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
+		Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
 		unsigned long cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
 		size_t ret_len = 0; \
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
-			if ((void*)sym > (void*)elf->data_end) { \
+			if ((void*)sym > elf->data_end) { \
 				warnf("%s: corrupt ELF symbols - aborting", elf->filename); \
 				goto break_out;	\
 			} \
 			if (sym->st_name) { \
 				/* make sure the symbol name is in acceptable memory range */ \
-				symname = (char *)(elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
-				if ((void*)symname > (void*)elf->data_end) { \
+				symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
+				if ((void*)symname > elf->data_end) { \
 					warnf("%s: corrupt ELF symbols", elf->filename); \
 					++sym; \
 					continue; \
