@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.69 2010/01/15 11:55:56 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.70 2010/01/15 12:06:37 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -503,6 +503,19 @@ free_elf_and_return:
 	elf->elf_class = elf->data[EI_CLASS];
 	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
 
+	/* for arches that need alignment, we have to make sure the buffer
+	 * is strictly aligned.  archive (.a) files only align to 2 bytes
+	 * while the arch can easily require 8.  so dupe the buffer so
+	 * that our local copy is always aligned (since we can't shift the
+	 * file mapping back and forth a few bytes).
+	 */
+	if (!__PAX_UNALIGNED_OK && ((unsigned long)elf->vdata & 0x7)) {
+		elf->_data = xmalloc(elf->len);
+		memcpy(elf->_data, elf->data, elf->len);
+		elf->data = elf->_data;
+		elf->data_end = elf->_data + elf->len;
+	}
+
 #define READELF_HEADER(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 		char invalid; \
@@ -612,6 +625,7 @@ void unreadelf(elfobj *elf)
 {
 	if (elf->is_mmap) munmap(elf->vdata, elf->len);
 	if (elf->fd != -1) close(elf->fd);
+	if (!__PAX_UNALIGNED_OK) free(elf->_data);
 	free(elf);
 }
 

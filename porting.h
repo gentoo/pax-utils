@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.38 2009/12/01 10:19:42 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.39 2010/01/15 12:06:37 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -69,6 +69,17 @@
 #ifdef __BOUNDS_CHECKING_ON
 # define free(ptr) do { if (ptr) free(ptr); } while (0)
 # define __PAX_UTILS_CLEANUP
+#endif
+
+/* Few arches can safely do unaligned accesses */
+#if defined(__cris__) || \
+    defined(__i386__) || \
+    defined(__powerpc__) || \
+    defined(__s390__) || \
+    defined(__x86_64__)
+# define __PAX_UNALIGNED_OK 1
+#else
+# define __PAX_UNALIGNED_OK 0
 #endif
 
 #if !defined(bswap_16)
