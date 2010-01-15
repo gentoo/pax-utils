@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.16 2009/12/20 20:37:09 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.17 2010/01/15 11:06:33 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *                2008 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.16 2009/12/20 20:37:09 grobian Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.17 2010/01/15 11:06:33 vapier Exp $";
 const char * const argv0 = "scanmacho";
 
 #include "paxinc.h"
@@ -72,9 +72,9 @@ static const char *macho_file_needed_lib(
 
 	do {
 		if (lcmd->lcmd->cmd == lc_load_dylib) {
-			struct dylib_command *dlcmd = (struct dylib_command*)lcmd->data;
+			struct dylib_command *dlcmd = lcmd->data;
 			char *needed;
-			needed = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset));
+			needed = lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset);
 			if (op == 0) {
 				if (!be_wewy_wewy_quiet) {
 					if (*found_needed)
@@ -113,10 +113,9 @@ static char *macho_file_interp(fatobj *fobj, char *found_interp)
 
 	do {
 		if (lcmd->lcmd->cmd == lc_load_dylinker) {
-			struct dylinker_command *dlcmd =
-				(struct dylinker_command*)lcmd->data;
+			struct dylinker_command *dlcmd = lcmd->data;
 			char *dylinker;
-			dylinker = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->name.offset));
+			dylinker = lcmd->data + MGET(fobj->swapped, dlcmd->name.offset);
 			*found_interp = 1;
 			free(lcmd);
 			return (be_wewy_wewy_quiet ? NULL : dylinker);
@@ -139,9 +138,9 @@ static char *macho_file_soname(fatobj *fobj, char *found_soname)
 
 	do {
 		if (lcmd->lcmd->cmd == lc_id_dylib) {
-			struct dylib_command *dlcmd = (struct dylib_command*)lcmd->data;
+			struct dylib_command *dlcmd = lcmd->data;
 			char *soname;
-			soname = (char *)(lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset));
+			soname = lcmd->data + MGET(fobj->swapped, dlcmd->dylib.name.offset);
 			*found_soname = 1;
 			free(lcmd);
 			return (be_wewy_wewy_quiet ? NULL : soname);

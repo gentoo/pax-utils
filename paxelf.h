@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.53 2010/01/15 10:29:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.54 2010/01/15 11:06:33 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -44,7 +44,7 @@ typedef struct {
 extern char *pax_short_hf_flags(unsigned long flags);
 extern char *pax_short_pf_flags(unsigned long flags);
 extern char *gnu_short_stack_flags(unsigned long flags);
-extern elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len);
+extern elfobj *readelf_buffer(const char *filename, void *buffer, size_t buffer_len);
 extern elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only);
 #define readelf_fd(filename, fd, len) _readelf_fd(filename, fd, len, 1)
 extern elfobj *_readelf(const char *filename, int read_only);

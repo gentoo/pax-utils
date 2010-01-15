@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.26 2010/01/15 10:29:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.27 2010/01/15 11:06:33 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.26 2010/01/15 10:29:17 vapier Exp $";
+static const char *rcsid = "$Id: dumpelf.c,v 1.27 2010/01/15 11:06:33 vapier Exp $";
 const char * const argv0 = "dumpelf";
 
 #include "paxinc.h"
@@ -98,7 +98,7 @@ static void dumpelf(const char *filename, long file_cnt)
 		uint16_t shnum = EGET(ehdr->e_shnum); \
 		for (i = 0; i < shnum; ++i) { \
 			if (i) printf(",\n"); \
-			dump_shdr(elf, shdr, i, (char*)(elf->data + offset + EGET(shdr->sh_name))); \
+			dump_shdr(elf, shdr, i, elf->vdata + offset + EGET(shdr->sh_name)); \
 			++shdr; \
 		} }
 		DUMP_SHDRS(32)
@@ -195,7 +195,7 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
 	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
 	if (size && be_verbose) { \
-		void *vdata = elf->data + EGET(shdr->sh_offset); \
+		void *vdata = elf->vdata + EGET(shdr->sh_offset); \
 		unsigned char *data = vdata; \
 		switch (type) { \
 		case SHT_PROGBITS: { \

@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.67 2009/12/01 10:14:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.68 2010/01/15 11:06:33 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -461,7 +461,7 @@ const char *get_elfshntype(int type)
 	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
 	 (buff[EI_VERSION] == EV_CURRENT))
-elfobj *readelf_buffer(const char *filename, char *buffer, size_t buffer_len)
+elfobj *readelf_buffer(const char *filename, void *buffer, size_t buffer_len)
 {
 	elfobj *elf;
 
@@ -502,7 +502,7 @@ free_elf_and_return:
 		elf->base_filename = elf->base_filename + 1;
 	elf->elf_class = elf->data[EI_CLASS];
 	do_reverse_endian = (ELF_DATA != elf->data[EI_DATA]);
-	elf->ehdr = (void*)elf->data;
+	elf->ehdr = elf->vdata;
 
 #define READELF_HEADER(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -516,7 +516,7 @@ free_elf_and_return:
 		else if (EGET(ehdr->e_phentsize) != sizeof(Elf ## B ## _Phdr)) \
 			invalid = 3; \
 		else { \
-			elf->phdr = elf->data + EGET(ehdr->e_phoff); \
+			elf->phdr = elf->vdata + EGET(ehdr->e_phoff); \
 			size = EGET(ehdr->e_phnum) * EGET(ehdr->e_phentsize); \
 			if (elf->phdr < elf->ehdr || /* check overflow */ \
 			    elf->phdr + size < elf->phdr || /* before start of mem */ \
@@ -534,7 +534,7 @@ free_elf_and_return:
 		else if (EGET(ehdr->e_shentsize) != sizeof(Elf ## B ## _Shdr)) \
 			invalid = 3; \
 		else { \
-			elf->shdr = elf->data + EGET(ehdr->e_shoff); \
+			elf->shdr = elf->vdata + EGET(ehdr->e_shoff); \
 			size = EGET(ehdr->e_shnum) * EGET(ehdr->e_shentsize); \
 			if (elf->shdr < elf->ehdr || /* check overflow */ \
 			    elf->shdr + size < elf->shdr || /* before start of mem */ \
@@ -611,7 +611,7 @@ close_fd_and_return:
 /* undo the readelf() stuff */
 void unreadelf(elfobj *elf)
 {
-	if (elf->is_mmap) munmap(elf->data, elf->len);
+	if (elf->is_mmap) munmap(elf->vdata, elf->len);
 	if (elf->fd != -1) close(elf->fd);
 	free(elf);
 }
@@ -746,7 +746,7 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 		if (EGET(shdr[i].sh_offset) >= elf->len - EGET(ehdr->e_shentsize)) continue; \
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 		if (offset >= (Elf ## B ## _Off)elf->len) continue; \
-		shdr_name = (char*)(elf->data + offset); \
+		shdr_name = elf->data + offset; \
 		if (!strcmp(shdr_name, name)) { \
 			if (ret) warnf("Multiple '%s' sections !?", name); \
 			ret = (void*)&(shdr[i]); \

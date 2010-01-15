@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.16 2010/01/15 10:29:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.17 2010/01/15 11:06:33 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -248,7 +248,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 	if (ret->len <= sizeof(struct fat_header))
 		return NULL;
 
-	fhdr = (struct fat_header *)ret->data;
+	fhdr = ret->data;
 	/* Check what kind of file this is.  Unfortunately we don't have
 	 * configure, so we don't know if we're on big or little endian, so
 	 * we cannot check if the fat_header is in bigendian like it should.
@@ -328,7 +328,7 @@ loadcmd *firstloadcmd(fatobj *fobj)
 	loadcmd *ret = xmalloc(sizeof(*ret));
 	ret->data = fobj->mhdata +
 		(fobj->ismach64 ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
-	ret->lcmd = (struct load_command *)ret->data;
+	ret->lcmd = ret->data;
 	ret->cleft = MOBJGET(fobj, mhdr.hdr32->ncmds); /* 32 and 64 bits are aligned here */
 	ret->align = (fobj->ismach64 ? 8 : 4);
 	ret->swapped = fobj->swapped;
@@ -360,7 +360,7 @@ int nextloadcmd(loadcmd *lcmd)
 		size += lcmd->align - (size % lcmd->align);
 	}
 	lcmd->data += size;
-	lcmd->lcmd = (struct load_command *)lcmd->data;
+	lcmd->lcmd = lcmd->data;
 
 	return 1;
 }
