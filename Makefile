@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.71 2009/03/15 09:23:11 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.72 2010/01/15 12:38:56 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -119,7 +119,7 @@ dist:
 	cd pax-utils-$(PV) && cvs up
 	echo "<releaseinfo>$(PV)</releaseinfo>" > pax-utils-$(PV)/man/fragment/version
 	$(MAKE) -C pax-utils-$(PV)/man
-	tar jcf pax-utils-$(PV).tar.bz2 pax-utils-$(PV) --exclude=CVS
+	tar jcf pax-utils-$(PV).tar.bz2 pax-utils-$(PV) --exclude=CVS --exclude=.cvsignore
 	@printf "\n ..... Making sure clean cvs build works ..... \n\n"
 	$(MAKE) -C pax-utils-$(PV)
 	rm -rf pax-utils-$(PV)
