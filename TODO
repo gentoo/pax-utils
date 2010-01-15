@@ -1,15 +1,3 @@
-Fix these warnings when building on arm/hppa/ia64/sparc:
-scanelf.c: In function `scanelf_file_textrel':
-scanelf.c:241: warning: cast increases required alignment of target type
-scanelf.c:242: warning: cast increases required alignment of target type
-due to:
-	dyn = DYN ## B (elf->data + offset); \
-	rel = REL ## B (elf->data + EGET(shdr[s].sh_offset)); \
-	rela = RELA ## B (elf->data + EGET(shdr[s].sh_offset)); \
-	sym = SYM ## B (elf->data + EGET(symtab->sh_offset)); \
-perhaps we need to just force the alignment of the data member in the struct to
-the size of something large ?  or just ignore the warning ...
-
 pspax -u 0
 errno = 0; uid = strtol(optarg, NULL, 10); if (uid == 0 && errno != 0) error("invalid value");
 
