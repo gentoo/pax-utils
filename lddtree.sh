@@ -102,20 +102,16 @@ if [[ $1 != "/../..source.lddtree" ]] ; then
 SHOW_ALL=false
 SET_X=false
 
-([[ $1 == "" ]] || [[ $1 == --help ]]) && usage 1
-opts="hax"
-getopt -Q -- "${opts}" "$@" || exit 1
-eval set -- $(getopt -- "${opts}" "$@")
-while [[ -n $1 ]] ; do
-	case $1 in
-		-a) SHOW_ALL=true;;
-		-x) SET_X=true;;
-		-h) usage;;
-		--) shift; break;;
-		-*) usage 1;;
+while getopts hax OPT ; do
+	case ${OPT} in
+		a) SHOW_ALL=true;;
+		x) SET_X=true;;
+		h) usage;;
+		?) usage 1;;
 	esac
-	shift
 done
+shift $((OPTIND - 1))
+[[ -z $1 ]] && usage 1
 
 ${SET_X} && set -x
 

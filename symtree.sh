@@ -68,19 +68,15 @@ show_elf() {
 
 SET_X=false
 
-([[ $1 == "" ]] || [[ $1 == --help ]]) && usage 1
-opts="hx"
-getopt -Q -- "${opts}" "$@" || exit 1
-eval set -- $(getopt -- "${opts}" "$@")
-while [[ -n $1 ]] ; do
-	case $1 in
-		-x) SET_X=true;;
-		-h) usage;;
-		--) shift; break;;
-		-*) usage 1;;
+while getopts hx OPT ; do
+	case ${OPT} in
+		x) SET_X=true;;
+		h) usage;;
+		*) usage 1;;
 	esac
-	shift
 done
+shift $((OPTIND - 1))
+[[ -z $1 ]] && usage 1
 
 ${SET_X} && set -x
 
