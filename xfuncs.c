@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.7 2009/12/03 04:15:54 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.8 2010/02/13 23:17:45 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -19,7 +19,7 @@ char *xstrdup(const char *s)
 void *xmalloc(size_t size)
 {
 	void *ret = malloc(size);
-	if (!ret) err("Could not malloc() %li bytes", (unsigned long)size);
+	if (!ret) err("Could not malloc() %zu bytes", size);
 	return ret;
 }
 
@@ -31,7 +31,7 @@ void *xzalloc(size_t size)
 void *xrealloc(void *ptr, size_t size)
 {
 	void *ret = realloc(ptr, size);
-	if (!ret) err("Could not realloc() %li bytes", (unsigned long)size);
+	if (!ret) err("Could not realloc() %zu bytes", size);
 	return ret;
 }
 
@@ -44,7 +44,7 @@ void xstrncat(char **dst, const char *src, size_t *curr_len, size_t n)
 		*curr_len = new_len + (*curr_len / 2);
 		*dst = realloc(*dst, *curr_len);
 		if (!*dst)
-			err("could not realloc() %li bytes", (unsigned long)*curr_len);
+			err("could not realloc() %zu bytes", *curr_len);
 	}
 
 	if (n)
