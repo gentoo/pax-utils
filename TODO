@@ -25,3 +25,7 @@ we don't handle versioned symbols well.  take an ELF with debugging and do:
 notice that glibc symbols generally have version info.  then search for that:
 	scanelf -s foo@@ver elf
 no hits as all of our symbol comparisons ignore the versioning info.
+
+allow digging into ARM_ATTRIBUTES (.ARM.attributes) sections
+	- need info on the section layout
+	- figure out how to integrate cleanly (target-independent driller)
