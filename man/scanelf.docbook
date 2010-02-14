@@ -52,11 +52,11 @@
   </varlistentry>
   <varlistentry>
    <term><option>-b</option>, <option>--bind</option></term>
-   <listitem><para>Print symbol binding information (lazy or now).</para></listitem>
+   <listitem><para>Print symbol binding information (lazy or now)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-D</option>, <option>--endian</option> </term>
-   <listitem><para>Print ELF endianness (big/little/...).</para></listitem>
+   <listitem><para>Print ELF endianness (big/little/...)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-E</option>, <option>--etype</option> <replaceable>ETYPE</replaceable></term>
@@ -68,7 +68,7 @@
   </varlistentry>
   <varlistentry>
    <term><option>-F</option>, <option>--format</option> <replaceable>FORMAT</replaceable></term>
-   <listitem><para>Use specified format for output; see the <link><emphasis remap='B'>FORMAT</emphasis></link> section for more information.</para></listitem>
+   <listitem><para>Use specified format for output; see the <link><emphasis remap='B'>FORMAT</emphasis></link> section for more information</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-f</option>, <option>--from</option> <replaceable>FILE</replaceable></term>
@@ -88,11 +88,11 @@
   </varlistentry>
   <varlistentry>
    <term><option>-i</option>, <option>--interp</option></term>
-   <listitem><para>Print the interpreter information (.interp/PT_INTERP).</para></listitem>
+   <listitem><para>Print the interpreter information (.interp/PT_INTERP)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-k</option>, <option>--section</option> <replaceable>SECTION</replaceable></term>
-   <listitem><para>Find ELFs with the specified section.</para></listitem>
+   <listitem><para>Find ELFs with the specified section</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-L</option>, <option>--ldcache</option></term>
@@ -116,23 +116,23 @@
   </varlistentry>
   <varlistentry>
    <term><option>-n</option>, <option>--needed</option></term>
-   <listitem><para>Print libraries the ELF is linked against (DT_NEEDED).</para></listitem>
+   <listitem><para>Print libraries the ELF is linked against (DT_NEEDED)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-O</option>, <option>--perms</option> <replaceable>PERMS</replaceable></term>
-   <listitem><para>Print only ELF files with matching specified octal bits (like 755).</para></listitem>
+   <listitem><para>Print only ELF files with matching specified octal bits (like 755)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-o</option>, <option>--file</option> <replaceable>FILE</replaceable></term>
-   <listitem><para>Write output stream to specified filename.</para></listitem>
+   <listitem><para>Write output stream to specified filename</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-p</option>, <option>--path</option></term>
-   <listitem><para>Scan all directories in PATH environment.</para></listitem>
+   <listitem><para>Scan all directories in PATH environment</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-q</option>, <option>--quiet</option></term>
-   <listitem><para>Only output 'bad' things.</para></listitem>
+   <listitem><para>Only output 'bad' things</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-R</option>, <option>--recursive</option></term>
@@ -140,19 +140,19 @@
   </varlistentry>
   <varlistentry>
    <term><option>-r</option>, <option>--rpath</option></term>
-   <listitem><para>Print runpaths encoded in the ELF (DT_RPATH/DT_RUNPATH).</para></listitem>
+   <listitem><para>Print runpaths encoded in the ELF (DT_RPATH/DT_RUNPATH)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-S</option>, <option>--soname</option></term>
-   <listitem><para>Print the ELF's shared library name (DT_SONAME).</para></listitem>
+   <listitem><para>Print the ELF's shared library name (DT_SONAME)</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-s</option>, <option>--symbol</option> <replaceable>SYMBOL</replaceable></term>
-   <listitem><para>Find the specified symbol; see <link><emphasis remap='B'>SYMBOL MATCHING</emphasis></link> for more info.</para></listitem>
+   <listitem><para>Find the specified symbol; see <link><emphasis remap='B'>SYMBOL MATCHING</emphasis></link> for more info</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-T</option>, <option>--textrels</option></term>
-   <listitem><para>Locate cause of TEXTRELs via objdump.</para></listitem>
+   <listitem><para>Locate cause of TEXTRELs via objdump</para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-t</option>, <option>--textrel</option></term>
