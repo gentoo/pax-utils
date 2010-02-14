@@ -257,7 +257,9 @@
 <refsect1 id='elf-etypes'>
  <title>Symbol Matching</title>
  <para>
-  A <emphasis remap='B'>-</emphasis> prefix will only show undefined references while a <emphasis remap='B'>+</emphasis> prefix will only show defined references while no prefix will show both.
+  A <emphasis remap='B'>-</emphasis> prefix will only show undefined references
+  while a <emphasis remap='B'>+</emphasis> prefix will only show defined
+  references while no prefix will show both.
  </para>
 </refsect1>
 
@@ -288,6 +290,8 @@
  <para>
   You can also narrow your search by specifying the ELF bitsize.  Again, specify
   the numeric value or the symbolic define.
+ </para>
+ <para>
   <itemizedlist>
    <listitem><para><emphasis remap='B'>32 - ELFCLASS32</emphasis> - 32bit ELFs</para></listitem>
    <listitem><para><emphasis remap='B'>64 - ELFCLASS64</emphasis> - 64bit ELFs</para></listitem>
