@@ -5,7 +5,7 @@
 #
 # simple scanelf symbol checks
 #
-scanelf -qsmain -F'%s#F' "${top_builddir}"/scanelf \
+scanelf -qsmain -F'%s %f' "${top_builddir}"/scanelf \
 	> scanelf.simple
 testit scanelf.simple{,.good}
 
