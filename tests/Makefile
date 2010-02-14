@@ -1,4 +1,4 @@
-SUBDIRS = source
+SUBDIRS = $(patsubst %/Makefile,%,$(wildcard */Makefile))
 
 .PHONY: all test check clean
 all test check clean:

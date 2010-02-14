@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. "${0%/*}"/../lib.sh
+
+#
+# simple scanelf symbol checks
+#
+scanelf -qsmain -F'%s#F' "${top_builddir}"/scanelf \
+	> scanelf.simple
+testit scanelf.simple{,.good}
+
+
+
+exit ${ret}
