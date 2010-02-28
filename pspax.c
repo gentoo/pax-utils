@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.45 2009/03/15 09:23:30 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.46 2010/02/28 19:12:39 solar Exp $";
 const char * const argv0 = "pspax";
 
 #include "paxinc.h"
@@ -36,7 +36,7 @@ static char show_phdr = 0;
 static char show_addr = 0;
 static char noexec = 1;
 static char writeexec = 1;
-
+static char wide_output = 0;
 static pid_t show_pid = 0;
 static uid_t show_uid = -1;
 static gid_t show_gid = -1;
@@ -49,10 +49,29 @@ static FILE *proc_fopen(pid_t pid, const char *file)
 	return fopen(path, "r");
 }
 
+static char *get_proc_name_cmdline(pid_t pid)
+{
+	FILE *fp;
+	static char str[1024];
+
+	fp = proc_fopen(pid, "cmdline");
+	if (fp == NULL)
+		return NULL;
+
+	if (fscanf(fp, "%s.1023", str) != 1) {
+		fclose(fp);
+		return NULL;
+	}
+	return (str);
+}
+
 static char *get_proc_name(pid_t pid)
 {
 	FILE *fp;
 	static char str[BUFSIZ];
+
+	if (wide_output)
+		return get_proc_name_cmdline(pid);
 
 	fp = proc_fopen(pid, "stat");
 	if (fp == NULL)
@@ -397,7 +416,7 @@ static void pspax(const char *find_name)
 }
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aeip:u:g:nwvBhV"
+#define PARSE_FLAGS "aeip:u:g:nwWvBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
@@ -408,12 +427,14 @@ static struct option const long_opts[] = {
 	{"group",      a_argument, NULL, 'g'},
 	{"nx",        no_argument, NULL, 'n'},
 	{"wx",        no_argument, NULL, 'w'},
+	{"wide",      no_argument, NULL, 'W'},
 	{"verbose",   no_argument, NULL, 'v'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
 };
+
 static const char *opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
@@ -423,6 +444,7 @@ static const char *opts_help[] = {
 	"Process group/gid #",
 	"Only display w^x processes",
 	"Only display w|x processes",
+	"Wide output display of cmdline",
 	"Be verbose about executable mappings",
 	"Don't display the header",
 	"Print this help and exit",
@@ -474,6 +496,7 @@ static void parseargs(int argc, char *argv[])
 		case 'p': show_pid = atoi(optarg); break;
 		case 'n': noexec = 1; writeexec = 0; break;
 		case 'w': noexec = 0; writeexec = 1; break;
+		case 'W': wide_output = 1; break;
 		case 'v': verbose++; break;
 		case 'u':
 			show_uid = atoi(optarg);
