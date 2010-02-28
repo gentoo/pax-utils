@@ -52,5 +52,9 @@ http://www.openembedded.org/filebrowser/org.openembedded.dev/packages/pax-utils
 http://magog.se/crux/pax-utils/Pkgfile
 Maintainer: mattias@hedenskog.se
 
+(Fedora)
+https://admin.fedoraproject.org/pkgdb/packages/name/pax-utils
+Maintainer:  Dominik 'Rathann' Mierzejewski <rpm@greysector.net>
+
 (ArchLinux?)
 
