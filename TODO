@@ -29,3 +29,4 @@ no hits as all of our symbol comparisons ignore the versioning info.
 allow digging into ARM_ATTRIBUTES (.ARM.attributes) sections
 	- need info on the section layout
 	- figure out how to integrate cleanly (target-independent driller)
+	http://sourceware.org/binutils/docs/as/GNU-Object-Attributes.html
