@@ -1,11 +1,11 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.17 2010/01/15 11:06:33 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.18 2010/04/04 10:03:33 grobian Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
- *                2008 Fabian Groffen  - <grobian@gentoo.org>
+ *           2008-2010 Fabian Groffen  - <grobian@gentoo.org>
  */
 
 #include "paxinc.h"
@@ -20,7 +20,6 @@ static const char *STR_X86_64  = "x86_64";
 static const char *STR_ARM     = "arm"; /* iPhone */
 static const char *STR_UNKNOWN = "unknown";
 
-#define QUERY(n) { #n, n }
 typedef struct {
        const char *str;
        int value;
@@ -36,6 +35,7 @@ static inline const char *find_pairtype(pairtype *pt, int type)
 }
 
 /* translate misc mach-o MH_ defines */
+#define QUERY(n) { #n, n }
 static pairtype macho_mh_type[] = {
 	QUERY(MH_OBJECT),
 	QUERY(MH_EXECUTE),

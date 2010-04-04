@@ -1,7 +1,7 @@
 /*
- * Copyright 2008 Gentoo Foundation
+ * Copyright 2008-2010 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.7 2008/12/30 12:34:28 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.8 2010/04/04 10:03:33 grobian Exp $
  */
 
 #ifndef _MACHO_H
@@ -156,8 +156,7 @@ struct load_command
 							   symbols to the original source code files
 							   from which the symbols were generated. */
 #define LC_DYSYMTAB 0xb     /* Specifies additional symbol table
-							   information used by the dynamic linker.
-							   */
+							   information used by the dynamic linker. */
 #define LC_THREAD   0x4
 #define LC_UNIXTHREAD  0x5  /* For an executable file, the LC_UNIXTHREAD
 							   command defines the initial thread state
@@ -182,8 +181,7 @@ struct load_command
 							   by the linker’s -init option). */
 #define LC_ROUTINES_64 0x1a /* Contains the address of the shared
 							   library 64-bit initialization routine
-							   (specified by the linker’s -init option).
-							   */
+							   (specified by the linker’s -init option). */
 #define LC_TWOLEVEL_HINTS 0x16 /* Contains the two-level namespace
 								  lookup hint table. */
 #define LC_SUB_FRAMEWORK 0x12/* Identifies this file as the
@@ -204,8 +202,7 @@ struct load_command
 							   another framework or bundle to link
 							   against it by including an LC_SUB_CLIENT
 							   load command containing the name of the
-							   framework or a client name for a bundle.
-							   */
+							   framework or a client name for a bundle. */
 
 union lc_str
 {
