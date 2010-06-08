@@ -1,12 +1,14 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.74 2010/02/14 18:08:42 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.75 2010/06/08 05:51:31 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
 	then echo "$(1)"; else echo "$(2)"; fi)
 
 ####################################################################
+# Avoid CC overhead when installing
+ifneq ($(MAKECMDGOALS),install)
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
@@ -15,6 +17,7 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              $(call check-gcc, -Wsequence-point) \
              $(call check-gcc, -Wstrict-overflow) \
              $(call check-gcc, -Wextra)
+endif
 
 CFLAGS    ?= -O2 -pipe
 override CPPFLAGS  += -D_GNU_SOURCE
