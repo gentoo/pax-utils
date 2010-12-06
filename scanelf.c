@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.218 2010/01/15 11:56:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.219 2010/12/06 20:43:48 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.218 2010/01/15 11:56:15 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.219 2010/12/06 20:43:48 vapier Exp $";
 const char * const argv0 = "scanelf";
 
 #include "paxinc.h"
@@ -1591,10 +1591,10 @@ static int load_ld_cache_config(int i, const char *fname)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
-#ifdef __linux__
+
 		/* recursive includes of the same file will make this segfault. */
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
-			glob64_t gl;
+			glob_t gl;
 			size_t x;
 			char gpath[__PAX_UTILS_PATH_MAX];
 
@@ -1605,22 +1605,22 @@ static int load_ld_cache_config(int i, const char *fname)
 			else
 				strncpy(gpath, &path[8], sizeof(gpath));
 
-			if ((glob64(gpath, 0, NULL, &gl)) == 0) {
+			if (glob(gpath, 0, NULL, &gl) == 0) {
 				for (x = 0; x < gl.gl_pathc; ++x) {
 					/* try to avoid direct loops */
 					if (strcmp(gl.gl_pathv[x], fname) == 0)
 						continue;
 					i = load_ld_cache_config(i, gl.gl_pathv[x]);
 					if (i + 1 >= ARRAY_SIZE(ldpaths)) {
-						globfree64(&gl);
+						globfree(&gl);
 						return i;
 					}
 				}
-				globfree64 (&gl);
+				globfree(&gl);
 				continue;
 			}
 		}
-#endif
+
 		if (*path != '/')
 			continue;
 
