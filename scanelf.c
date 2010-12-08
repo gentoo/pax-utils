@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.221 2010/12/08 01:16:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.222 2010/12/08 01:24:01 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.221 2010/12/08 01:16:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.222 2010/12/08 01:24:01 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1777,7 +1777,7 @@ static struct option const long_opts[] = {
 	{NULL,        no_argument, NULL, 0x0}
 };
 
-static const char *opts_help[] = {
+static const char * const opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
 	"Scan directories recursively",

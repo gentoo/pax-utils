@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.48 2010/12/08 01:16:01 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.49 2010/12/08 01:24:01 vapier Exp $";
 const char argv0[] = "pspax";
 
 #include "paxinc.h"
@@ -436,7 +436,7 @@ static struct option const long_opts[] = {
 	{NULL,        no_argument, NULL, 0x0}
 };
 
-static const char *opts_help[] = {
+static const char * const opts_help[] = {
 	"Show all processes",
 	"Print GNU_STACK/PT_LOAD markings",
 	"Print ipaddr info if supported",
