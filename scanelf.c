@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.220 2010/12/08 00:54:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.221 2010/12/08 01:16:01 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.220 2010/12/08 00:54:40 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.221 2010/12/08 01:16:01 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1731,8 +1731,8 @@ static void scanelf_envpath(void)
 	free(path);
 }
 
-/* usage / invocation handling functions */ /* Free Flags: c d j u w C G H J K P Q U W */
-#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZBhV"
+/* usage / invocation handling functions */ /* Free Flags: c d j u w G H J K P Q U W */
+#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZCBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1770,6 +1770,7 @@ static struct option const long_opts[] = {
 	{"format",     a_argument, NULL, 'F'},
 	{"from",       a_argument, NULL, 'f'},
 	{"file",       a_argument, NULL, 'o'},
+	{"nocolor",   no_argument, NULL, 'C'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
@@ -1812,6 +1813,7 @@ static const char *opts_help[] = {
 	"Use specified format for output",
 	"Read input stream from a filename",
 	"Write output stream to a filename",
+	"Don't emit color in output",
 	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
@@ -1956,6 +1958,7 @@ static int parseargs(int argc, char *argv[])
 		case 'L': use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
+		case 'C': color_init(true); break;
 		case 'B': show_banner = 0; break;
 		case 'l': scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
@@ -2121,6 +2124,7 @@ static char **get_split_env(const char *envvar)
 
 static void parseenv(void)
 {
+	color_init(false);
 	qa_textrels = get_split_env("QA_TEXTRELS");
 	qa_execstack = get_split_env("QA_EXECSTACK");
 	qa_wx_load = get_split_env("QA_WX_LOAD");

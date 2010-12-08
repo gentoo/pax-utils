@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.15 2010/12/08 00:54:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.16 2010/12/08 01:16:01 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -92,11 +92,8 @@ const char *strfileperms(const char *fname);
 	} while (0)
 
 /* helper functions for showing errors */
-#define color 1
-#define COLOR(c,b) (color ? "\e[" c ";" b "m" : "")
-#define NORM      COLOR("00", "00")
-#define RED       COLOR("31", "01")
-#define YELLOW    COLOR("33", "01")
+extern const char *NORM, *RED, *YELLOW;
+void color_init(bool disable);
 
 /* constant pointer to a constant buffer ... each program needs to set this */
 extern const char argv0[];

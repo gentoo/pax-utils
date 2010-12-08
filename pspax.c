@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.47 2010/12/08 00:54:40 vapier Exp $";
+static const char *rcsid = "$Id: pspax.c,v 1.48 2010/12/08 01:16:01 vapier Exp $";
 const char argv0[] = "pspax";
 
 #include "paxinc.h"
@@ -416,7 +416,7 @@ static void pspax(const char *find_name)
 }
 
 /* usage / invocation handling functions */
-#define PARSE_FLAGS "aeip:u:g:nwWvBhV"
+#define PARSE_FLAGS "aeip:u:g:nwWvCBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
@@ -429,6 +429,7 @@ static struct option const long_opts[] = {
 	{"wx",        no_argument, NULL, 'w'},
 	{"wide",      no_argument, NULL, 'W'},
 	{"verbose",   no_argument, NULL, 'v'},
+	{"nocolor",   no_argument, NULL, 'C'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
@@ -446,6 +447,7 @@ static const char *opts_help[] = {
 	"Only display w|x processes",
 	"Wide output display of cmdline",
 	"Be verbose about executable mappings",
+	"Don't emit color in output",
 	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
@@ -489,6 +491,7 @@ static void parseargs(int argc, char *argv[])
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
 
+		case 'C': color_init(true); break;
 		case 'B': show_banner = 0; break;
 		case 'a': show_all = 1; break;
 		case 'e': show_phdr = 1; break;
@@ -534,6 +537,7 @@ int main(int argc, char *argv[])
 {
 	char *name = NULL;
 
+	color_init(false);
 	parseargs(argc, argv);
 
 	if ((optind < argc) && (show_pid == 0))

@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.19 2010/12/08 00:54:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.20 2010/12/08 01:16:01 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *           2008-2010 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.19 2010/12/08 00:54:40 vapier Exp $";
+static const char *rcsid = "$Id: scanmacho.c,v 1.20 2010/12/08 01:16:01 vapier Exp $";
 const char argv0[] = "scanmacho";
 
 #include "paxinc.h"
@@ -497,8 +497,8 @@ static void scanmacho_envpath(void)
 	free(path);
 }
 
-/* usage / invocation handling functions */ /* Free Flags: c d e j k l r s t u w x z C G H I J K L P Q T U W X Y */
-#define PARSE_FLAGS "pRmyAnibSN:gE:M:DO:ZaqvF:f:o:BhV"
+/* usage / invocation handling functions */ /* Free Flags: c d e j k l r s t u w x z G H I J K L P Q T U W X Y */
+#define PARSE_FLAGS "pRmyAnibSN:gE:M:DO:ZaqvF:f:o:CBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -523,6 +523,7 @@ static struct option const long_opts[] = {
 	{"format",     a_argument, NULL, 'F'},
 	{"from",       a_argument, NULL, 'f'},
 	{"file",       a_argument, NULL, 'o'},
+	{"nocolor",   no_argument, NULL, 'C'},
 	{"nobanner",  no_argument, NULL, 'B'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
@@ -553,6 +554,7 @@ static const char *opts_help[] = {
 	"Use specified format for output",
 	"Read input stream from a filename",
 	"Write output stream to a filename",
+	"Don't emit color in output",
 	"Don't display the header",
 	"Print this help and exit",
 	"Print version and exit",
@@ -629,6 +631,7 @@ static int parseargs(int argc, char *argv[])
 		case 'g': g_match = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
+		case 'C': color_init(true); break;
 		case 'B': show_banner = 0; break;
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
@@ -724,6 +727,7 @@ int main(int argc, char *argv[])
 	int ret;
 	if (argc < 2)
 		usage(EXIT_FAILURE);
+	color_init(false);
 	ret = parseargs(argc, argv);
 	fclose(stdout);
 	return ret;

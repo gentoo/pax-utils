@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.13 2009/03/15 08:52:59 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.c,v 1.14 2010/12/08 01:16:01 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -142,4 +142,21 @@ const char *strfileperms(const char *fname)
 	snprintf(buf, sizeof(buf), "%o", st.st_mode);
 
 	return buf + 2;
+}
+
+/* Color helpers */
+#define COLOR(c,b) "\e[" c ";" b "m"
+const char *NORM   = COLOR("00", "00");
+const char *RED    = COLOR("31", "01");
+const char *YELLOW = COLOR("33", "01");
+
+void color_init(bool disable)
+{
+	if (!disable) {
+		const char *nocolor = getenv("NOCOLOR");
+		if (nocolor)
+			disable = !strcmp(nocolor, "yes") || !strcmp(nocolor, "true");
+	}
+	if (disable)
+		NORM = RED = YELLOW = "";
 }
