@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.18 2010/04/04 10:03:33 grobian Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.19 2010/12/08 01:29:36 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -11,18 +11,19 @@
 #include "paxinc.h"
 
 /* lil' static string pool */
-static const char *STR_BE      = "BE";
-static const char *STR_LE      = "LE";
-static const char *STR_PPC     = "ppc";
-static const char *STR_PPC64   = "ppc64";
-static const char *STR_I386    = "i386";
-static const char *STR_X86_64  = "x86_64";
-static const char *STR_ARM     = "arm"; /* iPhone */
-static const char *STR_UNKNOWN = "unknown";
+static const char STR_BE[]      = "BE";
+static const char STR_LE[]      = "LE";
+static const char STR_PPC[]     = "ppc";
+static const char STR_PPC64[]   = "ppc64";
+static const char STR_I386[]    = "i386";
+static const char STR_X86_64[]  = "x86_64";
+static const char STR_ARM[]     = "arm"; /* iPhone */
+static const char STR_UNKNOWN[] = "unknown";
 
-typedef struct {
-       const char *str;
-       int value;
+#define QUERY(n) { #n, n }
+typedef const struct {
+	const char *str;
+	int value;
 } pairtype;
 
 static inline const char *find_pairtype(pairtype *pt, int type)
@@ -35,7 +36,6 @@ static inline const char *find_pairtype(pairtype *pt, int type)
 }
 
 /* translate misc mach-o MH_ defines */
-#define QUERY(n) { #n, n }
 static pairtype macho_mh_type[] = {
 	QUERY(MH_OBJECT),
 	QUERY(MH_EXECUTE),
