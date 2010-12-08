@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.14 2008/12/30 13:34:46 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxinc.h,v 1.15 2010/12/08 00:54:40 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -99,7 +99,7 @@ const char *strfileperms(const char *fname);
 #define YELLOW    COLOR("33", "01")
 
 /* constant pointer to a constant buffer ... each program needs to set this */
-extern const char * const argv0;
+extern const char argv0[];
 
 /* we need the space before the last comma or we trigger a bug in gcc-2 :( */
 #define warn(fmt, args...) \

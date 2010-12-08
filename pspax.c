@@ -12,8 +12,8 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char *rcsid = "$Id: pspax.c,v 1.46 2010/02/28 19:12:39 solar Exp $";
-const char * const argv0 = "pspax";
+static const char *rcsid = "$Id: pspax.c,v 1.47 2010/12/08 00:54:40 vapier Exp $";
+const char argv0[] = "pspax";
 
 #include "paxinc.h"
 #include <grp.h>
