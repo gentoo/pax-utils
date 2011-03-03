@@ -22,6 +22,8 @@ error() {
 	return 1
 }
 
+unset c_last_needed_by
+unset c_ldso_paths
 find_elf() {
 	local elf=$1 needed_by=$2
 	if [[ ${elf} == */* ]] && [[ -e ${elf} ]] ; then
@@ -32,6 +34,7 @@ find_elf() {
 			local elf=$1 ; shift
 			local path
 			for path in "$@" ; do
+				# XXX: This lacks ELF EM/EI_CLASS/EI_DATA/... checking (multilib)
 				if [[ -e ${path}/${elf} ]] ; then
 					echo "${path}/${elf}"
 					return 0
@@ -39,20 +42,50 @@ find_elf() {
 			done
 			return 1
 		}
-		if [[ ${__last_needed_by} != ${needed_by} ]] ; then
-			__last_needed_by=${needed_by}
-			__last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | sed 's|:| |g')
+
+		if [[ ${c_last_needed_by} != ${needed_by} ]] ; then
+			c_last_needed_by=${needed_by}
+			c_last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | sed 's|:| |g')
 		fi
-		check_paths "${elf}" ${__last_needed_by_rpaths} && return 0
-		if [[ -z ${__ldso_paths} ]] ; then
+		check_paths "${elf}" ${c_last_needed_by_rpaths} && return 0
+
+		if [[ -n ${LD_LIBRARY_PATH} ]] ; then
+			# Need to handle empty paths as $PWD,
+			# and handle spaces in between the colons
+			local p path=${LD_LIBRARY_PATH}
+			while : ; do
+				p=${path%%:*}
+				check_paths "${elf}" "${path:-${PWD}}" && return 0
+				[[ ${path} == *:* ]] || break
+				path=${path#*:}
+			done
+		fi
+
+		if [[ -z ${c_ldso_paths} ]] ; then
 			if [[ -r /etc/ld.so.conf ]] ; then
-				__ldso_paths=$(sed -e 's:^[[:space:]]*#.*::' /etc/ld.so.conf)
+				read_ldso_conf() {
+					local line p
+					for p in "$@" ; do
+						while read line ; do
+							case ${line} in
+								"#"*) ;;
+								"include "*) read_ldso_conf ${line#* } ;;
+								*) c_ldso_paths="${c_ldso_paths} ${line}" ;;
+							esac
+						done <"${p}"
+					done
+				}
+				# the 'include' command is relative
+				pushd /etc >/dev/null
+				read_ldso_conf /etc/ld.so.conf
+				popd >/dev/null
 			fi
-			: ${__ldso_paths:= }
+			: ${c_ldso_paths:= }
 		fi
-		if [[ ${__ldso_paths} != " " ]] ; then
-			check_paths "${elf}" ${__ldso_paths} && return 0
+		if [[ ${c_ldso_paths} != " " ]] ; then
+			check_paths "${elf}" ${c_ldso_paths} && return 0
 		fi
+
 		check_paths "${elf}" /lib* /usr/lib* /usr/local/lib* && return 0
 	fi
 	return 1
