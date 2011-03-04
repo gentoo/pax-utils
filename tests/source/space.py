@@ -9,19 +9,22 @@ import sys
 
 def crapspace(fname):
 	chars = True
-	fp = open(fname, "r")
-	line = fp.readline()
-	while line:
-		line = line.rstrip()
-		if line:
-			chars = True
-			print line
-		else:
-			if chars:
-				print ""
-			chars = False
-
+	try:
+		fp = open(fname, "r")
 		line = fp.readline()
+		while line:
+			line = line.rstrip()
+			if line:
+				chars = True
+				print(line)
+			else:
+				if chars:
+					print("")
+				chars = False
+
+			line = fp.readline()
+	finally:
+		fp.close()
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
