@@ -1,0 +1,23 @@
+#!/bin/sh
+# Usage: space <file>
+# Trim trailing whitespace and consecutive newlines.
+
+i=$1
+
+if [ $# != 1 ] ; then
+	cat <<-EOF
+	Usage: ${0##/*} <file>
+	Trim trailing whitespace and consecutive newlines.
+	EOF
+fi
+
+sed -r '/[[:space:]]+$/s:[[:space:]]+$::' "$i" | \
+	awk '{
+	if (NF == 0) {
+		while (NF == 0)
+			if (getline == 0)
+				exit
+		print ""
+	}
+	print
+	}'

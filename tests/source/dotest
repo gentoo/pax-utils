@@ -88,17 +88,17 @@ find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
 testit src.style
 
 
-# Stupid BSD makes us check for this..
-if [ $(type -P md5sum) != "" ]; then
-	for x in $(find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' ); do
-		python "${srcdir}"/space.py $x > $x~
-		if [[ $(md5sum $x | awk '{print $1}') != $(md5sum $x~ | awk '{print $1}') ]]; then
-			diff -u $x $x~
-			#cp $x~ $x
-		fi
-		rm $x~
-	done > src.space
-	testit src.space
-fi
+#
+# Auto clean up the space issues
+#
+for x in $(find ../.. '(' -name '*.c' -o -name '*.h' ')' ); do
+	./space "$x" > "$x~"
+	if ! diff -u "$x" "$x~" ; then
+		echo "New file: $x~"
+	else
+		rm -f "$x~"
+	fi
+done > src.space
+testit src.space
 
 exit ${ret}
