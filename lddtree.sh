@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.9 2011/03/03 21:49:29 solar Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.10 2011/03/23 02:23:34 vapier Exp $
 
 argv0=${0##*/}
 
@@ -67,6 +67,9 @@ find_elf() {
 				read_ldso_conf() {
 					local line p
 					for p in "$@" ; do
+						# if the glob didnt match anything #360041,
+						# or the files arent readable, skip it
+						[[ -r ${p} ]] || continue
 						while read line ; do
 							case ${line} in
 								"#"*) ;;
