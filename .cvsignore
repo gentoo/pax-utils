@@ -8,3 +8,4 @@ pax-utils-*.tar.bz2
 .gdb_history
 .gdbinit
 a.out
+*.gdb
