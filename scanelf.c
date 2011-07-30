@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.222 2010/12/08 01:24:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.223 2011/07/30 17:08:30 solar Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.222 2010/12/08 01:24:01 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.223 2011/07/30 17:08:30 solar Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -68,6 +68,7 @@ static char use_ldcache = 0;
 static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
 static char **qa_wx_load = NULL;
+static char *root;
 
 static int match_bits = 0;
 static unsigned int match_perms = 0;
@@ -1497,6 +1498,16 @@ static int scanelf_file(const char *filename, const struct stat *st_cache)
 	return 0;
 }
 
+static const char* maybe_add_root(const char* fname, char* buf)
+{
+	if (root && strncmp(fname, root, strlen(root))) {
+		strcpy(buf, root);
+		strncat(buf, fname, __PAX_UTILS_PATH_MAX-strlen(root)-1);
+		fname = buf;
+	}
+	return fname;
+}
+
 /* scan a directory for ET_EXEC files and print when we find one */
 static int scanelf_dir(const char *path)
 {
@@ -1504,8 +1515,11 @@ static int scanelf_dir(const char *path)
 	register struct dirent *dentry;
 	struct stat st_top, st;
 	char buf[__PAX_UTILS_PATH_MAX];
+	char _path[__PAX_UTILS_PATH_MAX];
 	size_t pathlen = 0, len = 0;
 	int ret = 0;
+
+	path = maybe_add_root(path, _path);
 
 	/* make sure path exists */
 	if (lstat(path, &st_top) == -1) {
@@ -1579,6 +1593,9 @@ static int load_ld_cache_config(int i, const char *fname)
 	FILE *fp = NULL;
 	char *p;
 	char path[__PAX_UTILS_PATH_MAX];
+	char _fname[__PAX_UTILS_PATH_MAX];
+
+	fname = maybe_add_root(fname, _fname);
 
 	if (i + 1 == ARRAY_SIZE(ldpaths))
 		return i;
@@ -1599,11 +1616,13 @@ static int load_ld_cache_config(int i, const char *fname)
 			char gpath[__PAX_UTILS_PATH_MAX];
 
 			memset(gpath, 0, sizeof(gpath));
+			if (root)
+				strcpy(gpath, root);
 
 			if (path[8] != '/')
-				snprintf(gpath, sizeof(gpath), "/etc/%s", &path[8]);
+				snprintf(gpath+strlen(gpath), sizeof(gpath)-strlen(gpath), "/etc/%s", &path[8]);
 			else
-				strncpy(gpath, &path[8], sizeof(gpath));
+				strncpy(gpath+strlen(gpath), &path[8], sizeof(gpath)-strlen(gpath));
 
 			if (glob(gpath, 0, NULL, &gl) == 0) {
 				for (x = 0; x < gl.gl_pathc; ++x) {
@@ -1642,6 +1661,9 @@ static int load_ld_cache_config(int i, const char *fname)
 	FILE *fp = NULL;
 	char *b = NULL, *p;
 	struct elfhints_hdr hdr;
+	char _fname[__PAX_UTILS_PATH_MAX];
+
+	fname = maybe_add_root(fname, _fname);
 
 	if (i + 1 == ARRAY_SIZE(ldpaths))
 		return i;
@@ -1737,6 +1759,7 @@ static void scanelf_envpath(void)
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
+	{"root",       a_argument, NULL, 128},
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
 	{"symlink",   no_argument, NULL, 'y'},
@@ -1780,6 +1803,7 @@ static struct option const long_opts[] = {
 static const char * const opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
+	"Root directory (use with -l or -p)",
 	"Scan directories recursively",
 	"Don't recursively cross mount points",
 	"Don't scan symlinks",
@@ -1830,6 +1854,9 @@ static void usage(int status)
 	for (i = 0; long_opts[i].name; ++i)
 		if (long_opts[i].has_arg == no_argument)
 			printf("  -%c, --%-14s* %s\n", long_opts[i].val,
+			       long_opts[i].name, opts_help[i]);
+		else if (long_opts[i].val > '~')
+			printf("      --%-7s <arg> * %s\n",
 			       long_opts[i].name, opts_help[i]);
 		else
 			printf("  -%c, --%-7s <arg> * %s\n", long_opts[i].val,
@@ -1980,6 +2007,9 @@ static int parseargs(int argc, char *argv[])
 		case 'D': show_endian = 1; break;
 		case 'I': show_osabi = 1; break;
 		case 'Y': show_eabi = 1; break;
+		case 128:
+			root = optarg;
+			break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':
