@@ -26,8 +26,8 @@ http://www.gentoo.org/proj/en/hardened/pax-utils.xml
 http://sources.gentoo.org/viewcvs.py/gentoo-projects/pax-utils/
 Maintainer: solar@gentoo.org,vapier@gentoo.org
 
-(OpenSUSE)
-http://lists.opensuse.org/opensuse-commit/2006-11/msg00820.html
+(openSUSE)
+https://build.opensuse.org/package/show?package=pax-utils&project=openSUSE%3AFactory
 Maintainer: ludwig.nussel@suse.de
 
 (Ubuntu)
