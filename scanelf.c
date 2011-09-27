@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.230 2011/09/27 19:56:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.231 2011/09/27 19:58:09 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.230 2011/09/27 19:56:15 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.231 2011/09/27 19:58:09 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"

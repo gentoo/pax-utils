@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.29 2010/12/08 01:24:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.30 2011/09/27 19:58:09 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: dumpelf.c,v 1.29 2010/12/08 01:24:01 vapier Exp $";
+static const char rcsid[] = "$Id: dumpelf.c,v 1.30 2011/09/27 19:58:09 vapier Exp $";
 const char argv0[] = "dumpelf";
 
 #include "paxinc.h"

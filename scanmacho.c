@@ -1,7 +1,7 @@
 /*
  * Copyright 2008 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.21 2010/12/08 01:24:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.22 2011/09/27 19:58:09 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +10,7 @@
  *           2008-2010 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanmacho.c,v 1.21 2010/12/08 01:24:01 vapier Exp $";
+static const char rcsid[] = "$Id: scanmacho.c,v 1.22 2011/09/27 19:58:09 vapier Exp $";
 const char argv0[] = "scanmacho";
 
 #include "paxinc.h"
