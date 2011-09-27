@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.229 2011/09/27 19:29:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.230 2011/09/27 19:56:15 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.229 2011/09/27 19:29:19 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.230 2011/09/27 19:56:15 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -70,26 +70,23 @@ static unsigned long setpax = 0UL;
 static int has_objdump = 0;
 
 /* find the path to a file by name */
-static char *which(const char *fname)
+static int bin_in_path(const char *fname)
 {
-	static char fullpath[__PAX_UTILS_PATH_MAX];
+	char fullpath[__PAX_UTILS_PATH_MAX];
 	char *path, *p;
 
 	path = getenv("PATH");
 	if (!path)
-		return NULL;
+		return 0;
 
-	path = xstrdup(path);
 	while ((p = strrchr(path, ':')) != NULL) {
 		snprintf(fullpath, sizeof(fullpath), "%s/%s", p + 1, fname);
 		*p = 0;
-		if (access(fullpath, R_OK) != -1) {
-			free(path);
-			return fullpath;
-		}
+		if (access(fullpath, R_OK) != -1)
+			return 1;
 	}
-	free(path);
-	return NULL;
+
+	return 0;
 }
 
 /* 1 on failure. 0 otherwise */
@@ -1585,24 +1582,30 @@ static int scanelf_dir(const char *path)
 
 static int scanelf_from_file(const char *filename)
 {
-	FILE *fp = NULL;
-	char *p;
-	char path[__PAX_UTILS_PATH_MAX];
-	int ret = 0;
+	FILE *fp;
+	char *p, *path;
+	size_t len;
+	int ret;
 
 	if (strcmp(filename, "-") == 0)
 		fp = stdin;
 	else if ((fp = fopen(filename, "r")) == NULL)
 		return 1;
 
-	while ((fgets(path, __PAX_UTILS_PATH_MAX, fp)) != NULL) {
+	path = NULL;
+	len = 0;
+	ret = 0;
+	while (getline(&path, &len, fp) != -1) {
 		if ((p = strchr(path, '\n')) != NULL)
 			*p = 0;
 		search_path = path;
 		ret = scanelf_dir(path);
 	}
+	free(path);
+
 	if (fp != stdin)
 		fclose(fp);
+
 	return ret;
 }
 
@@ -1611,8 +1614,8 @@ static int scanelf_from_file(const char *filename)
 static int load_ld_cache_config(int i, const char *fname)
 {
 	FILE *fp = NULL;
-	char *p;
-	char path[__PAX_UTILS_PATH_MAX];
+	char *p, *path;
+	size_t len;
 	char _fname[__PAX_UTILS_PATH_MAX];
 
 	fname = maybe_add_root(fname, _fname);
@@ -1620,7 +1623,9 @@ static int load_ld_cache_config(int i, const char *fname)
 	if ((fp = fopen(fname, "r")) == NULL)
 		return i;
 
-	while ((fgets(path, __PAX_UTILS_PATH_MAX, fp)) != NULL) {
+	path = NULL;
+	len = 0;
+	while (getline(&path, &len, fp) != -1) {
 		if ((p = strrchr(path, '\r')) != NULL)
 			*p = 0;
 		if ((p = strchr(path, '\n')) != NULL)
@@ -1658,8 +1663,10 @@ static int load_ld_cache_config(int i, const char *fname)
 
 		xarraypush(ldpaths, path, strlen(path));
 	}
+	free(path);
 
 	fclose(fp);
+
 	return i;
 }
 
@@ -2018,10 +2025,8 @@ static int parseargs(int argc, char *argv[])
 			err("Unhandled option '%c'; please report this", i);
 		}
 	}
-	if (show_textrels && be_verbose) {
-		if (which("objdump") != NULL)
-			has_objdump = 1;
-	}
+	if (show_textrels && be_verbose)
+		has_objdump = bin_in_path("objdump");
 	/* flatten arrays for display */
 	if (array_cnt(find_lib_arr))
 		find_lib = array_flatten_str(find_lib_arr);
