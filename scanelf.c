@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.231 2011/09/27 19:58:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.232 2011/09/27 22:20:07 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.231 2011/09/27 19:58:09 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.232 2011/09/27 22:20:07 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -59,7 +59,7 @@ static char use_ldcache = 0;
 static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
 static char **qa_wx_load = NULL;
-static char *root;
+static int root_fd = AT_FDCWD;
 
 static int match_bits = 0;
 static unsigned int match_perms = 0;
@@ -89,6 +89,34 @@ static int bin_in_path(const char *fname)
 	return 0;
 }
 
+static FILE *fopenat_r(int dir_fd, const char *path)
+{
+	int fd = openat(dir_fd, path, O_RDONLY|O_CLOEXEC);
+	if (fd == -1)
+		return NULL;
+	return fdopen(fd, "re");
+}
+
+static const char *root_rel_path(const char *path)
+{
+	/*
+	 * openat() will ignore the dirfd if path starts with
+	 * a /, so consume all of that noise
+	 *
+	 * XXX: we don't handle relative paths like ../ that
+	 * break out of the --root option, but for now, just
+	 * don't do that :P.
+	 */
+	if (root_fd != AT_FDCWD) {
+		while (*path == '/')
+			++path;
+		if (*path == '\0')
+			path = ".";
+	}
+
+	return path;
+}
+
 /* 1 on failure. 0 otherwise */
 static int rematch(const char *regex, const char *match, int cflags)
 {
@@ -114,7 +142,7 @@ static int rematch(const char *regex, const char *match, int cflags)
 	return ret;
 }
 
-/* sub-funcs for scanelf_file() */
+/* sub-funcs for scanelf_fileat() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
 {
 	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
@@ -466,7 +494,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
 				size_t syslen; \
-				int sysret; \
 				const char sysfmt[] = "objdump -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
 				syslen = sizeof(sysfmt) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
 				sysbuf = xmalloc(syslen); \
@@ -479,7 +506,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 					elf->filename, \
 					(unsigned long)r_offset); \
 				fflush(stdout); \
-				sysret = system(sysbuf); \
+				if (system(sysbuf)) /* don't care */; \
 				fflush(stdout); \
 				free(sysbuf); \
 			} \
@@ -688,7 +715,7 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 	int fd;
 	char *strs;
 	static char buf[__PAX_UTILS_PATH_MAX] = "";
-	const char cachefile[] = "/etc/ld.so.cache";
+	const char *cachefile = root_rel_path("/etc/ld.so.cache");
 	struct stat st;
 
 	typedef struct {
@@ -709,10 +736,10 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 		return NULL;
 
 	if (ldcache == NULL) {
-		if (stat(cachefile, &st))
+		if (fstatat(root_fd, cachefile, &st, 0))
 			return NULL;
 
-		fd = open(cachefile, O_RDONLY);
+		fd = openat(root_fd, cachefile, O_RDONLY);
 		if (fd == -1)
 			return NULL;
 
@@ -1482,7 +1509,7 @@ static int scanelf_archive(const char *filename, int fd, size_t len)
 	return 0;
 }
 /* scan a file which may be an elf or an archive or some other magical beast */
-static int scanelf_file(const char *filename, const struct stat *st_cache)
+static int scanelf_fileat(int dir_fd, const char *filename, const struct stat *st_cache)
 {
 	const struct stat *st = st_cache;
 	struct stat symlink_st;
@@ -1490,8 +1517,9 @@ static int scanelf_file(const char *filename, const struct stat *st_cache)
 
 	/* always handle regular files and handle symlinked files if no -y */
 	if (S_ISLNK(st->st_mode)) {
-		if (!scan_symlink) return 1;
-		stat(filename, &symlink_st);
+		if (!scan_symlink)
+			return 1;
+		fstatat(dir_fd, filename, &symlink_st, 0);
 		st = &symlink_st;
 	}
 
@@ -1504,80 +1532,87 @@ static int scanelf_file(const char *filename, const struct stat *st_cache)
 		if ((st->st_mode | match_perms) != st->st_mode)
 			return 1;
 	}
-	if ((fd=open(filename, (fix_elf ? O_RDWR : O_RDONLY))) == -1)
+	fd = openat(dir_fd, filename, (fix_elf ? O_RDWR : O_RDONLY) | O_CLOEXEC);
+	if (fd == -1)
 		return 1;
 
 	if (scanelf_elf(filename, fd, st->st_size) == 1 && scan_archives)
 		/* if it isn't an ELF, maybe it's an .a archive */
 		scanelf_archive(filename, fd, st->st_size);
 
+	/* XXX: unreadelf() implicitly closes its fd */
 	close(fd);
 	return 0;
 }
 
-static const char *maybe_add_root(const char *fname, char *buf)
-{
-	if (root && strncmp(fname, root, strlen(root))) {
-		strcpy(buf, root);
-		strncat(buf, fname, __PAX_UTILS_PATH_MAX - strlen(root) - 1);
-		fname = buf;
-	}
-	return fname;
-}
-
 /* scan a directory for ET_EXEC files and print when we find one */
-static int scanelf_dir(const char *path)
+static int scanelf_dirat(int dir_fd, const char *path)
 {
 	register DIR *dir;
 	register struct dirent *dentry;
 	struct stat st_top, st;
-	char buf[__PAX_UTILS_PATH_MAX];
-	char _path[__PAX_UTILS_PATH_MAX];
+	char buf[__PAX_UTILS_PATH_MAX], *subpath;
 	size_t pathlen = 0, len = 0;
 	int ret = 0;
-
-	path = maybe_add_root(path, _path);
+	int subdir_fd;
 
 	/* make sure path exists */
-	if (lstat(path, &st_top) == -1) {
+	if (fstatat(dir_fd, path, &st_top, AT_SYMLINK_NOFOLLOW) == -1) {
 		if (be_verbose > 2) printf("%s: does not exist\n", path);
 		return 1;
 	}
 
 	/* ok, if it isn't a directory, assume we can open it */
-	if (!S_ISDIR(st_top.st_mode)) {
-		return scanelf_file(path, &st_top);
-	}
+	if (!S_ISDIR(st_top.st_mode))
+		return scanelf_fileat(dir_fd, path, &st_top);
 
 	/* now scan the dir looking for fun stuff */
-	if ((dir = opendir(path)) == NULL) {
+	subdir_fd = openat(dir_fd, path, O_RDONLY|O_CLOEXEC);
+	if (subdir_fd == -1)
+		dir = NULL;
+	else
+		dir = fdopendir(subdir_fd);
+	if (dir == NULL) {
+		if (subdir_fd != -1)
+			close(subdir_fd);
 		warnf("could not opendir %s: %s", path, strerror(errno));
 		return 1;
 	}
 	if (be_verbose > 1) printf("%s: scanning dir\n", path);
 
-	pathlen = strlen(path);
+	subpath = stpcpy(buf, path);
+	*subpath++ = '/';
+	pathlen = subpath - buf;
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
 			continue;
-		len = (pathlen + 1 + strlen(dentry->d_name) + 1);
-		if (len >= sizeof(buf)) {
-			warnf("Skipping '%s': len > sizeof(buf); %lu > %lu\n", path,
-			      (unsigned long)len, (unsigned long)sizeof(buf));
+
+		if (fstatat(subdir_fd, dentry->d_name, &st, AT_SYMLINK_NOFOLLOW) == -1)
+			continue;
+
+		len = strlen(dentry->d_name);
+		if (len + pathlen + 1 >= sizeof(buf)) {
+			warnf("Skipping '%s%s': len > sizeof(buf); %zu > %zu\n",
+			      path, dentry->d_name, len + pathlen + 1, sizeof(buf));
 			continue;
 		}
-		snprintf(buf, sizeof(buf), "%s%s%s", path, (path[pathlen-1] == '/') ? "" : "/", dentry->d_name);
-		if (lstat(buf, &st) != -1) {
-			if (S_ISREG(st.st_mode))
-				ret = scanelf_file(buf, &st);
-			else if (dir_recurse && S_ISDIR(st.st_mode)) {
-				if (dir_crossmount || (st_top.st_dev == st.st_dev))
-					ret = scanelf_dir(buf);
-			}
+		memcpy(subpath, dentry->d_name, len);
+		subpath[len] = '\0';
+
+		if (S_ISREG(st.st_mode))
+			ret = scanelf_fileat(dir_fd, buf, &st);
+		else if (dir_recurse && S_ISDIR(st.st_mode)) {
+			if (dir_crossmount || (st_top.st_dev == st.st_dev))
+				ret = scanelf_dirat(dir_fd, buf);
 		}
 	}
 	closedir(dir);
+
 	return ret;
+}
+static int scanelf_dir(const char *path)
+{
+	return scanelf_dirat(root_fd, root_rel_path(path));
 }
 
 static int scanelf_from_file(const char *filename)
@@ -1616,11 +1651,10 @@ static int load_ld_cache_config(int i, const char *fname)
 	FILE *fp = NULL;
 	char *p, *path;
 	size_t len;
-	char _fname[__PAX_UTILS_PATH_MAX];
+	int curr_fd = -1;
 
-	fname = maybe_add_root(fname, _fname);
-
-	if ((fp = fopen(fname, "r")) == NULL)
+	fp = fopenat_r(root_fd, root_rel_path(fname));
+	if (fp == NULL)
 		return i;
 
 	path = NULL;
@@ -1635,16 +1669,21 @@ static int load_ld_cache_config(int i, const char *fname)
 		if ((memcmp(path, "include", 7) == 0) && isblank(path[7])) {
 			glob_t gl;
 			size_t x;
-			char gpath[__PAX_UTILS_PATH_MAX];
+			const char *gpath;
 
-			memset(gpath, 0, sizeof(gpath));
-			if (root)
-				strcpy(gpath, root);
-
+			/* re-use existing path buffer ... need to be creative */
 			if (path[8] != '/')
-				snprintf(gpath+strlen(gpath), sizeof(gpath)-strlen(gpath), "/etc/%s", &path[8]);
+				gpath = memcpy(path + 3, "/etc/", 5);
 			else
-				strncpy(gpath+strlen(gpath), &path[8], sizeof(gpath)-strlen(gpath));
+				gpath = path + 8;
+			if (root_fd != AT_FDCWD) {
+				if (curr_fd == -1) {
+					curr_fd = open(".", O_RDONLY|O_CLOEXEC);
+					if (fchdir(root_fd))
+						errp("unable to change to root dir");
+				}
+				gpath = root_rel_path(gpath);
+			}
 
 			if (glob(gpath, 0, NULL, &gl) == 0) {
 				for (x = 0; x < gl.gl_pathc; ++x) {
@@ -1654,8 +1693,10 @@ static int load_ld_cache_config(int i, const char *fname)
 					i = load_ld_cache_config(i, gl.gl_pathv[x]);
 				}
 				globfree(&gl);
-				continue;
 			}
+
+			/* failed globs are ignored by glibc */
+			continue;
 		}
 
 		if (*path != '/')
@@ -1667,6 +1708,12 @@ static int load_ld_cache_config(int i, const char *fname)
 
 	fclose(fp);
 
+	if (curr_fd != -1) {
+		if (fchdir(curr_fd))
+			/* don't care */;
+		close(curr_fd);
+	}
+
 	return i;
 }
 
@@ -1677,11 +1724,9 @@ static int load_ld_cache_config(int i, const char *fname)
 	FILE *fp = NULL;
 	char *b = NULL, *p;
 	struct elfhints_hdr hdr;
-	char _fname[__PAX_UTILS_PATH_MAX];
 
-	fname = maybe_add_root(fname, _fname);
-
-	if ((fp = fopen(fname, "r")) == NULL)
+	fp = fopenat_r(root_fd, root_rel_path(fname));
+	if (fp == NULL)
 		return i;
 
 	if (fread(&hdr, 1, sizeof(hdr), fp) != sizeof(hdr) ||
@@ -2015,7 +2060,9 @@ static int parseargs(int argc, char *argv[])
 		case 'I': show_osabi = 1; break;
 		case 'Y': show_eabi = 1; break;
 		case 128:
-			root = optarg;
+			root_fd = open(optarg, O_RDONLY|O_CLOEXEC);
+			if (root_fd == -1)
+				err("Could not open root: %s", optarg);
 			break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
@@ -2194,7 +2241,7 @@ int main(int argc, char *argv[])
 #ifdef __PAX_UTILS_CLEANUP
 	cleanup();
 	warn("The calls to add/delete heap should be off:\n"
-	     "\t- 1 due to the out_buffer not being freed in scanelf_file()\n"
+	     "\t- 1 due to the out_buffer not being freed in scanelf_fileat()\n"
 	     "\t- 1 per QA_TEXTRELS/QA_EXECSTACK/QA_WX_LOAD");
 #endif
 	return ret;
