@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.225 2011/09/27 17:28:19 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.226 2011/09/27 18:37:22 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.225 2011/09/27 17:28:19 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.226 2011/09/27 18:37:22 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -58,7 +58,9 @@ static char be_wewy_wewy_quiet = 0;
 static char be_semi_verbose = 0;
 static char *find_sym = NULL;
 static char *find_lib = NULL;
+static array_t _find_lib_arr = array_init_decl, *find_lib_arr = &_find_lib_arr;
 static char *find_section = NULL;
+static array_t _find_section_arr = array_init_decl, *find_section_arr = &_find_section_arr;
 static char *out_format = NULL;
 static char *search_path = NULL;
 static char fix_elf = 0;
@@ -814,7 +816,12 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 	void *strtbl_void;
 	char *p;
 
-	if ((op==0 && !show_needed) || (op==1 && !find_lib)) return NULL;
+	/*
+	 * -n -> op==0 -> print all
+	 * -N -> op==1 -> print requested
+	 */
+	if ((op == 0 && !show_needed) || (op == 1 && !find_lib))
+		return NULL;
 
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
@@ -826,10 +833,15 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 		Elf ## B ## _Off offset; \
+		size_t matched = 0; \
+		/* Walk all the program headers to find the PT_DYNAMIC */ \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
+			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) \
+				continue; \
 			offset = EGET(phdr[i].p_offset); \
-			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
+				continue; \
+			/* Walk all the dynamic tags to find NEEDED entries */ \
 			dyn = DYN ## B (elf->vdata + offset); \
 			while (EGET(dyn->d_tag) != DT_NULL) { \
 				if (EGET(dyn->d_tag) == DT_NEEDED) { \
@@ -840,6 +852,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 					} \
 					needed = elf->data + offset; \
 					if (op == 0) { \
+						/* -n -> print all entries */ \
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
 							if (use_ldcache) \
@@ -849,9 +862,17 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						} \
 						*found_needed = 1; \
 					} else { \
-						if (!strncmp(find_lib, needed, strlen( !g_match ? needed : find_lib))) { \
+						/* -N -> print matching entries */ \
+						size_t n; \
+						const char *find_lib_name; \
+						\
+						array_for_each(find_lib_arr, n, find_lib_name) \
+							if (!strcmp(find_lib_name, needed)) \
+								++matched; \
+						\
+						if (matched == array_cnt(find_lib_arr)) { \
 							*found_lib = 1; \
-							return (be_wewy_wewy_quiet ? NULL : needed); \
+							return (be_wewy_wewy_quiet ? NULL : find_lib); \
 						} \
 					} \
 				} \
@@ -1213,11 +1234,20 @@ static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 
 #define FIND_SECTION(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
+		size_t matched, n; \
 		int invert; \
+		const char *section_name; \
 		Elf ## B ## _Shdr *section; \
-		invert = (*find_section == '!' ? 1 : 0); \
-		section = SHDR ## B (elf_findsecbyname(elf, find_section+invert)); \
-		if ((section == NULL && invert) || (section != NULL && !invert)) \
+		\
+		matched = 0; \
+		array_for_each(find_section_arr, n, section_name) { \
+			invert = (*section_name == '!' ? 1 : 0); \
+			section = SHDR ## B (elf_findsecbyname(elf, section_name + invert)); \
+			if ((section == NULL && invert) || (section != NULL && !invert)) \
+				++matched; \
+		} \
+		\
+		if (matched == array_cnt(find_section_arr)) \
 			*found_section = 1; \
 	}
 	FIND_SECTION(32)
@@ -1822,7 +1852,7 @@ static const char * const opts_help[] = {
 	"Find a specified symbol",
 	"Find a specified section",
 	"Find a specified library",
-	"Use strncmp to match libraries. (use with -N)",
+	"Use regex matching rather than string compare (use with -s)",
 	"Locate cause of TEXTREL",
 	"Print only ELF files matching etype ET_DYN,ET_EXEC ...",
 	"Print only ELF files matching numeric bits",
@@ -1918,20 +1948,16 @@ static int parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'k':
-			if (find_section) warn("You prob don't want to specify -k twice");
-			find_section = optarg;
+			xarraypush(find_section_arr, optarg, strlen(optarg));
 			break;
 		case 's': {
 			if (find_sym) warn("You prob don't want to specify -s twice");
 			find_sym = optarg;
 			break;
 		}
-		case 'N': {
-			if (find_lib) warn("You prob don't want to specify -N twice");
-			find_lib = optarg;
+		case 'N':
+			xarraypush(find_lib_arr, optarg, strlen(optarg));
 			break;
-		}
-
 		case 'F': {
 			if (out_format) warn("You prob don't want to specify -F twice");
 			out_format = optarg;
@@ -2022,6 +2048,11 @@ static int parseargs(int argc, char *argv[])
 		if (which("objdump") != NULL)
 			has_objdump = 1;
 	}
+	/* flatten arrays for display */
+	if (array_cnt(find_lib_arr))
+		find_lib = array_flatten_str(find_lib_arr);
+	if (array_cnt(find_section_arr))
+		find_section = array_flatten_str(find_section_arr);
 	/* let the format option override all other options */
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
@@ -2112,6 +2143,8 @@ static int parseargs(int argc, char *argv[])
 	/* clean up */
 	for (i = 0; ldpaths[i]; ++i)
 		free(ldpaths[i]);
+	free(find_lib);
+	free(find_section);
 
 	if (ldcache != 0)
 		munmap(ldcache, ldcache_size);

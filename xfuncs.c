@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.9 2010/02/13 23:27:12 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.10 2011/09/27 18:37:22 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -63,4 +63,44 @@ void xchrcat(char **dst, const char append, size_t *curr_len)
 	my_app[0] = append;
 	my_app[1] = '\0';
 	xstrcat(dst, my_app, curr_len);
+}
+
+void *xmemdup(const void *src, size_t n)
+{
+	void *ret = xmalloc(n);
+	memcpy(ret, src, n);
+	return ret;
+}
+
+void xarraypush(array_t *arr, const void *ele, size_t ele_len)
+{
+	size_t n = arr->num++;
+	arr->eles = xrealloc_array(arr->eles, arr->num, sizeof(ele));
+	arr->eles[n] = xmemdup(ele, ele_len);
+}
+
+void xarrayfree(array_t *arr)
+{
+	array_t blank = array_init_decl;
+	size_t n;
+
+	for (n = 0; n < arr->num; ++n)
+		free(arr->eles[n]);
+	free(arr->eles);
+
+	*arr = blank;
+}
+
+char *array_flatten_str(array_t *array)
+{
+	size_t n, len = 0;
+	char *str, *ret = NULL;
+
+	array_for_each(array, n, str) {
+		if (ret)
+			xchrcat(&ret, ',', &len);
+		xstrcat(&ret, str, &len);
+	}
+
+	return ret;
 }
