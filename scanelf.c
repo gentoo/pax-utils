@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.226 2011/09/27 18:37:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.227 2011/09/27 19:20:51 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.226 2011/09/27 18:37:22 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.227 2011/09/27 19:20:51 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -30,7 +30,7 @@ static int parseargs(int argc, char *argv[]);
 
 /* variables to control behavior */
 static char match_etypes[126] = "";
-static char *ldpaths[256];
+static array_t _ldpaths = array_init_decl, *ldpaths = &_ldpaths;
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
 static char scan_symlink = 1;
@@ -534,7 +534,7 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
-	unsigned long i, s;
+	unsigned long i;
 	char *rpath, *runpath, **r;
 	void *strtbl_void;
 
@@ -589,9 +589,11 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 							rpath_security_checks(elf, start, get_elfdtype(word)); \
 							end = strchr(start, ':'); \
 							len = (end ? abs(end - start) : strlen(start)); \
-							if (use_ldcache) \
-								for (s = 0; ldpaths[s]; ++s) \
-									if (!strncmp(ldpaths[s], start, len) && !ldpaths[s][len]) { \
+							if (use_ldcache) { \
+								size_t n; \
+								const char *ldpath; \
+								array_for_each(ldpaths, n, ldpath) \
+									if (!strncmp(ldpath, start, len) && !ldpath[len]) { \
 										*r = end; \
 										/* corner case ... if RPATH reads "/usr/lib:", we want \
 										 * to show ':' rather than '' */ \
@@ -599,6 +601,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 											(*r)++; \
 										break; \
 									} \
+							} \
 							if (!*r || !end) \
 								break; \
 							else \
@@ -779,10 +782,11 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 {
 	static char buf[__PAX_UTILS_PATH_MAX] = "";
 	static struct stat st;
+	size_t n;
+	char *ldpath;
 
-	char **ldpath;
-	for (ldpath = ldpaths; *ldpath != NULL; ldpath++) {
-		if ((unsigned) snprintf(buf, sizeof(buf), "%s/%s", *ldpath, fname) >= sizeof(buf))
+	array_for_each(ldpath, n, ldpath) {
+		if ((unsigned) snprintf(buf, sizeof(buf), "%s/%s", ldpath, fname) >= sizeof(buf))
 			continue; /* if the pathname is too long, or something went wrong, ignore */
 
 		if (stat(buf, &st) != 0)
@@ -1627,9 +1631,6 @@ static int load_ld_cache_config(int i, const char *fname)
 
 	fname = maybe_add_root(fname, _fname);
 
-	if (i + 1 == ARRAY_SIZE(ldpaths))
-		return i;
-
 	if ((fp = fopen(fname, "r")) == NULL)
 		return i;
 
@@ -1660,10 +1661,6 @@ static int load_ld_cache_config(int i, const char *fname)
 					if (strcmp(gl.gl_pathv[x], fname) == 0)
 						continue;
 					i = load_ld_cache_config(i, gl.gl_pathv[x]);
-					if (i + 1 >= ARRAY_SIZE(ldpaths)) {
-						globfree(&gl);
-						return i;
-					}
 				}
 				globfree(&gl);
 				continue;
@@ -1673,12 +1670,8 @@ static int load_ld_cache_config(int i, const char *fname)
 		if (*path != '/')
 			continue;
 
-		ldpaths[i++] = xstrdup(path);
-
-		if (i + 1 == ARRAY_SIZE(ldpaths))
-			break;
+		xarraypush(ldpaths, path, strlen(path));
 	}
-	ldpaths[i] = NULL;
 
 	fclose(fp);
 	return i;
@@ -1694,9 +1687,6 @@ static int load_ld_cache_config(int i, const char *fname)
 	char _fname[__PAX_UTILS_PATH_MAX];
 
 	fname = maybe_add_root(fname, _fname);
-
-	if (i + 1 == ARRAY_SIZE(ldpaths))
-		return i;
 
 	if ((fp = fopen(fname, "r")) == NULL)
 		return i;
@@ -1717,13 +1707,10 @@ static int load_ld_cache_config(int i, const char *fname)
 	}
 
 	while ((p = strsep(&b, ":"))) {
-		if (*p == '\0') continue;
-		ldpaths[i++] = xstrdup(p);
-
-		if (i + 1 == ARRAY_SIZE(ldpaths))
-			break;
+		if (*p == '\0')
+			continue;
+		xarraypush(ldpaths, p, strlen(p));
 	}
-	ldpaths[i] = NULL;
 
 	free(b);
 	fclose(fp);
@@ -1736,7 +1723,6 @@ static int load_ld_cache_config(int i, const char *fname)
 #endif
 static int load_ld_cache_config(int i, const char *fname)
 {
-	memset(ldpaths, 0x00, sizeof(ldpaths));
 	return 0;
 }
 #endif
@@ -1745,18 +1731,20 @@ static int load_ld_cache_config(int i, const char *fname)
 static void scanelf_ldpath(void)
 {
 	char scan_l, scan_ul, scan_ull;
+	size_t n;
+	const char *ldpath;
 	int i = 0;
 
-	if (!ldpaths[0])
+	if (array_cnt(ldpaths) == 0)
 		err("Unable to load any paths from ld.so.conf");
 
 	scan_l = scan_ul = scan_ull = 0;
 
-	while (ldpaths[i]) {
-		if (!scan_l   && !strcmp(ldpaths[i], "/lib"))           scan_l   = 1;
-		if (!scan_ul  && !strcmp(ldpaths[i], "/usr/lib"))       scan_ul  = 1;
-		if (!scan_ull && !strcmp(ldpaths[i], "/usr/local/lib")) scan_ull = 1;
-		scanelf_dir(ldpaths[i]);
+	array_for_each(ldpaths, n, ldpath) {
+		if (!scan_l   && !strcmp(ldpath, "/lib"))           scan_l   = 1;
+		if (!scan_ul  && !strcmp(ldpath, "/usr/lib"))       scan_ul  = 1;
+		if (!scan_ull && !strcmp(ldpath, "/usr/local/lib")) scan_ull = 1;
+		scanelf_dir(ldpath);
 		++i;
 	}
 
@@ -2141,8 +2129,9 @@ static int parseargs(int argc, char *argv[])
 	}
 
 	/* clean up */
-	for (i = 0; ldpaths[i]; ++i)
-		free(ldpaths[i]);
+	xarrayfree(ldpaths);
+	xarrayfree(find_lib_arr);
+	xarrayfree(find_section_arr);
 	free(find_lib);
 	free(find_section);
 
