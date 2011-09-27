@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.227 2011/09/27 19:20:51 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.228 2011/09/27 19:21:56 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.227 2011/09/27 19:20:51 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.228 2011/09/27 19:21:56 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -29,7 +29,7 @@ static void parseenv(void);
 static int parseargs(int argc, char *argv[]);
 
 /* variables to control behavior */
-static char match_etypes[126] = "";
+static char *match_etypes = NULL;
 static array_t _ldpaths = array_init_decl, *ldpaths = &_ldpaths;
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
@@ -1448,7 +1448,7 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 			break;
 		default: break;
 	}
-	if (strlen(match_etypes)) {
+	if (match_etypes) {
 		char sbuf[126];
 		strncpy(sbuf, match_etypes, sizeof(sbuf));
 		if (strchr(match_etypes, ',') != NULL) {
@@ -1915,7 +1915,7 @@ static int parseargs(int argc, char *argv[])
 			from_file = optarg;
 			break;
 		case 'E':
-			strncpy(match_etypes, optarg, sizeof(match_etypes));
+			match_etypes = optarg;
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
