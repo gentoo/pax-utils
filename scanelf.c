@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.228 2011/09/27 19:21:56 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.229 2011/09/27 19:29:19 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.228 2011/09/27 19:21:56 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.229 2011/09/27 19:29:19 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -16,17 +16,6 @@ const char argv0[] = "scanelf";
 
 /* prototypes */
 static int file_matches_list(const char *filename, char **matchlist);
-static int scanelf_elfobj(elfobj *elf);
-static int scanelf_elf(const char *filename, int fd, size_t len);
-static int scanelf_archive(const char *filename, int fd, size_t len);
-static int scanelf_file(const char *filename, const struct stat *st_cache);
-static int scanelf_dir(const char *path);
-static void scanelf_ldpath(void);
-static void scanelf_envpath(void);
-static void usage(int status);
-static char **get_split_env(const char *envvar);
-static void parseenv(void);
-static int parseargs(int argc, char *argv[]);
 
 /* variables to control behavior */
 static char *match_etypes = NULL;
@@ -508,7 +497,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	return NULL;
 }
 
-static void rpath_security_checks(elfobj *, char *, const char *);
 static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 {
 	struct stat st;
@@ -695,8 +683,6 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 #define FLAG_POWERPC_LIB64  0x0500
 #define FLAG_MIPS64_LIBN32  0x0600
 #define FLAG_MIPS64_LIBN64  0x0700
-
-static char *lookup_cache_lib(elfobj *, char *);
 
 #if defined(__GLIBC__) || defined(__UCLIBC__)
 
