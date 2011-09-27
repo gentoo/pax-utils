@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.224 2011/08/08 01:56:16 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.225 2011/09/27 17:28:19 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char *rcsid = "$Id: scanelf.c,v 1.224 2011/08/08 01:56:16 vapier Exp $";
+static const char *rcsid = "$Id: scanelf.c,v 1.225 2011/09/27 17:28:19 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1146,7 +1146,7 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 		next_sym[-1] = saved;
 }
 
-static char *scanelf_file_sym(elfobj *elf, char *found_sym)
+static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	unsigned long i;
 	char *ret;
@@ -1203,10 +1203,10 @@ break_out:
 	if (be_quiet)
 		return NULL;
 	else
-		return (char *)" - ";
+		return " - ";
 }
 
-static char *scanelf_file_sections(elfobj *elf, char *found_section)
+static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 {
 	if (!find_section)
 		 return NULL;
@@ -1232,7 +1232,7 @@ static char *scanelf_file_sections(elfobj *elf, char *found_section)
 	if (be_quiet)
 		return NULL;
 	else
-		return (char *)" - ";
+		return " - ";
 }
 
 /* scan an elf file and show all the fun stuff */
