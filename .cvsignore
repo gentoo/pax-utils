@@ -4,8 +4,10 @@ pspax
 scanelf
 scanmacho
 *.x
-pax-utils-*.tar.bz2 
+pax-utils-*.tar.*
 .gdb_history
 .gdbinit
+.git
+.gitignore
 a.out
 *.gdb
