@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.232 2011/09/27 22:20:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.233 2011/10/03 16:19:18 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.232 2011/09/27 22:20:07 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.233 2011/10/03 16:19:18 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1702,7 +1702,7 @@ static int load_ld_cache_config(int i, const char *fname)
 		if (*path != '/')
 			continue;
 
-		xarraypush(ldpaths, path, strlen(path));
+		xarraypush_str(ldpaths, path);
 	}
 	free(path);
 
@@ -1747,7 +1747,7 @@ static int load_ld_cache_config(int i, const char *fname)
 	while ((p = strsep(&b, ":"))) {
 		if (*p == '\0')
 			continue;
-		xarraypush(ldpaths, p, strlen(p));
+		xarraypush_str(ldpaths, p);
 	}
 
 	free(b);
@@ -1974,7 +1974,7 @@ static int parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'k':
-			xarraypush(find_section_arr, optarg, strlen(optarg));
+			xarraypush_str(find_section_arr, optarg);
 			break;
 		case 's': {
 			if (find_sym) warn("You prob don't want to specify -s twice");
@@ -1982,7 +1982,7 @@ static int parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'N':
-			xarraypush(find_lib_arr, optarg, strlen(optarg));
+			xarraypush_str(find_lib_arr, optarg);
 			break;
 		case 'F': {
 			if (out_format) warn("You prob don't want to specify -F twice");

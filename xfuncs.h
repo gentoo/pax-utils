@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.h,v 1.5 2011/09/27 18:37:22 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.h,v 1.6 2011/10/03 16:19:18 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -25,6 +25,7 @@ typedef struct {
 	size_t num;
 } array_t;
 void xarraypush(array_t *array, const void *ele, size_t ele_len);
+#define xarraypush_str(arr, ele) xarraypush(arr, ele, strlen(ele) + 1 /*NUL*/)
 void xarrayfree(array_t *array);
 #define xrealloc_array(ptr, size, ele_size) xrealloc(ptr, (size) * (ele_size))
 #define array_for_each(arr, n, ele) \
