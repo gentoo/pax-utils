@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.40 2011/04/30 00:52:15 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.41 2011/10/08 18:34:06 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -39,7 +39,7 @@
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__)
 # include <alloca.h>
 #endif
-#if defined(__linux__)
+#if defined(__GLIBC__) || defined(__UCLIBC__)
 # include <byteswap.h>
 # include <endian.h>
 #elif defined(__FreeBSD__)
