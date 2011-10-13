@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.30 2011/09/27 19:58:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.31 2011/10/13 04:48:44 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: dumpelf.c,v 1.30 2011/09/27 19:58:09 vapier Exp $";
+static const char rcsid[] = "$Id: dumpelf.c,v 1.31 2011/10/13 04:48:44 vapier Exp $";
 const char argv0[] = "dumpelf";
 
 #include "paxinc.h"
@@ -17,8 +17,8 @@ static void dumpelf(const char *filename, long file_cnt);
 static void dump_ehdr(elfobj *elf, void *ehdr);
 static void dump_phdr(elfobj *elf, void *phdr, long phdr_cnt);
 static void dump_shdr(elfobj *elf, void *shdr, long shdr_cnt, char *name);
+static void dump_dyn(elfobj *elf, void *dyn, long dyn_cnt);
 #if 0
-static void dump_dyn(elfobj *elf, void *dyn);
 static void dump_sym(elfobj *elf, void *sym);
 static void dump_rel(elfobj *elf, void *rel);
 static void dump_rela(elfobj *elf, void *rela);
@@ -29,11 +29,14 @@ static void parseargs(int argc, char *argv[]);
 /* variables to control behavior */
 static char be_verbose = 0;
 
+/* misc dynamic tag caches */
+static void *phdr_dynamic_void = NULL;
+
 /* dump all internal elf info */
 static void dumpelf(const char *filename, long file_cnt)
 {
 	elfobj *elf;
-	unsigned long i;
+	unsigned long i, b;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL)
@@ -53,12 +56,19 @@ static void dumpelf(const char *filename, long file_cnt)
 #define MAKE_STRUCT(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	printf("struct {\n" \
-	       "\tElf%1$i_Ehdr ehdr;\n" \
-	       "\tElf%1$i_Phdr phdrs[%3$li];\n" \
-	       "\tElf%1$i_Shdr shdrs[%4$li];\n" \
-	       "} dumpedelf_%2$li = {\n\n", \
-	       B, file_cnt, (long)EGET(ehdr->e_phnum), (long)EGET(ehdr->e_shnum)); \
+	b = B; \
+	printf( \
+		"Elf%1$i_Dyn dumpedelf_dyn_%2$li[];\n" \
+		"struct {\n" \
+		"\tElf%1$i_Ehdr ehdr;\n" \
+		"\tElf%1$i_Phdr phdrs[%3$li];\n" \
+		"\tElf%1$i_Shdr shdrs[%4$li];\n" \
+		"\tElf%1$i_Dyn *dyns;\n" \
+		"} dumpedelf_%2$li = {\n\n", \
+		B, file_cnt, \
+		(long)EGET(ehdr->e_phnum), \
+		(long)EGET(ehdr->e_shnum) \
+	); \
 	}
 	MAKE_STRUCT(32)
 	MAKE_STRUCT(64)
@@ -74,17 +84,15 @@ static void dumpelf(const char *filename, long file_cnt)
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		uint16_t phnum = EGET(ehdr->e_phnum); \
-		for (i = 0; i < phnum; ++i) { \
-			if (i) printf(",\n"); \
+		for (i = 0; i < phnum; ++i, ++phdr) \
 			dump_phdr(elf, phdr, i); \
-			++phdr; \
-		} }
+		}
 		DUMP_PHDRS(32)
 		DUMP_PHDRS(64)
 	} else {
 		printf(" /* no program headers ! */ ");
 	}
-	printf("\n},\n");
+	printf("},\n");
 
 	/* dump the section headers */
 	printf("\n.shdrs = {\n");
@@ -96,20 +104,40 @@ static void dumpelf(const char *filename, long file_cnt)
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
 		Elf ## B ## _Off offset = EGET(shdr[shstrndx].sh_offset); \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
-		for (i = 0; i < shnum; ++i) { \
-			if (i) printf(",\n"); \
+		for (i = 0; i < shnum; ++i, ++shdr) \
 			dump_shdr(elf, shdr, i, elf->vdata + offset + EGET(shdr->sh_name)); \
-			++shdr; \
-		} }
+		}
 		DUMP_SHDRS(32)
 		DUMP_SHDRS(64)
 	} else {
 		printf(" /* no section headers ! */ ");
 	}
-	printf("\n}\n");
+	printf("},\n");
 
-	/* finish the namespace struct and get out of here */
+	/* finish the namespace struct and start the abitrary ones */
+	printf("\n.dyns = dumpedelf_dyn_%li,\n", file_cnt);
 	printf("};\n");
+
+	/* start the arbitrary structs */
+	printf("Elf%lu_Dyn dumpedelf_dyn_%li[] = {\n", b, file_cnt);
+	if (phdr_dynamic_void) {
+#define DUMP_DYNS(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+		Elf ## B ## _Phdr *phdr = phdr_dynamic_void; \
+		Elf ## B ## _Dyn *dyn = elf->vdata + EGET(phdr->p_offset); \
+		i = 0; \
+		do { \
+			dump_dyn(elf, dyn++, i++); \
+		} while (EGET(dyn->d_tag) != DT_NULL); \
+		}
+		DUMP_DYNS(32)
+		DUMP_DYNS(64)
+	} else {
+		printf(" /* no dynamic tags ! */ ");
+	}
+	printf("};\n");
+
+	/* get out of here */
 	unreadelf(elf);
 }
 static void dump_ehdr(elfobj *elf, void *ehdr_void)
@@ -160,6 +188,9 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
+	switch (EGET(phdr->p_type)) { \
+	case PT_DYNAMIC: phdr_dynamic_void = phdr_void; break; \
+	} \
 	printf("/* Program Header #%li 0x%lX */\n{\n", phdr_cnt, (unsigned long)phdr_void - (unsigned long)elf->data); \
 	printf("\t.p_type   = %-10li , /* [%s] */\n", (long)EGET(phdr->p_type), get_elfptype(EGET(phdr->p_type))); \
 	printf("\t.p_offset = %-10li ,\n", (long)EGET(phdr->p_offset)); \
@@ -169,7 +200,7 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 	printf("\t.p_memsz  = %-10li ,\n", (long)EGET(phdr->p_memsz)); \
 	printf("\t.p_flags  = %-10li ,\n", (long)EGET(phdr->p_flags)); \
 	printf("\t.p_align  = %-10li\n", (long)EGET(phdr->p_align)); \
-	printf("}"); \
+	printf("},\n"); \
 	}
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
@@ -257,10 +288,28 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 		} \
 		} \
 	} \
-	printf("}"); \
+	printf("},\n"); \
 	}
 	DUMP_SHDR(32)
 	DUMP_SHDR(64)
+}
+static void dump_dyn(elfobj *elf, void *dyn_void, long dyn_cnt)
+{
+#define DUMP_DYN(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+	Elf ## B ## _Dyn *dyn = dyn_void; \
+	unsigned long tag = EGET(dyn->d_tag); \
+	printf("/* Dynamic tag #%li '%s' 0x%lX */\n{\n", \
+	       dyn_cnt, get_elfdtype(tag), (unsigned long)dyn_void - (unsigned long)elf->data); \
+	printf("\t.d_tag     = 0x%-8lX ,\n", tag); \
+	printf("\t.d_un      = {\n"); \
+	printf("\t\t.d_val = 0x%-8lX ,\n", (unsigned long)EGET(dyn->d_un.d_val)); \
+	printf("\t\t.d_ptr = 0x%-8lX ,\n", (unsigned long)EGET(dyn->d_un.d_val)); \
+	printf("\t},\n"); \
+	printf("},\n"); \
+	}
+	DUMP_DYN(32)
+	DUMP_DYN(64)
 }
 
 /* usage / invocation handling functions */
