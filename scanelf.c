@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.233 2011/10/03 16:19:18 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.234 2011/10/13 04:49:30 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.233 2011/10/03 16:19:18 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.234 2011/10/13 04:49:30 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -143,7 +143,7 @@ static int rematch(const char *regex, const char *match, int cflags)
 }
 
 /* sub-funcs for scanelf_fileat() */
-static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
+static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 {
 	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
 
@@ -165,12 +165,103 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **tab)
 	if (strtab && dynstr) { \
 		Elf ## B ## _Shdr *estrtab = strtab; \
 		Elf ## B ## _Shdr *edynstr = dynstr; \
-		*tab = (EGET(estrtab->sh_size) > EGET(edynstr->sh_size)) ? strtab : dynstr; \
+		*str = (EGET(estrtab->sh_size) > EGET(edynstr->sh_size)) ? strtab : dynstr; \
 	} else \
-		*tab = strtab ? strtab : dynstr; \
+		*str = strtab ? strtab : dynstr; \
 	}
 	GET_SYMTABS(32)
 	GET_SYMTABS(64)
+
+	if (*sym && *str)
+		return;
+
+	/*
+	 * damn, they're really going to make us work for it huh?
+	 * reconstruct the section header info out of the dynamic
+	 * tags so we can see what symbols this guy uses at runtime.
+	 */
+#define GET_SYMTABS_DT(B) \
+	if (elf->elf_class == ELFCLASS ## B) { \
+	size_t i; \
+	static Elf ## B ## _Shdr sym_shdr, str_shdr; \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Addr vsym, vstr, vhash, vgnu_hash; \
+	Elf ## B ## _Dyn *dyn; \
+	Elf ## B ## _Off offset; \
+	\
+	/* lookup symbols used at runtime with DT_SYMTAB / DT_STRTAB */ \
+	vsym = vstr = vhash = vgnu_hash = 0; \
+	memset(&sym_shdr, 0, sizeof(sym_shdr)); \
+	memset(&str_shdr, 0, sizeof(str_shdr)); \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC) \
+			continue; \
+		\
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
+			continue; \
+		\
+		dyn = DYN ## B (elf->vdata + offset); \
+		while (EGET(dyn->d_tag) != DT_NULL) { \
+			switch (EGET(dyn->d_tag)) { \
+			case DT_SYMTAB:   vsym = EGET(dyn->d_un.d_val); break; \
+			case DT_SYMENT:   sym_shdr.sh_entsize = dyn->d_un.d_val; break; \
+			case DT_STRTAB:   vstr = EGET(dyn->d_un.d_val); break; \
+			case DT_STRSZ:    str_shdr.sh_size = dyn->d_un.d_val; break; \
+			case DT_HASH:     vhash = EGET(dyn->d_un.d_val); break; \
+			/*case DT_GNU_HASH: vgnu_hash = EGET(dyn->d_un.d_val); break;*/ \
+			} \
+			++dyn; \
+		} \
+		if (vsym && vstr) \
+			break; \
+	} \
+	if (!vsym || !vstr || !(vhash || vgnu_hash)) \
+		return; \
+	\
+	/* calc offset into the ELF by finding the load addr of the syms */ \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
+		Elf ## B ## _Addr filesz = EGET(phdr[i].p_filesz); \
+		offset = EGET(phdr[i].p_offset); \
+		\
+		if (EGET(phdr[i].p_type) != PT_LOAD) \
+			continue; \
+		\
+		if (vhash >= vaddr && vhash < vaddr + filesz) { \
+			/* Scan the hash table to see how many entries we have */ \
+			Elf32_Word max_sym_idx = 0; \
+			Elf32_Word *hashtbl = elf->vdata + offset + (vhash - vaddr); \
+			Elf32_Word b, nbuckets = EGET(hashtbl[0]); \
+			Elf32_Word nchains = EGET(hashtbl[1]); \
+			Elf32_Word *buckets = &hashtbl[2]; \
+			Elf32_Word *chains = &buckets[nbuckets]; \
+			Elf32_Word sym_idx; \
+			\
+			for (b = 0; b < nbuckets; ++b) { \
+				if (!buckets[b]) \
+					continue; \
+				for (sym_idx = buckets[b]; sym_idx < nchains && sym_idx; sym_idx = chains[sym_idx]) \
+					if (max_sym_idx < sym_idx) \
+						max_sym_idx = sym_idx; \
+			} \
+			ESET(sym_shdr.sh_size, sym_shdr.sh_entsize * max_sym_idx); \
+		} \
+		\
+		if (vsym >= vaddr && vsym < vaddr + filesz) { \
+			ESET(sym_shdr.sh_offset, offset + (vsym - vaddr)); \
+			*sym = &sym_shdr; \
+		} \
+		\
+		if (vstr >= vaddr && vstr < vaddr + filesz) { \
+			ESET(str_shdr.sh_offset, offset + (vstr - vaddr)); \
+			*str = &str_shdr; \
+		} \
+	} \
+	}
+	GET_SYMTABS_DT(32)
+	GET_SYMTABS_DT(64)
 }
 
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
@@ -1183,7 +1274,6 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 
 static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
-	unsigned long i;
 	char *ret;
 	void *symtab_void, *strtab_void;
 
@@ -1198,7 +1288,7 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 		Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
-		unsigned long cnt = EGET(symtab->sh_entsize); \
+		Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
 		size_t ret_len = 0; \
 		if (cnt) \
@@ -1225,7 +1315,8 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 			                          EGET(sym->st_size)); \
 			} \
 			++sym; \
-		} }
+		} \
+		}
 		FIND_SYM(32)
 		FIND_SYM(64)
 	}
