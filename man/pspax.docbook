@@ -42,7 +42,7 @@
    <listitem><para>Show all processes</para></listitem>
   </varlistentry>
   <varlistentry>
-   <term><option>-h</option>, <option>--header</option></term>
+   <term><option>-e</option>, <option>--header</option></term>
    <listitem><para>Print GNU_STACK/PT_LOAD markings</para></listitem>
   </varlistentry>
   <varlistentry>
