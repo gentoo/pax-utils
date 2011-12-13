@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.234 2011/10/13 04:49:30 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.235 2011/12/13 05:12:14 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.234 2011/10/13 04:49:30 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.235 2011/12/13 05:12:14 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1536,7 +1536,7 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 	/* verify this is real ELF */
 	if ((elf = _readelf_fd(filename, fd, len, !fix_elf)) == NULL) {
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
-		return ret;
+		return 2;
 	}
 	switch (match_bits) {
 		case 32:
@@ -1627,12 +1627,18 @@ static int scanelf_fileat(int dir_fd, const char *filename, const struct stat *s
 	if (fd == -1)
 		return 1;
 
-	if (scanelf_elf(filename, fd, st->st_size) == 1 && scan_archives)
+	if (scanelf_elf(filename, fd, st->st_size) == 2) {
 		/* if it isn't an ELF, maybe it's an .a archive */
-		scanelf_archive(filename, fd, st->st_size);
+		if (scan_archives)
+			scanelf_archive(filename, fd, st->st_size);
 
-	/* XXX: unreadelf() implicitly closes its fd */
-	close(fd);
+		/*
+		 * unreadelf() implicitly closes its fd, so only close it
+		 * when we are returning it in the non-ELF case
+		 */
+		close(fd);
+	}
+
 	return 0;
 }
 
