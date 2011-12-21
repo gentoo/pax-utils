@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.237 2011/12/21 22:00:58 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.238 2011/12/21 22:17:36 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.237 2011/12/21 22:00:58 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.238 2011/12/21 22:17:36 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1122,7 +1122,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
  *    filters.  There are groups of modifiers.  If you don't specify a member
  *    of a group, then all types in that group are matched.  The current
  *    groups and their types are:
- *        STT group: STT_NOTYPE:n STT_OBJECT:o STT_FUNC:f SST_FILE:F
+ *        STT group: STT_NOTYPE:n STT_OBJECT:o STT_FUNC:f STT_FILE:F
  *        STB group: STB_LOCAL:l STB_GLOBAL:g STB_WEAK:w
  *        SHN group: SHN_UNDEF:u SHN_ABS:a SHN_COMMON:c {defined}:d
  *    The "defined" value in the SHN group does not correspond to a SHN_xxx define.
