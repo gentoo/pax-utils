@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.236 2011/12/21 17:34:12 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.237 2011/12/21 22:00:58 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.236 2011/12/21 17:34:12 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.237 2011/12/21 22:00:58 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1676,7 +1676,7 @@ static int scanelf_dirat(int dir_fd, const char *path)
 	if (dir == NULL) {
 		if (subdir_fd != -1)
 			close(subdir_fd);
-		warnf("could not opendir %s: %s", path, strerror(errno));
+		warnfp("could not opendir(%s)", path);
 		return 1;
 	}
 	if (be_verbose > 1) printf("%s: scanning dir\n", path);
@@ -2071,7 +2071,7 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 'o': {
 			if (freopen(optarg, "w", stdout) == NULL)
-				err("Could not open output stream '%s': %s", optarg, strerror(errno));
+				errp("Could not freopen(%s)", optarg);
 			break;
 		}
 		case 'k':
