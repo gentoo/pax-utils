@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.235 2011/12/13 05:12:14 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.236 2011/12/21 17:34:12 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.235 2011/12/13 05:12:14 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.236 2011/12/21 17:34:12 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -971,9 +971,13 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						size_t n; \
 						const char *find_lib_name; \
 						\
-						array_for_each(find_lib_arr, n, find_lib_name) \
-							if (!strcmp(find_lib_name, needed)) \
+						array_for_each(find_lib_arr, n, find_lib_name) { \
+							int invert = 1; \
+							if (find_lib_name[0] == '!') \
+								invert = 0, ++find_lib_name; \
+							if (!strcmp(find_lib_name, needed) == invert) \
 								++matched; \
+						} \
 						\
 						if (matched == array_cnt(find_lib_arr)) { \
 							*found_lib = 1; \
