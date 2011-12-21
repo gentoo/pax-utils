@@ -92,7 +92,11 @@
   </varlistentry>
   <varlistentry>
    <term><option>-k</option>, <option>--section</option> <replaceable>SECTION</replaceable></term>
-   <listitem><para>Find ELFs with the specified section</para></listitem>
+   <listitem><para>
+    Find ELFs with the specified section.  May be specified multiple times to
+    match multiple sections simultaneously.  See
+    <link><emphasis remap='B'>SECTION MATCHING</emphasis></link> for more info.
+   </para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-L</option>, <option>--ldcache</option></term>
@@ -112,7 +116,11 @@
   </varlistentry>
   <varlistentry>
    <term><option>-N</option>, <option>--lib</option> <replaceable>SONAME</replaceable></term>
-   <listitem><para>Find ELFs that need the specified SONAME</para></listitem>
+   <listitem><para>
+    Find ELFs that need the specified SONAME.  May be specified multiple times
+    to match multiple SONAMEs simultaneously.  See
+    <link><emphasis remap='B'>SONAME MATCHING</emphasis></link> for more info.
+   </para></listitem>
   </varlistentry>
   <varlistentry>
    <term><option>-n</option>, <option>--needed</option></term>
@@ -254,12 +262,51 @@
  </para>
 </refsect1>
 
-<refsect1 id='elf-etypes'>
+<refsect1 id='symbol-matching'>
  <title>Symbol Matching</title>
  <para>
-  A <emphasis remap='B'>-</emphasis> prefix will only show undefined references
-  while a <emphasis remap='B'>+</emphasis> prefix will only show defined
-  references while no prefix will show both.
+  The string specified takes the form <emphasis remap='B'>[%[modifiers]%][[+-]&lt;symbol name&gt;][,[.....]]</emphasis>.
+ </para>
+ <para>
+  If the <option>symbol name</option> is empty, then all symbols are matched.
+ </para>
+ <para>
+  If the <option>symbol name</option> is a glob ("<emphasis remap='B'>*</emphasis>"),
+  then all symbols are dumped in a debug format.  Do not rely on the structure
+  of this output as it changes whenever we feel like it.
+ </para>
+ <para>
+  If the first char of the symbol name is a plus ("<emphasis remap='B'>+</emphasis>"),
+  then only match defined symbols.  If it's a minus ("<emphasis remap='B'>-</emphasis>"),
+  only match undefined symbols.  When we say "defined", we mean the symbol is
+  defined in the ELF vs having an external reference.
+ </para>
+ <para>
+  Putting modifiers in between the percent signs ("<emphasis remap='B'>%</emphasis>")
+  allows for more in depth filters.  There are groups of modifiers.  If you
+  don't specify a member of a group, then all types in that group are matched.
+ </para>
+ <para>
+  <itemizedlist>
+   <listitem><para><emphasis remap='B'>STT group</emphasis> (symbol type)</para></listitem>
+   <listitem><para><emphasis remap='B'>n</emphasis> - STT_NOTYPE</para></listitem>
+   <listitem><para><emphasis remap='B'>o</emphasis> - STT_OBJECT</para></listitem>
+   <listitem><para><emphasis remap='B'>f</emphasis> - STT_FUNC</para></listitem>
+   <listitem><para><emphasis remap='B'>F</emphasis> - STT_FILE</para></listitem>
+   <listitem><para><emphasis remap='B'>STB group</emphasis> (symbol binding/visibility)</para></listitem>
+   <listitem><para><emphasis remap='B'>l</emphasis> - STB_LOCAL</para></listitem>
+   <listitem><para><emphasis remap='B'>g</emphasis> - STB_GLOBAL</para></listitem>
+   <listitem><para><emphasis remap='B'>w</emphasis> - STB_WEAK</para></listitem>
+   <listitem><para><emphasis remap='B'>SHN group</emphasis> (section header)</para></listitem>
+   <listitem><para><emphasis remap='B'>u</emphasis> - SHN_UNDEF</para></listitem>
+   <listitem><para><emphasis remap='B'>a</emphasis> - SHN_ABS</para></listitem>
+   <listitem><para><emphasis remap='B'>c</emphasis> - SHN_COMMON</para></listitem>
+  </itemizedlist>
+ </para>
+ <para>
+  You can search for multiple symbols simultaneously by using a comma ("<emphasis remap='B'>,</emphasis>")
+  to separate different searches.  Every symbol that matches will be displayed
+  while unmatched symbols will not.
  </para>
 </refsect1>
 
@@ -296,6 +343,22 @@
    <listitem><para><emphasis remap='B'>32 - ELFCLASS32</emphasis> - 32bit ELFs</para></listitem>
    <listitem><para><emphasis remap='B'>64 - ELFCLASS64</emphasis> - 64bit ELFs</para></listitem>
   </itemizedlist>
+ </para>
+</refsect1>
+
+<refsect1 id='section-matching'>
+ <title>Section Matching</title>
+ <para>
+  A <emphasis remap='B'>!</emphasis> prefix will only show ELF's that do not
+  have the specified section.
+ </para>
+</refsect1>
+
+<refsect1 id='needed-matching'>
+ <title>Needed SONAME Matching</title>
+ <para>
+  A <emphasis remap='B'>!</emphasis> prefix will only show ELF's that do not
+  depend on the specified library.
  </para>
 </refsect1>
 
