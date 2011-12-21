@@ -22,6 +22,7 @@
   <citerefentry><refentrytitle>paxctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>pspax</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
   <citerefentry><refentrytitle>readelf</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-  <citerefentry><refentrytitle>scanelf</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+  <citerefentry><refentrytitle>scanelf</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>elf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
  </para>
 </refsect1>
