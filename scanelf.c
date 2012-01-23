@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.239 2012/01/23 22:28:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.240 2012/01/23 23:48:54 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.239 2012/01/23 22:28:17 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.240 2012/01/23 23:48:54 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -55,6 +55,7 @@ static char *search_path = NULL;
 static char fix_elf = 0;
 static char g_match = 0;
 static char use_ldcache = 0;
+static char use_ldpath = 0;
 
 static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
@@ -801,7 +802,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 
 #if defined(__GLIBC__) || defined(__UCLIBC__)
 
-static char *lookup_cache_lib(elfobj *elf, char *fname)
+static char *lookup_cache_lib(elfobj *elf, const char *fname)
 {
 	int fd;
 	char *strs;
@@ -879,7 +880,7 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 }
 
 #elif defined(__NetBSD__)
-static char *lookup_cache_lib(elfobj *elf, char *fname)
+static char *lookup_cache_lib(elfobj *elf, const char *fname)
 {
 	static char buf[__PAX_UTILS_PATH_MAX] = "";
 	static struct stat st;
@@ -908,11 +909,26 @@ static char *lookup_cache_lib(elfobj *elf, char *fname)
 #ifdef __ELF__
 #warning Cache support not implemented for your target
 #endif
-static char *lookup_cache_lib(elfobj *elf, char *fname)
+static char *lookup_cache_lib(elfobj *elf, const char *fname)
 {
 	return NULL;
 }
 #endif
+
+static char *lookup_config_lib(elfobj *elf, char *fname)
+{
+	static char buf[__PAX_UTILS_PATH_MAX] = "";
+	const char *ldpath;
+	size_t n;
+
+	array_for_each(ldpaths, n, ldpath) {
+		snprintf(buf, sizeof(buf), "%s/%s", root_rel_path(ldpath), fname);
+		if (faccessat(root_fd, buf, F_OK, AT_SYMLINK_NOFOLLOW) == 0)
+			return buf;
+	}
+
+	return NULL;
+}
 
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
@@ -960,9 +976,13 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						/* -n -> print all entries */ \
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
-							if (use_ldcache) \
+							if (use_ldpath) { \
+								if ((p = lookup_config_lib(elf, needed)) != NULL) \
+									needed = p; \
+							} else if (use_ldcache) { \
 								if ((p = lookup_cache_lib(elf, needed)) != NULL) \
 									needed = p; \
+							} \
 							xstrcat(ret, needed, ret_len); \
 						} \
 						*found_needed = 1; \
@@ -1421,6 +1441,7 @@ static int scanelf_elfobj(elfobj *elf)
 			case 't': prints("TEXTREL "); break;
 			case 'r': prints("RPATH "); break;
 			case 'M': prints("CLASS "); break;
+			case 'l':
 			case 'n': prints("NEEDED "); break;
 			case 'i': prints("INTERP "); break;
 			case 'b': prints("BIND "); break;
@@ -1747,7 +1768,7 @@ static int scanelf_from_file(const char *filename)
 
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 
-static int load_ld_cache_config(int i, const char *fname)
+static int _load_ld_cache_config(const char *fname)
 {
 	FILE *fp = NULL;
 	char *p, *path;
@@ -1756,7 +1777,7 @@ static int load_ld_cache_config(int i, const char *fname)
 
 	fp = fopenat_r(root_fd, root_rel_path(fname));
 	if (fp == NULL)
-		return i;
+		return -1;
 
 	path = NULL;
 	len = 0;
@@ -1791,7 +1812,7 @@ static int load_ld_cache_config(int i, const char *fname)
 					/* try to avoid direct loops */
 					if (strcmp(gl.gl_pathv[x], fname) == 0)
 						continue;
-					i = load_ld_cache_config(i, gl.gl_pathv[x]);
+					_load_ld_cache_config(gl.gl_pathv[x]);
 				}
 				globfree(&gl);
 			}
@@ -1815,12 +1836,12 @@ static int load_ld_cache_config(int i, const char *fname)
 		close(curr_fd);
 	}
 
-	return i;
+	return 0;
 }
 
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 
-static int load_ld_cache_config(int i, const char *fname)
+static int _load_ld_cache_config(const char *fname)
 {
 	FILE *fp = NULL;
 	char *b = NULL, *p;
@@ -1828,21 +1849,21 @@ static int load_ld_cache_config(int i, const char *fname)
 
 	fp = fopenat_r(root_fd, root_rel_path(fname));
 	if (fp == NULL)
-		return i;
+		return -1;
 
 	if (fread(&hdr, 1, sizeof(hdr), fp) != sizeof(hdr) ||
 	    hdr.magic != ELFHINTS_MAGIC || hdr.version != 1 ||
 	    fseek(fp, hdr.strtab + hdr.dirlist, SEEK_SET) == -1)
 	{
 		fclose(fp);
-		return i;
+		return -1;
 	}
 
 	b = xmalloc(hdr.dirlistlen + 1);
 	if (fread(b, 1, hdr.dirlistlen+1, fp) != hdr.dirlistlen+1) {
 		fclose(fp);
 		free(b);
-		return i;
+		return -1;
 	}
 
 	while ((p = strsep(&b, ":"))) {
@@ -1853,43 +1874,49 @@ static int load_ld_cache_config(int i, const char *fname)
 
 	free(b);
 	fclose(fp);
-	return i;
+	return 0;
 }
 
 #else
 #ifdef __ELF__
 #warning Cache config support not implemented for your target
 #endif
-static int load_ld_cache_config(int i, const char *fname)
+static int _load_ld_cache_config(const char *fname)
 {
 	return 0;
 }
 #endif
 
+static void load_ld_cache_config(const char *fname)
+{
+	bool scan_l, scan_ul, scan_ull;
+	size_t n;
+	const char *ldpath;
+
+	_load_ld_cache_config(fname);
+
+	scan_l = scan_ul = scan_ull = false;
+	if (array_cnt(ldpaths)) {
+		array_for_each(ldpaths, n, ldpath) {
+			if (!scan_l   && !strcmp(ldpath, "/lib"))           scan_l   = true;
+			if (!scan_ul  && !strcmp(ldpath, "/usr/lib"))       scan_ul  = true;
+			if (!scan_ull && !strcmp(ldpath, "/usr/local/lib")) scan_ull = true;
+		}
+	}
+
+	if (!scan_l)   xarraypush_str(ldpaths, "/lib");
+	if (!scan_ul)  xarraypush_str(ldpaths, "/usr/lib");
+	if (!scan_ull) xarraypush_str(ldpaths, "/usr/local/lib");
+}
+
 /* scan /etc/ld.so.conf for paths */
 static void scanelf_ldpath(void)
 {
-	char scan_l, scan_ul, scan_ull;
 	size_t n;
 	const char *ldpath;
-	int i = 0;
 
-	if (array_cnt(ldpaths) == 0)
-		err("Unable to load any paths from ld.so.conf");
-
-	scan_l = scan_ul = scan_ull = 0;
-
-	array_for_each(ldpaths, n, ldpath) {
-		if (!scan_l   && !strcmp(ldpath, "/lib"))           scan_l   = 1;
-		if (!scan_ul  && !strcmp(ldpath, "/usr/lib"))       scan_ul  = 1;
-		if (!scan_ull && !strcmp(ldpath, "/usr/local/lib")) scan_ull = 1;
+	array_for_each(ldpaths, n, ldpath)
 		scanelf_dir(ldpath);
-		++i;
-	}
-
-	if (!scan_l)   scanelf_dir("/lib");
-	if (!scan_ul)  scanelf_dir("/usr/lib");
-	if (!scan_ull) scanelf_dir("/usr/local/lib");
 }
 
 /* scan env PATH for paths */
@@ -1916,6 +1943,7 @@ static void scanelf_envpath(void)
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
+	{"use-ldpath",no_argument, NULL, 129},
 	{"root",       a_argument, NULL, 128},
 	{"recursive", no_argument, NULL, 'R'},
 	{"mount",     no_argument, NULL, 'm'},
@@ -1960,6 +1988,7 @@ static struct option const long_opts[] = {
 static const char * const opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
+	"Use ld.so.conf to show full path (use with -r/-n)",
 	"Root directory (use with -l or -p)",
 	"Scan directories recursively",
 	"Don't recursively cross mount points",
@@ -2037,6 +2066,7 @@ static int parseargs(int argc, char *argv[])
 	int i;
 	const char *from_file = NULL;
 	int ret = 0;
+	char load_cache_config = 0;
 
 	opterr = 0;
 	while ((i=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
@@ -2135,12 +2165,12 @@ static int parseargs(int argc, char *argv[])
 		}
 		case 'Z': show_size = 1; break;
 		case 'g': g_match = 1; break;
-		case 'L': use_ldcache = 1; break;
+		case 'L': load_cache_config = use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
 		case 'C': color_init(true); break;
 		case 'B': show_banner = 0; break;
-		case 'l': scan_ldpath = 1; break;
+		case 'l': load_cache_config = scan_ldpath = 1; break;
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
 		case 'm': dir_crossmount = 0; break;
@@ -2165,6 +2195,7 @@ static int parseargs(int argc, char *argv[])
 			if (root_fd == -1)
 				err("Could not open root: %s", optarg);
 			break;
+		case 129: load_cache_config = use_ldpath = 1; break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':
@@ -2217,7 +2248,7 @@ static int parseargs(int argc, char *argv[])
 			case 'S': show_soname = 1; break;
 			case 'T': show_textrels = 1; break;
 			default:
-				err("Invalid format specifier '%c' (byte %i)",
+				err("invalid format specifier '%c' (byte %i)",
 				    out_format[i], i+1);
 			}
 		}
@@ -2250,8 +2281,8 @@ static int parseargs(int argc, char *argv[])
 	if (be_verbose > 2) printf("Format: %s\n", out_format);
 
 	/* now lets actually do the scanning */
-	if (scan_ldpath || use_ldcache)
-		load_ld_cache_config(0, __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG);
+	if (load_cache_config)
+		load_ld_cache_config(__PAX_UTILS_DEFAULT_LD_CACHE_CONFIG);
 	if (scan_ldpath) scanelf_ldpath();
 	if (scan_envpath) scanelf_envpath();
 	if (!from_file && optind == argc && ttyname(0) == NULL && !scan_ldpath && !scan_envpath)
