@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.238 2011/12/21 22:17:36 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.239 2012/01/23 22:28:17 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.238 2011/12/21 22:17:36 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.239 2012/01/23 22:28:17 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1965,7 +1965,7 @@ static const char * const opts_help[] = {
 	"Don't recursively cross mount points",
 	"Don't scan symlinks",
 	"Scan archives (.a files)",
-	"Utilize ld.so.cache information (use with -r/-n)",
+	"Utilize ld.so.cache to show full path (use with -r/-n)",
 	"Try and 'fix' bad things (use with -r/-e)",
 	"Sets EI_PAX/PT_PAX_FLAGS to <arg> (use with -Xx)\n",
 	"Print PaX markings",
