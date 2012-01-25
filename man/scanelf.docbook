@@ -198,6 +198,22 @@
    <term><option>-z</option>, <option>--setpax</option> <replaceable>FLAGS</replaceable></term>
    <listitem><para>Sets EI_PAX/PT_PAX_FLAGS to specified flags (use with <option>-Xx</option>)</para></listitem>
   </varlistentry>
+  <varlistentry>
+   <term><option>--use-ldpath</option></term>
+   <listitem><para>
+    Use the ld.so.conf paths to find the full path to libraries (use in
+    conjunction with --needed).
+   </para></listitem>
+  </varlistentry>
+  <varlistentry>
+   <term><option>--root</option> <replaceable>PATH</replaceable></term>
+   <listitem><para>
+    Search the specified root tree instead of /.  Generally paired with options
+    like -l or -p.  This implicitly treats all paths specified on the command
+    line as relative to the root, so be sure to omit it if you are explicitly
+    listing ELFs.
+   </para></listitem>
+  </varlistentry>
  </variablelist>
 </refsect1>
 
