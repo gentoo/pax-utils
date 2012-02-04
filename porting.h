@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.41 2011/10/08 18:34:06 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.42 2012/02/04 18:15:37 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -201,6 +201,10 @@
 # else
 #  define EM_ST19	74
 # endif
+#endif
+
+#ifndef O_CLOEXEC
+# define O_CLOEXEC 0
 #endif
 
 #endif /* _PORTING_H */
