@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.77 2012/01/23 23:47:14 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.78 2012/02/04 18:14:18 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -24,7 +24,11 @@ override CPPFLAGS  += -D_GNU_SOURCE
 LDFLAGS   +=
 LIBS      :=
 DESTDIR    =
-PREFIX    := $(DESTDIR)/usr
+PREFIX     = $(DESTDIR)/usr
+DATADIR    = $(PREFIX)/share
+MANDIR     = $(DATADIR)/man
+DOCDIR     = $(DATADIR)/doc
+PKGDOCDIR  = $(DOCDIR)/pax-utils
 STRIP     := strip
 MKDIR     := mkdir -p
 CP        := cp
@@ -100,15 +104,15 @@ strip-more:
 	$(STRIP) --strip-unneeded $(TARGETS)
 
 install: all
-	$(MKDIR) $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
+	$(MKDIR) $(PREFIX)/bin/ $(MANDIR)/man1/
 	for sh in *.sh ; do $(INS_EXE) $$sh $(PREFIX)/bin/$${sh%.sh} || exit $$? ; done
 	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/
 ifeq ($(S),)
-	$(MKDIR) $(PREFIX)/share/doc/pax-utils/
-	$(CP) README BUGS TODO $(PREFIX)/share/doc/pax-utils/
-	-$(INS_DATA) $(MPAGES) $(PREFIX)/share/man/man1/
+	$(MKDIR) $(PKGDOCDIR)/
+	$(CP) README BUGS TODO $(PKGDOCDIR)/
+	-$(INS_DATA) $(MPAGES) $(MANDIR)/man1/
 else
-	$(INS_DATA) $(MPAGES) $(PREFIX)/share/man/man1/
+	$(INS_DATA) $(MPAGES) $(MANDIR)/man1/
 endif
 
 dist:
