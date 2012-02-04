@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.78 2012/02/04 18:14:18 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.79 2012/02/04 18:22:37 vapier Exp $
 ####################################################################
 
 check_gcc=$(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -31,7 +31,6 @@ DOCDIR     = $(DATADIR)/doc
 PKGDOCDIR  = $(DOCDIR)/pax-utils
 STRIP     := strip
 MKDIR     := mkdir -p
-CP        := cp
 INS_EXE   := install -m755
 INS_DATA  := install -m644
 
@@ -104,36 +103,33 @@ strip-more:
 	$(STRIP) --strip-unneeded $(TARGETS)
 
 install: all
-	$(MKDIR) $(PREFIX)/bin/ $(MANDIR)/man1/
+	$(MKDIR) $(PREFIX)/bin/ $(MANDIR)/man1/ $(PKGDOCDIR)/
 	for sh in *.sh ; do $(INS_EXE) $$sh $(PREFIX)/bin/$${sh%.sh} || exit $$? ; done
 	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/
-ifeq ($(S),)
-	$(MKDIR) $(PKGDOCDIR)/
-	$(CP) README BUGS TODO $(PKGDOCDIR)/
-	-$(INS_DATA) $(MPAGES) $(MANDIR)/man1/
-else
+	$(INS_DATA) README BUGS TODO $(PKGDOCDIR)/
 	$(INS_DATA) $(MPAGES) $(MANDIR)/man1/
-endif
 
+PN = pax-utils
+P = $(PN)-$(PV)
 dist:
 	@if [ "$(PV)" = "" ] ; then \
 		echo "Please run 'make dist PV=<ver>'" ; \
 		exit 1 ; \
 	fi
-	rm -rf pax-utils-$(PV)
-	mkdir pax-utils-$(PV)
-	cp -a CVS pax-utils-$(PV)/
-	cd pax-utils-$(PV) && cvs up
-	echo "<releaseinfo>$(PV)</releaseinfo>" > pax-utils-$(PV)/man/fragment/version
-	$(MAKE) -C pax-utils-$(PV)/man
-	tar cf - pax-utils-$(PV) --exclude=CVS --exclude=.cvsignore | xz > pax-utils-$(PV).tar.xz
+	rm -rf $(P)
+	mkdir $(P)
+	cp -a CVS $(P)/
+	cd $(P) && cvs up
+	echo "<releaseinfo>$(PV)</releaseinfo>" > $(P)/man/fragment/version
+	$(MAKE) -C $(P)/man
+	tar cf - $(P) --exclude=CVS --exclude=.cvsignore | xz > $(P).tar.xz
 	@printf "\n ..... Making sure clean cvs build works ..... \n\n"
 	unset CFLAGS; \
 	for t in all check clean debug check ; do \
-		$(MAKE) -C pax-utils-$(PV) $$t || exit $$? ; \
+		$(MAKE) -C $(P) $$t || exit $$? ; \
 	done
-	rm -rf pax-utils-$(PV)
-	du -b pax-utils-$(PV).tar.xz
+	rm -rf $(P)
+	du -b $(P).tar.xz
 
 -include .depend
 
