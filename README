@@ -43,7 +43,7 @@ Maintainer: rdenis@simphalempin.com
 http://portsmon.freebsd.org/portoverview.py?category=sysutils&portname=pax-utils
 http://www.freshports.org/sysutils/pax-utils/
 http://archive.netbsd.se/?ml=freebsd-cvs-all&a=2006-08&m=2311441
-Maintainer: pav@FreeBSD.org
+Maintainer: sbz@FreeBSD.org
 
 (OpenEmedded)
 http://www.openembedded.org/filebrowser/org.openembedded.dev/packages/pax-utils
@@ -53,7 +53,7 @@ http://magog.se/crux/pax-utils/Pkgfile
 Maintainer: mattias@hedenskog.se
 
 (Fedora)
-https://admin.fedoraproject.org/pkgdb/packages/name/pax-utils
+https://admin.fedoraproject.org/pkgdb/acls/name/pax-utils
 Maintainer:  Dominik 'Rathann' Mierzejewski <rpm@greysector.net>
 
 (ArchLinux?)
