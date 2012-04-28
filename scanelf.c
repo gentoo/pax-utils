@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.241 2012/01/25 01:58:29 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.242 2012/04/28 05:14:26 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.241 2012/01/25 01:58:29 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.242 2012/04/28 05:14:26 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -299,16 +299,12 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	SHOW_PAX(64)
 	}
 
-	if (fix_elf && setpax) {
-		/* set the chpax settings */
-		if (elf->elf_class == ELFCLASS32) {
-			if (EHDR32(elf->ehdr)->e_type == ET_DYN || EHDR32(elf->ehdr)->e_type == ET_EXEC)
-				ESET(EHDR32(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
-		} else {
-			if (EHDR64(elf->ehdr)->e_type == ET_DYN || EHDR64(elf->ehdr)->e_type == ET_EXEC)
-				ESET(EHDR64(elf->ehdr)->e_ident[EI_PAX],  pax_pf2hf_flags(setpax));
-		}
-	}
+	/* Note: We do not support setting EI_PAX if not PT_PAX_FLAGS
+	 * was found.  This is known to break ELFs on glibc systems,
+	 * and mainline PaX has deprecated use of this for a long time.
+	 * We could support changing PT_GNU_STACK, but that doesn't
+	 * seem like it's worth the effort. #411919
+	 */
 
 	/* fall back to EI_PAX if no PT_PAX was found */
 	if (!*ret) {
