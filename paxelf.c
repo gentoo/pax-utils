@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.71 2012/04/28 05:14:26 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.72 2012/04/29 06:24:47 vapier Exp $
  *
  * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
@@ -706,7 +706,6 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 	if (shstrndx >= shnum) return NULL; \
 	strtbl = &(shdr[shstrndx]); \
 	for (i = 0; i < shnum; ++i) { \
-		if (EGET(shdr[i].sh_offset) >= elf->len - EGET(ehdr->e_shentsize)) continue; \
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 		if (offset >= (Elf ## B ## _Off)elf->len) continue; \
 		shdr_name = elf->data + offset; \
