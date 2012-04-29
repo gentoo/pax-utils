@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.243 2012/04/29 05:41:14 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.244 2012/04/29 06:21:36 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.243 2012/04/29 05:41:14 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.244 2012/04/29 06:21:36 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -155,19 +155,35 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	void *dynsym = elf_findsecbyname(elf, ".dynsym");
 	void *dynstr = elf_findsecbyname(elf, ".dynstr");
 
+	/*
+	 * If the sections are marked NOBITS, then they don't exist, so we just
+	 * skip them.  This let's us work sanely with splitdebug ELFs (rather
+	 * than spewing a lot of "corrupt ELF" messages later on).  In malformed
+	 * ELFs, the section might be wrongly set to NOBITS, but screw em.
+	 */
 #define GET_SYMTABS(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	if (symtab && dynsym) { \
-		Elf ## B ## _Shdr *esymtab = symtab; \
-		Elf ## B ## _Shdr *edynsym = dynsym; \
+	Elf ## B ## _Shdr *esymtab = symtab; \
+	Elf ## B ## _Shdr *estrtab = strtab; \
+	Elf ## B ## _Shdr *edynsym = dynsym; \
+	Elf ## B ## _Shdr *edynstr = dynstr; \
+	\
+	if (symtab && EGET(esymtab->sh_type) == SHT_NOBITS) \
+		symtab = NULL; \
+	if (dynsym && EGET(edynsym->sh_type) == SHT_NOBITS) \
+		dynsym = NULL; \
+	if (symtab && dynsym) \
 		*sym = (EGET(esymtab->sh_size) > EGET(edynsym->sh_size)) ? symtab : dynsym; \
-	} else \
+	else \
 		*sym = symtab ? symtab : dynsym; \
-	if (strtab && dynstr) { \
-		Elf ## B ## _Shdr *estrtab = strtab; \
-		Elf ## B ## _Shdr *edynstr = dynstr; \
+	\
+	if (strtab && EGET(estrtab->sh_type) == SHT_NOBITS) \
+		strtab = NULL; \
+	if (dynstr && EGET(edynstr->sh_type) == SHT_NOBITS) \
+		dynstr = NULL; \
+	if (strtab && dynstr) \
 		*str = (EGET(estrtab->sh_size) > EGET(edynstr->sh_size)) ? strtab : dynstr; \
-	} else \
+	else \
 		*str = strtab ? strtab : dynstr; \
 	}
 	GET_SYMTABS(32)
