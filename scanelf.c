@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.242 2012/04/28 05:14:26 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.243 2012/04/29 05:41:14 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.242 2012/04/28 05:14:26 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.243 2012/04/29 05:41:14 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1699,7 +1699,8 @@ static int scanelf_dirat(int dir_fd, const char *path)
 	if (be_verbose > 1) printf("%s: scanning dir\n", path);
 
 	subpath = stpcpy(buf, path);
-	*subpath++ = '/';
+	if (subpath[-1] != '/')
+		*subpath++ = '/';
 	pathlen = subpath - buf;
 	while ((dentry = readdir(dir))) {
 		if (!strcmp(dentry->d_name, ".") || !strcmp(dentry->d_name, ".."))
