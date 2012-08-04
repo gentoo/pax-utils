@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.244 2012/04/29 06:21:36 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.245 2012/08/04 06:08:25 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.244 2012/04/29 06:21:36 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.245 2012/08/04 06:08:25 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1661,8 +1661,13 @@ static int scanelf_fileat(int dir_fd, const char *filename, const struct stat *s
 			return 1;
 	}
 	fd = openat(dir_fd, filename, (fix_elf ? O_RDWR : O_RDONLY) | O_CLOEXEC);
-	if (fd == -1)
+	if (fd == -1) {
+		if (fix_elf && errno == ETXTBSY)
+			warnp("%s: could not fix", filename);
+		else if (be_verbose > 2)
+			printf("%s: skipping file: %s\n", filename, strerror(errno));
 		return 1;
+	}
 
 	if (scanelf_elf(filename, fd, st->st_size) == 2) {
 		/* if it isn't an ELF, maybe it's an .a archive */
