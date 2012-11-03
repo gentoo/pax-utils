@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.10 2011/03/23 02:23:34 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.11 2012/11/03 00:06:10 vapier Exp $
 
 argv0=${0##*/}
 
@@ -23,22 +23,30 @@ error() {
 	return 1
 }
 
-unset c_last_needed_by
-unset c_ldso_paths
+elf_specs() {
+	scanelf -BF '#F%a %M %D %I' "$1"
+}
+
+lib_paths_fallback="/lib* /usr/lib* /usr/local/lib*"
+c_ldso_paths_loaded='false'
 find_elf() {
+	_find_elf=''
+
 	local elf=$1 needed_by=$2
 	if [[ ${elf} == */* ]] && [[ -e ${elf} ]] ; then
-		echo "${elf}"
+		_find_elf=${elf}
 		return 0
 	else
 		check_paths() {
 			local elf=$1 ; shift
-			local path
-			for path in "$@" ; do
-				# XXX: This lacks ELF EM/EI_CLASS/EI_DATA/... checking (multilib)
-				if [[ -e ${path}/${elf} ]] ; then
-					echo "${path}/${elf}"
-					return 0
+			local path pe
+			for path ; do
+				pe="${path%/}/${elf#/}"
+				if [[ -e ${pe} ]] ; then
+					if [[ $(elf_specs "${pe}") == "${elf_specs}" ]] ; then
+						_find_elf=${pe}
+						return 0
+					fi
 				fi
 			done
 			return 1
@@ -62,11 +70,13 @@ find_elf() {
 			done
 		fi
 
-		if [[ -z ${c_ldso_paths} ]] ; then
+		if ! ${c_ldso_paths_loaded} ; then
+			c_ldso_paths_loaded='true'
+			c_ldso_paths=()
 			if [[ -r /etc/ld.so.conf ]] ; then
 				read_ldso_conf() {
 					local line p
-					for p in "$@" ; do
+					for p ; do
 						# if the glob didnt match anything #360041,
 						# or the files arent readable, skip it
 						[[ -r ${p} ]] || continue
@@ -74,7 +84,7 @@ find_elf() {
 							case ${line} in
 								"#"*) ;;
 								"include "*) read_ldso_conf ${line#* } ;;
-								*) c_ldso_paths="${c_ldso_paths} ${line}" ;;
+								*) c_ldso_paths+=( "${line}" ) ;;
 							esac
 						done <"${p}"
 					done
@@ -84,13 +94,12 @@ find_elf() {
 				read_ldso_conf /etc/ld.so.conf
 				popd >/dev/null
 			fi
-			: ${c_ldso_paths:= }
 		fi
-		if [[ ${c_ldso_paths} != " " ]] ; then
-			check_paths "${elf}" ${c_ldso_paths} && return 0
+		if [[ ${#c_ldso_paths[@]} -gt 0 ]] ; then
+			check_paths "${elf}" "${c_ldso_paths[@]}" && return 0
 		fi
 
-		check_paths "${elf}" /lib* /usr/lib* /usr/local/lib* && return 0
+		check_paths "${elf}" ${lib_paths_ldso:-${lib_paths_fallback}} && return 0
 	fi
 	return 1
 }
@@ -98,7 +107,9 @@ find_elf() {
 show_elf() {
 	local elf=$1 indent=$2 parent_elfs=$3
 	local rlib lib libs
-	local interp resolved=$(find_elf "${elf}")
+	local interp resolved
+	find_elf "${elf}"
+	resolved=${_find_elf}
 	elf=${elf##*/}
 
 	printf "%${indent}s%s => " "" "${elf}"
@@ -109,8 +120,15 @@ show_elf() {
 	parent_elfs="${parent_elfs},${elf}"
 	printf "${resolved:-not found}"
 	if [[ ${indent} -eq 0 ]] ; then
+		elf_specs=$(elf_specs "${resolved}")
 		interp=$(scanelf -qF '#F%i' "${resolved}")
+
 		printf " (interpreter => ${interp:-none})"
+		if [[ -r ${interp} ]] ; then
+			# Extract the default lib paths out of the ldso.
+			lib_paths_ldso=$(strings "${interp}" | grep '^/.*lib')
+			lib_paths_ldso=${lib_paths_ldso//:/ }
+		fi
 		interp=${interp##*/}
 	fi
 	printf "\n"
@@ -128,7 +146,8 @@ show_elf() {
 	for lib in ${libs//,/ } ; do
 		lib=${lib##*/}
 		[[ ,${my_allhits}, == *,${lib},* ]] && continue
-		rlib=$(find_elf "${lib}" "${resolved}")
+		find_elf "${lib}" "${resolved}"
+		rlib=${_find_elf}
 		show_elf "${rlib:-${lib}}" $((indent + 4)) "${parent_elfs}"
 	done
 }
@@ -153,7 +172,9 @@ shift $((OPTIND - 1))
 ${SET_X} && set -x
 
 ret=0
-for elf in "$@" ; do
+for elf ; do
+	unset lib_paths_ldso
+	unset c_last_needed_by
 	if [[ ! -e ${elf} ]] ; then
 		error "${elf}: file does not exist"
 	elif [[ ! -r ${elf} ]] ; then
