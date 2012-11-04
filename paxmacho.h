@@ -1,11 +1,11 @@
 /*
- * Copyright 2005-2007 Gentoo Foundation
+ * Copyright 2005-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.6 2010/01/15 10:29:17 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.h,v 1.7 2012/11/04 07:26:24 vapier Exp $
  *
- * Copyright 2005-2007 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005-2007 Mike Frysinger  - <vapier@gentoo.org>
- *                2008 Fabian Groffen  - <grobian@gentoo.org>
+ * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
+ *           2008-2012 Fabian Groffen  - <grobian@gentoo.org>
  *
  * Make sure all of the common mach-o stuff is setup as we expect
  */

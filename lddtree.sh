@@ -1,5 +1,8 @@
 #!/bin/bash
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.12 2012/11/04 07:20:43 vapier Exp $
+# Copyright 2007-2012 Gentoo Foundation
+# Copyright 2007-2012 Mike Frysinger <vapier@gentoo.org>
+# Distributed under the terms of the GNU General Public License v2
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.13 2012/11/04 07:26:24 vapier Exp $
 
 argv0=${0##*/}
 

@@ -1,10 +1,10 @@
 /*
- * Copyright 2003-2007 Gentoo Foundation
+ * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.h,v 1.6 2011/10/03 16:19:18 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.h,v 1.7 2012/11/04 07:26:24 vapier Exp $
  *
- * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
+ * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 #ifndef __XFUNCS_H__
