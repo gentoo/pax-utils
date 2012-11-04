@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.248 2012/11/04 07:48:42 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.249 2012/11/04 08:23:12 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.248 2012/11/04 07:48:42 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.249 2012/11/04 08:23:12 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -47,6 +47,7 @@ static char be_wewy_wewy_quiet = 0;
 static char be_semi_verbose = 0;
 static char *find_sym = NULL;
 static array_t _find_sym_arr = array_init_decl, *find_sym_arr = &_find_sym_arr;
+static array_t _find_sym_regex_arr = array_init_decl, *find_sym_regex_arr = &_find_sym_regex_arr;
 static char *find_lib = NULL;
 static array_t _find_lib_arr = array_init_decl, *find_lib_arr = &_find_lib_arr;
 static char *find_section = NULL;
@@ -117,28 +118,6 @@ static const char *root_rel_path(const char *path)
 	}
 
 	return path;
-}
-
-/* 1 on failure. 0 otherwise */
-static int rematch(const char *regex, const char *match, int cflags)
-{
-	regex_t preg;
-	int ret;
-
-	if ((match == NULL) || (regex == NULL))
-		return EXIT_FAILURE;
-
-	ret = regcomp(&preg, regex, cflags);
-	if (ret) {
-		char err[256];
-		regerror(ret, &preg, err, sizeof(err));
-		warnf("regcomp failed: %s", err);
-		return EXIT_FAILURE;
-	}
-	ret = regexec(&preg, match, 0, NULL, 0);
-	regfree(&preg);
-
-	return ret;
 }
 
 /* sub-funcs for scanelf_fileat() */
@@ -1257,10 +1236,7 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 		} else {
 			if (g_match) {
 				/* regex match the symbol */
-				int flags = REG_EXTENDED | REG_NOSUB;
-				if (g_match > 1)
-					flags |= REG_ICASE;
-				if (rematch(this_sym, symname, flags) != 0)
+				if (regexec(find_sym_regex_arr->eles[n], symname, 0, NULL, 0) == REG_NOMATCH)
 					continue;
 
 			} else if (*this_sym) {
@@ -2120,6 +2096,8 @@ static int parseargs(int argc, char *argv[])
 		case 's': {
 			/* historically, this was comma delimited */
 			char *this_sym = strtok(optarg, ",");
+			if (!this_sym)	/* edge case: -s '' */
+				xarraypush_str(find_sym_arr, "");
 			while (this_sym) {
 				xarraypush_str(find_sym_arr, this_sym);
 				this_sym = strtok(NULL, ",");
@@ -2220,6 +2198,40 @@ static int parseargs(int argc, char *argv[])
 	}
 	if (show_textrels && be_verbose)
 		has_objdump = bin_in_path("objdump");
+	/* precompile all the regexes */
+	if (g_match) {
+		regex_t preg;
+		const char *this_sym;
+		size_t n;
+		int flags = REG_EXTENDED | REG_NOSUB | (g_match > 1 ? REG_ICASE : 0);
+
+		array_for_each(find_sym_arr, n, this_sym) {
+			/* see scanelf_match_symname for logic info */
+			switch (this_sym[0]) {
+			case '%':
+				while (*(this_sym++))
+					if (*this_sym == '%') {
+						++this_sym;
+						break;
+					}
+				break;
+			case '+':
+			case '-':
+				++this_sym;
+				break;
+			}
+			if (*this_sym == '*')
+				++this_sym;
+
+			ret = regcomp(&preg, this_sym, flags);
+			if (ret) {
+				char err[256];
+				regerror(ret, &preg, err, sizeof(err));
+				err("regcomp of %s failed: %s", this_sym, err);
+			}
+			xarraypush(find_sym_regex_arr, &preg, sizeof(preg));
+		}
+	}
 	/* flatten arrays for display */
 	if (array_cnt(find_sym_arr))
 		find_sym = array_flatten_str(find_sym_arr);
@@ -2322,6 +2334,13 @@ static int parseargs(int argc, char *argv[])
 	free(find_sym);
 	free(find_lib);
 	free(find_section);
+	{
+		size_t n;
+		regex_t *preg;
+		array_for_each(find_sym_regex_arr, n, preg)
+			regfree(preg);
+		xarrayfree(find_sym_regex_arr);
+	}
 
 	if (ldcache != 0)
 		munmap(ldcache, ldcache_size);
