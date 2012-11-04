@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2007 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.245 2012/08/04 06:08:25 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.246 2012/11/04 06:55:04 vapier Exp $
  *
  * Copyright 2003-2007 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2007 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.245 2012/08/04 06:08:25 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.246 2012/11/04 06:55:04 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -127,14 +127,11 @@ static int rematch(const char *regex, const char *match, int cflags)
 	if ((match == NULL) || (regex == NULL))
 		return EXIT_FAILURE;
 
-	if ((ret = regcomp(&preg, regex, cflags))) {
+	ret = regcomp(&preg, regex, cflags);
+	if (ret) {
 		char err[256];
-
-		if (regerror(ret, &preg, err, sizeof(err)))
-			fprintf(stderr, "regcomp failed: %s", err);
-		else
-			fprintf(stderr, "regcomp failed");
-
+		regerror(ret, &preg, err, sizeof(err));
+		warnf("regcomp failed: %s", err);
 		return EXIT_FAILURE;
 	}
 	ret = regexec(&preg, match, 0, NULL, 0);
@@ -1272,7 +1269,10 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 		} else {
 			if (g_match) {
 				/* regex match the symbol */
-				if (rematch(this_sym, symname, REG_EXTENDED) != 0)
+				int flags = REG_EXTENDED | REG_NOSUB;
+				if (g_match > 1)
+					flags |= REG_ICASE;
+				if (rematch(this_sym, symname, flags) != 0)
 					continue;
 
 			} else if (*this_sym) {
@@ -2026,7 +2026,7 @@ static const char * const opts_help[] = {
 	"Find a specified symbol",
 	"Find a specified section",
 	"Find a specified library",
-	"Use regex matching rather than string compare (use with -s)",
+	"Use regex rather than string compare (with -s); specify twice for case insensitive",
 	"Locate cause of TEXTREL",
 	"Print only ELF files matching etype ET_DYN,ET_EXEC ...",
 	"Print only ELF files matching numeric bits",
@@ -2188,7 +2188,7 @@ static int parseargs(int argc, char *argv[])
 			break;
 		}
 		case 'Z': show_size = 1; break;
-		case 'g': g_match = 1; break;
+		case 'g': ++g_match; break;
 		case 'L': load_cache_config = use_ldcache = 1; break;
 		case 'y': scan_symlink = 0; break;
 		case 'A': scan_archives = 1; break;
