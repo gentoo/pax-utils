@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.249 2012/11/04 08:23:12 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.250 2012/11/04 08:25:41 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.249 2012/11/04 08:23:12 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.250 2012/11/04 08:25:41 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -2326,6 +2326,7 @@ static int parseargs(int argc, char *argv[])
 		ret = scanelf_dir(search_path);
 	}
 
+#ifdef __PAX_UTILS_CLEANUP
 	/* clean up */
 	xarrayfree(ldpaths);
 	xarrayfree(find_sym_arr);
@@ -2344,6 +2345,8 @@ static int parseargs(int argc, char *argv[])
 
 	if (ldcache != 0)
 		munmap(ldcache, ldcache_size);
+#endif
+
 	return ret;
 }
 
