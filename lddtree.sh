@@ -1,7 +1,11 @@
 #!/bin/bash
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.11 2012/11/03 00:06:10 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.12 2012/11/04 07:20:43 vapier Exp $
 
 argv0=${0##*/}
+
+: ${ROOT:=/}
+[[ ${ROOT} != */ ]] && ROOT="${ROOT}/"
+[[ ${ROOT} != /* ]] && ROOT="${PWD}${ROOT}"
 
 usage() {
 	cat <<-EOF
@@ -10,9 +14,10 @@ usage() {
 	Usage: ${argv0} [options] <ELF file[s]>
 
 	Options:
-	  -a   Show all duplicated dependencies
-	  -x   Run with debugging
-	  -h   Show this help output
+	  -a          Show all duplicated dependencies
+	  -x          Run with debugging
+	  -h          Show this help output
+	  -R <root>   Use this ROOT filesystem tree
 	EOF
 	exit ${1:-0}
 }
@@ -27,7 +32,7 @@ elf_specs() {
 	scanelf -BF '#F%a %M %D %I' "$1"
 }
 
-lib_paths_fallback="/lib* /usr/lib* /usr/local/lib*"
+lib_paths_fallback="${ROOT}lib* ${ROOT}usr/lib* ${ROOT}usr/local/lib*"
 c_ldso_paths_loaded='false'
 find_elf() {
 	_find_elf=''
@@ -73,7 +78,7 @@ find_elf() {
 		if ! ${c_ldso_paths_loaded} ; then
 			c_ldso_paths_loaded='true'
 			c_ldso_paths=()
-			if [[ -r /etc/ld.so.conf ]] ; then
+			if [[ -r ${ROOT}etc/ld.so.conf ]] ; then
 				read_ldso_conf() {
 					local line p
 					for p ; do
@@ -84,14 +89,14 @@ find_elf() {
 							case ${line} in
 								"#"*) ;;
 								"include "*) read_ldso_conf ${line#* } ;;
-								*) c_ldso_paths+=( "${line}" ) ;;
+								*) c_ldso_paths+=( "${ROOT}${line#/}" ) ;;
 							esac
 						done <"${p}"
 					done
 				}
 				# the 'include' command is relative
-				pushd /etc >/dev/null
-				read_ldso_conf /etc/ld.so.conf
+				pushd "${ROOT}"etc >/dev/null
+				read_ldso_conf "${ROOT}"etc/ld.so.conf
 				popd >/dev/null
 			fi
 		fi
@@ -122,12 +127,15 @@ show_elf() {
 	if [[ ${indent} -eq 0 ]] ; then
 		elf_specs=$(elf_specs "${resolved}")
 		interp=$(scanelf -qF '#F%i' "${resolved}")
+		[[ -n ${interp} ]] && interp="${ROOT}${interp#/}"
 
 		printf " (interpreter => ${interp:-none})"
 		if [[ -r ${interp} ]] ; then
 			# Extract the default lib paths out of the ldso.
-			lib_paths_ldso=$(strings "${interp}" | grep '^/.*lib')
-			lib_paths_ldso=${lib_paths_ldso//:/ }
+			lib_paths_ldso=$(
+				strings "${interp}" | \
+				sed -nr -e "/^\/.*lib/{s|^/?|${ROOT}|;s|/$||;s|/?:/?|\n${ROOT}|g;p}"
+			)
 		fi
 		interp=${interp##*/}
 	fi
@@ -158,11 +166,12 @@ if [[ $1 != "/../..source.lddtree" ]] ; then
 SHOW_ALL=false
 SET_X=false
 
-while getopts hax OPT ; do
+while getopts haxR: OPT ; do
 	case ${OPT} in
 		a) SHOW_ALL=true;;
 		x) SET_X=true;;
 		h) usage;;
+		R) ROOT="${OPTARG%/}/";;
 		?) usage 1;;
 	esac
 done
