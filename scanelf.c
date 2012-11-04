@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.247 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.248 2012/11/04 07:48:42 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.247 2012/11/04 07:26:24 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.248 2012/11/04 07:48:42 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -46,6 +46,7 @@ static char be_verbose = 0;
 static char be_wewy_wewy_quiet = 0;
 static char be_semi_verbose = 0;
 static char *find_sym = NULL;
+static array_t _find_sym_arr = array_init_decl, *find_sym_arr = &_find_sym_arr;
 static char *find_lib = NULL;
 static array_t _find_lib_arr = array_init_decl, *find_lib_arr = &_find_lib_arr;
 static char *find_section = NULL;
@@ -1173,26 +1174,13 @@ static void
 scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len, const char *symname,
 	unsigned int stt, unsigned int stb, unsigned int shn, unsigned long size)
 {
-	char *this_sym, *next_sym, saved = saved;
+	const char *this_sym;
+	size_t n;
 
-	/* allow the user to specify a comma delimited list of symbols to search for */
-	next_sym = NULL;
-	do {
+	array_for_each(find_sym_arr, n, this_sym) {
 		bool inc_notype, inc_object, inc_func, inc_file,
 		     inc_local, inc_global, inc_weak,
 		     inc_def, inc_undef, inc_abs, inc_common;
-
-		if (next_sym) {
-			next_sym[-1] = saved;
-			this_sym = next_sym;
-		} else
-			this_sym = find_sym;
-		if ((next_sym = strchr(this_sym, ','))) {
-			/* make parsing easier by killing the comma temporarily */
-			saved = *next_sym;
-			*next_sym = '\0';
-			next_sym += 1;
-		}
 
 		/* symbol selection! */
 		inc_notype = inc_object = inc_func = inc_file = \
@@ -1298,14 +1286,12 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 
 			goto matched;
 		}
-	} while (next_sym);
+	}
 
 	return;
 
  matched:
 	*found_sym = 1;
-	if (next_sym)
-		next_sym[-1] = saved;
 }
 
 static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
@@ -2132,8 +2118,12 @@ static int parseargs(int argc, char *argv[])
 			xarraypush_str(find_section_arr, optarg);
 			break;
 		case 's': {
-			if (find_sym) warn("You prob don't want to specify -s twice");
-			find_sym = optarg;
+			/* historically, this was comma delimited */
+			char *this_sym = strtok(optarg, ",");
+			while (this_sym) {
+				xarraypush_str(find_sym_arr, this_sym);
+				this_sym = strtok(NULL, ",");
+			}
 			break;
 		}
 		case 'N':
@@ -2231,6 +2221,8 @@ static int parseargs(int argc, char *argv[])
 	if (show_textrels && be_verbose)
 		has_objdump = bin_in_path("objdump");
 	/* flatten arrays for display */
+	if (array_cnt(find_sym_arr))
+		find_sym = array_flatten_str(find_sym_arr);
 	if (array_cnt(find_lib_arr))
 		find_lib = array_flatten_str(find_lib_arr);
 	if (array_cnt(find_section_arr))
@@ -2324,8 +2316,10 @@ static int parseargs(int argc, char *argv[])
 
 	/* clean up */
 	xarrayfree(ldpaths);
+	xarrayfree(find_sym_arr);
 	xarrayfree(find_lib_arr);
 	xarrayfree(find_section_arr);
+	free(find_sym);
 	free(find_lib);
 	free(find_section);
 
