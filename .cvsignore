@@ -11,3 +11,4 @@ pax-utils-*.tar.*
 .gitignore
 a.out
 *.gdb
+*.pyc
