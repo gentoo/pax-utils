@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.1 2012/11/12 21:57:23 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.2 2012/11/12 23:08:35 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -267,6 +267,12 @@ def _NormalizeRoot(_option, _opt, value, parser):
 		parser.values.root = ''
 
 
+def _ShowVersion(_option, _opt, _value, _parser):
+	id = '$Id: lddtree.py,v 1.2 2012/11/12 23:08:35 vapier Exp $'.split()
+	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
+	sys.exit(0)
+
+
 def main(argv):
 	parser = optparse.OptionParser("""%prog [options] <ELFs>
 
@@ -281,6 +287,9 @@ Display ELF dependencies as a tree""")
 	parser.add_option('-x', '--debug',
 		action='store_true', default=False,
 		help=('Run with debugging'))
+	parser.add_option('-V', '--version',
+		action='callback', callback=_ShowVersion,
+		help=('Show version information'))
 	(options, files) = parser.parse_args(argv)
 
 	files.pop(0)
