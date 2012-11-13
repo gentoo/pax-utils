@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.4 2012/11/13 02:33:01 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.5 2012/11/13 05:10:37 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -15,6 +15,7 @@ from __future__ import print_function
 import glob
 import optparse
 import os
+import shutil
 import sys
 
 from elftools.elf.elffile import ELFFile
@@ -193,6 +194,7 @@ def ParseELF(file, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 	"""
 	ret = {
 		'interp': None,
+		'path': file,
 		'needed': [],
 		'libs': _all_libs,
 	}
@@ -261,16 +263,92 @@ def ParseELF(file, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 	return ret
 
 
-def _NormalizeRoot(_option, _opt, value, parser):
-	parser.values.root = normpath(value)
-	if parser.values.root == '/':
-		parser.values.root = ''
+def _NormalizePath(option, _opt, value, parser):
+	setattr(parser.values, option.dest, normpath(value))
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.4 2012/11/13 02:33:01 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.5 2012/11/13 05:10:37 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
+
+
+def _ActionShow(options, elf):
+	"""Show the dependency tree for this ELF"""
+	def _show(lib, depth):
+		chain_libs.append(lib)
+		fullpath = elf['libs'][lib]['path']
+		if options.list:
+			print(fullpath or lib)
+		else:
+			print('%s%s => %s' % ('    ' * depth, lib, fullpath))
+
+		new_libs = []
+		for lib in elf['libs'][lib]['needed']:
+			if lib in chain_libs:
+				if not options.list:
+					print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
+				continue
+			if options.all or not lib in shown_libs:
+				shown_libs.add(lib)
+				new_libs.append(lib)
+
+		for lib in new_libs:
+			_show(lib, depth + 1)
+		chain_libs.pop()
+
+	shown_libs = set(elf['needed'])
+	chain_libs = []
+	interp = elf['interp']
+	if interp:
+		shown_libs.add(os.path.basename(interp))
+	if options.list:
+		print(elf['path'])
+		if not interp is None:
+			print(interp)
+	else:
+		print('%s (interpreter => %s)' % (elf['path'], interp))
+	for lib in elf['needed']:
+		_show(lib, 1)
+
+
+def _ActionCopy(options, elf):
+	"""Copy the ELF and its dependencies to a destination tree"""
+	def _copy(file):
+		if file is None:
+			return
+
+		dest = options.dest + file
+		if os.path.exists(dest):
+			# See if they're the same file.
+			ostat = os.stat(file)
+			nstat = os.stat(dest)
+			for field in ('mode', 'mtime', 'size'):
+				if getattr(ostat, 'st_' + field) != \
+				   getattr(nstat, 'st_' + field):
+					break
+			else:
+				return
+
+		if options.verbose:
+			print('%s -> %s' % (file, dest))
+
+		try:
+			os.makedirs(os.path.dirname(dest))
+		except OSError as e:
+			if e.errno != os.errno.EEXIST:
+				raise
+		try:
+			shutil.copy2(file, dest)
+			return
+		except IOError:
+			os.unlink(dest)
+		shutil.copy2(file, dest)
+
+	_copy(elf['path'])
+	_copy(elf['interp'])
+	for lib in elf['libs']:
+		_copy(elf['libs'][lib]['path'])
 
 
 def main(argv):
@@ -282,24 +360,34 @@ Display ELF dependencies as a tree""")
 		help=('Show all duplicated dependencies'))
 	parser.add_option('-R', '--root',
 		dest='root', default=os.environ.get('ROOT', ''), type='string',
-		action='callback', callback=_NormalizeRoot,
+		action='callback', callback=_NormalizePath,
 		help=('Show all duplicated dependencies'))
+	parser.add_option('--copy-to-tree',
+		dest='dest', default=None, type='string',
+		action='callback', callback=_NormalizePath,
+		help=('Copy all files to the specified tree'))
 	parser.add_option('-l', '--list',
 		action='store_true', default=False,
 		help=('Display output in a simple list (easy for copying)'))
 	parser.add_option('-x', '--debug',
 		action='store_true', default=False,
 		help=('Run with debugging'))
+	parser.add_option('-v', '--verbose',
+		action='store_true', default=False,
+		help=('Be verbose'))
 	parser.add_option('-V', '--version',
 		action='callback', callback=_ShowVersion,
 		help=('Show version information'))
 	(options, files) = parser.parse_args(argv)
 
 	files.pop(0)
-	options.root += '/'
+	if options.root != '/':
+		options.root += '/'
 
 	if options.debug:
 		print('root =', options.root)
+		if options.dest:
+			print('dest =', options.dest)
 	if not files:
 		err('missing ELF files to scan')
 
@@ -325,29 +413,7 @@ Display ELF dependencies as a tree""")
 		print('ldpaths[conf] =', ldpaths['conf'])
 		print('ldpaths[env]  =', ldpaths['env'])
 
-	# Now show the tree for each specified ELF.
-	def _show(lib, depth):
-		chain_libs.append(lib)
-		fullpath = elf['libs'][lib]['path']
-		if options.list:
-			print(fullpath or lib)
-		else:
-			print('%s%s => %s' % ('    ' * depth, lib, fullpath))
-
-		new_libs = []
-		for lib in elf['libs'][lib]['needed']:
-			if lib in chain_libs:
-				if not options.list:
-					print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
-				continue
-			if options.all or not lib in shown_libs:
-				shown_libs.add(lib)
-				new_libs.append(lib)
-
-		for lib in new_libs:
-			_show(lib, depth + 1)
-		chain_libs.pop()
-
+	# Process all the files specified.
 	ret = 0
 	for file in files:
 		try:
@@ -356,19 +422,10 @@ Display ELF dependencies as a tree""")
 			ret = 1
 			warn('%s: %s' % (file, e))
 			continue
-		shown_libs = set(elf['needed'])
-		chain_libs = []
-		interp = elf['interp']
-		if interp:
-			shown_libs.add(os.path.basename(interp))
-		if options.list:
-			print(file)
-			if not interp is None:
-				print(interp)
+		if options.dest is None:
+			_ActionShow(options, elf)
 		else:
-			print('%s (interpreter => %s)' % (file, interp))
-		for lib in elf['needed']:
-			_show(lib, 1)
+			_ActionCopy(options, elf)
 	return ret
 
 
