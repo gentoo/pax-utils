@@ -2,7 +2,7 @@
 # Copyright 2007-2012 Gentoo Foundation
 # Copyright 2007-2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.15 2012/11/10 07:26:53 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.16 2012/11/13 01:09:06 vapier Exp $
 
 argv0=${0##*/}
 
@@ -20,6 +20,7 @@ usage() {
 	  -a          Show all duplicated dependencies
 	  -x          Run with debugging
 	  -R <root>   Use this ROOT filesystem tree
+      -l          Display output in a flat format
 	  -h          Show this help output
 	  -V          Show version information
 	EOF
@@ -27,7 +28,7 @@ usage() {
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.15 2012/11/10 07:26:53 vapier Exp $'
+	local id='$Id: lddtree.sh,v 1.16 2012/11/13 01:09:06 vapier Exp $'
 	id=${id##*,v }
 	exec echo "lddtree-${id% * Exp*}"
 }
@@ -130,19 +131,27 @@ show_elf() {
 	resolved=${_find_elf}
 	elf=${elf##*/}
 
-	printf "%${indent}s%s => " "" "${elf}"
+	${LIST} || printf "%${indent}s%s => " "" "${elf}"
 	if [[ ,${parent_elfs}, == *,${elf},* ]] ; then
-		printf "!!! circular loop !!!\n" ""
+		${LIST} || printf "!!! circular loop !!!\n" ""
 		return
 	fi
 	parent_elfs="${parent_elfs},${elf}"
-	printf "${resolved:-not found}"
+	if ${LIST} ; then
+		echo "${resolved:-$1}"
+	else
+		printf "${resolved:-not found}"
+	fi
 	if [[ ${indent} -eq 0 ]] ; then
 		elf_specs=$(elf_specs "${resolved}")
 		interp=$(scanelf -qF '#F%i' "${resolved}")
 		[[ -n ${interp} ]] && interp="${ROOT}${interp#/}"
 
-		printf " (interpreter => ${interp:-none})"
+		if ${LIST} ; then
+			[[ -n ${interp} ]] && echo "${interp}"
+		else
+			printf " (interpreter => ${interp:-none})"
+		fi
 		if [[ -r ${interp} ]] ; then
 			# Extract the default lib paths out of the ldso.
 			lib_paths_ldso=$(
@@ -152,7 +161,7 @@ show_elf() {
 		fi
 		interp=${interp##*/}
 	fi
-	printf "\n"
+	${LIST} || printf "\n"
 
 	[[ -z ${resolved} ]] && return
 
@@ -178,14 +187,16 @@ if [[ $1 != "/../..source.lddtree" ]] ; then
 
 SHOW_ALL=false
 SET_X=false
+LIST=false
 
-while getopts haxVR: OPT ; do
+while getopts haxVR:l OPT ; do
 	case ${OPT} in
 		a) SHOW_ALL=true;;
 		x) SET_X=true;;
 		h) usage;;
 		V) version;;
 		R) ROOT="${OPTARG%/}/";;
+		l) LIST=true;;
 		?) usage 1;;
 	esac
 done

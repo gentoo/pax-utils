@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.2 2012/11/12 23:08:35 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.3 2012/11/13 01:09:06 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -268,7 +268,7 @@ def _NormalizeRoot(_option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.2 2012/11/12 23:08:35 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.3 2012/11/13 01:09:06 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
@@ -284,6 +284,9 @@ Display ELF dependencies as a tree""")
 		dest='root', default=os.environ.get('ROOT', ''), type='string',
 		action='callback', callback=_NormalizeRoot,
 		help=('Show all duplicated dependencies'))
+	parser.add_option('-l', '--list',
+		action='store_true', default=False,
+		help=('Display output in a simple list (easy for copying)'))
 	parser.add_option('-x', '--debug',
 		action='store_true', default=False,
 		help=('Run with debugging'))
@@ -325,12 +328,17 @@ Display ELF dependencies as a tree""")
 	# Now show the tree for each specified ELF.
 	def _show(lib, depth):
 		chain_libs.append(lib)
-		print('%s%s => %s' % ('    ' * depth, lib, elf['libs'][lib]['path']))
+		fullpath = elf['libs'][lib]['path']
+		if options.flat_list:
+			print(fullpath or lib)
+		else:
+			print('%s%s => %s' % ('    ' * depth, lib, fullpath))
 
 		new_libs = []
 		for lib in elf['libs'][lib]['needed']:
 			if lib in chain_libs:
-				print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
+				if not options.flat_list:
+					print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
 				continue
 			if options.all or not lib in shown_libs:
 				shown_libs.add(lib)
@@ -353,7 +361,12 @@ Display ELF dependencies as a tree""")
 		interp = elf['interp']
 		if interp:
 			shown_libs.add(os.path.basename(interp))
-		print('%s (interpreter => %s)' % (file, interp))
+		if options.flat_list:
+			print(file)
+			if not interp is None:
+				print(interp)
+		else:
+			print('%s (interpreter => %s)' % (file, interp))
 		for lib in elf['needed']:
 			_show(lib, 1)
 	return ret
