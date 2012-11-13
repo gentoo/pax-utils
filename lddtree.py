@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.3 2012/11/13 01:09:06 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.4 2012/11/13 02:33:01 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -268,7 +268,7 @@ def _NormalizeRoot(_option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.3 2012/11/13 01:09:06 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.4 2012/11/13 02:33:01 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
@@ -329,7 +329,7 @@ Display ELF dependencies as a tree""")
 	def _show(lib, depth):
 		chain_libs.append(lib)
 		fullpath = elf['libs'][lib]['path']
-		if options.flat_list:
+		if options.list:
 			print(fullpath or lib)
 		else:
 			print('%s%s => %s' % ('    ' * depth, lib, fullpath))
@@ -337,7 +337,7 @@ Display ELF dependencies as a tree""")
 		new_libs = []
 		for lib in elf['libs'][lib]['needed']:
 			if lib in chain_libs:
-				if not options.flat_list:
+				if not options.list:
 					print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
 				continue
 			if options.all or not lib in shown_libs:
@@ -361,7 +361,7 @@ Display ELF dependencies as a tree""")
 		interp = elf['interp']
 		if interp:
 			shown_libs.add(os.path.basename(interp))
-		if options.flat_list:
+		if options.list:
 			print(file)
 			if not interp is None:
 				print(interp)
