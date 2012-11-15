@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.5 2012/11/13 05:10:37 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.6 2012/11/15 19:33:08 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -50,7 +50,7 @@ def ParseLdPaths(str_ldpaths, root=''):
 	Note the special handling as dictated by the ldso:
 	 - Empty paths are equivalent to $PWD
 	 - (TODO) $ORIGIN is expanded to the path of the given file
-	 - (TODO) 
+	 - (TODO) $LIB and friends
 
 	Args:
 	  str_ldpath: A colon-delimited string of paths
@@ -114,6 +114,37 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
 	return paths
 
 
+def LoadLdpaths(root='/'):
+	"""Load linker paths from common locations
+
+	This parses the ld.so.conf and LD_LIBRARY_PATH env var.
+
+	Args:
+	  root: The root tree to prepend to paths
+	Returns:
+	  dict containing library paths to search
+	"""
+	ldpaths = {
+		'conf': [],
+		'env': [],
+		'interp': [],
+	}
+
+	# Load up $LD_LIBRARY_PATH.
+	ldpaths['env'] = []
+	env_ldpath = os.environ.get('LD_LIBRARY_PATH')
+	if not env_ldpath is None:
+		if root != '/':
+			warn('ignoring LD_LIBRARY_PATH due to ROOT usage')
+		else:
+			ldpaths['env'] = ParseLdPaths(env_ldpath)
+
+	# Load up /etc/ld.so.conf.
+	ldpaths['conf'] = ParseLdSoConf(root + 'etc/ld.so.conf', root=root)
+
+	return ldpaths
+
+
 def CompatibleELFs(elf1, elf2):
 	"""See if two ELFs are compatible
 
@@ -134,10 +165,12 @@ def CompatibleELFs(elf1, elf2):
 		return False
 	elif osabi1 != osabi2:
 		compat_sets = (
-			frozenset('ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX'),
+			frozenset(['ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX']),
 		)
 		for cs in compat_sets:
-			if (cs | osabi1) == (cs | osabi2):
+			cs1 = cs | set([osabi1])
+			cs2 = cs | set([osabi2])
+			if cs1 == cs2:
 				return True
 		return False
 	else:
@@ -169,8 +202,9 @@ def ParseELF(file, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 	"""Parse the ELF dependency tree of the specified file
 
 	Args:
-	  file: 
-	  root: 
+	  file: The ELF to scan
+	  root: The root tree to prepend to paths; this applies to interp and rpaths
+	        only as |file| and |ldpaths| are expected to be prefixed already
 	  ldpaths: dict containing library paths to search; should have the keys:
 	           conf, env, interp
 	  _first: Recursive use only; is this the first ELF ?
@@ -268,7 +302,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.5 2012/11/13 05:10:37 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.6 2012/11/15 19:33:08 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
@@ -391,24 +425,7 @@ Display ELF dependencies as a tree""")
 	if not files:
 		err('missing ELF files to scan')
 
-	ldpaths = {
-		'conf': [],
-		'env': [],
-		'interp': [],
-	}
-
-	# Load up $LD_LIBRARY_PATH.
-	ldpaths['env'] = []
-	env_ldpath = os.environ.get('LD_LIBRARY_PATH')
-	if not env_ldpath is None:
-		if options.root != '/':
-			warn('ignoring LD_LIBRARY_PATH due to ROOT usage')
-		else:
-			ldpaths['env'] = ParseLdPaths(env_ldpath)
-
-	# Load up /etc/ld.so.conf.
-	ldpaths['conf'] = ParseLdSoConf(options.root + 'etc/ld.so.conf', root=options.root)
-
+	ldpaths = LoadLdpaths(options.root)
 	if options.debug:
 		print('ldpaths[conf] =', ldpaths['conf'])
 		print('ldpaths[env]  =', ldpaths['env'])
