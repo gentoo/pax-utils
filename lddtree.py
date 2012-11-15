@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.8 2012/11/15 20:28:55 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.9 2012/11/15 20:35:04 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -44,12 +44,12 @@ def normpath(path):
 	return os.path.normpath(path).replace('//', '/')
 
 
-def ParseLdPaths(str_ldpaths, root=''):
+def ParseLdPaths(str_ldpaths, root='', path=None):
 	"""Parse the colon-delimited list of paths and apply ldso rules to each
 
 	Note the special handling as dictated by the ldso:
 	 - Empty paths are equivalent to $PWD
-	 - (TODO) $ORIGIN is expanded to the path of the given file
+	 - $ORIGIN is expanded to the path of the given file
 	 - (TODO) $LIB and friends
 
 	Args:
@@ -63,6 +63,8 @@ def ParseLdPaths(str_ldpaths, root=''):
 		if ldpath == '':
 			# The ldso treats "" paths as $PWD.
 			ldpath = os.getcwd()
+		elif ldpath == '$ORIGIN':
+			ldpath = os.path.dirname(path)
 		ldpath = normpath(root + ldpath)
 		if not ldpath in ldpaths:
 			ldpaths.append(ldpath)
@@ -265,9 +267,9 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 
 			for t in segment.iter_tags():
 				if t.entry.d_tag == 'DT_RPATH':
-					rpaths = ParseLdPaths(t.rpath, root)
+					rpaths = ParseLdPaths(t.rpath, root=root, path=path)
 				elif t.entry.d_tag == 'DT_RUNPATH':
-					runpaths = ParseLdPaths(t.runpath, root)
+					runpaths = ParseLdPaths(t.runpath, root=root, path=path)
 				elif t.entry.d_tag == 'DT_NEEDED':
 					libs.append(t.needed)
 			if runpaths:
@@ -303,7 +305,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.8 2012/11/15 20:28:55 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.9 2012/11/15 20:35:04 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 

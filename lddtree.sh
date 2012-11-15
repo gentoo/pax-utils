@@ -2,7 +2,7 @@
 # Copyright 2007-2012 Gentoo Foundation
 # Copyright 2007-2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.16 2012/11/13 01:09:06 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.17 2012/11/15 20:35:04 vapier Exp $
 
 argv0=${0##*/}
 
@@ -28,7 +28,7 @@ usage() {
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.16 2012/11/13 01:09:06 vapier Exp $'
+	local id='$Id: lddtree.sh,v 1.17 2012/11/15 20:35:04 vapier Exp $'
 	id=${id##*,v }
 	exec echo "lddtree-${id% * Exp*}"
 }
@@ -73,7 +73,8 @@ find_elf() {
 
 		if [[ ${c_last_needed_by} != ${needed_by} ]] ; then
 			c_last_needed_by=${needed_by}
-			c_last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | sed 's|:| |g')
+			c_last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | \
+				sed -e 's|:| |g' -e "s:[$]ORIGIN:${needed_by%/*}:")
 		fi
 		check_paths "${elf}" ${c_last_needed_by_rpaths} && return 0
 
