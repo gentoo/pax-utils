@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.6 2012/11/15 19:33:08 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.7 2012/11/15 20:26:27 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -95,8 +95,8 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
 						line = root + line.lstrip('/')
 					else:
 						line = os.path.dirname(ldso_conf) + '/' + line
-					for file in glob.glob(line):
-						paths += ParseLdSoConf(file, root=root, _first=False)
+					for path in glob.glob(line):
+						paths += ParseLdSoConf(path, root=root, _first=False)
 				else:
 					paths += [normpath(root + line)]
 	except IOError:
@@ -197,14 +197,14 @@ def FindLib(elf, lib, ldpaths):
 	return None
 
 
-def ParseELF(file, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
+def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
              _first=True, _all_libs={}):
 	"""Parse the ELF dependency tree of the specified file
 
 	Args:
-	  file: The ELF to scan
+	  path: The ELF to scan
 	  root: The root tree to prepend to paths; this applies to interp and rpaths
-	        only as |file| and |ldpaths| are expected to be prefixed already
+	        only as |path| and |ldpaths| are expected to be prefixed already
 	  ldpaths: dict containing library paths to search; should have the keys:
 	           conf, env, interp
 	  _first: Recursive use only; is this the first ELF ?
@@ -224,16 +224,16 @@ def ParseELF(file, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 					'needed': ['libc.so.6', 'librt.so.1',],
 				},
 			},
-		}	  
+		}
 	"""
 	ret = {
 		'interp': None,
-		'path': file,
+		'path': path,
 		'needed': [],
 		'libs': _all_libs,
 	}
 
-	with open(file) as f:
+	with open(path) as f:
 		elf = ELFFile(f)
 
 		# If this is the first ELF, extract the interpreter.
@@ -302,7 +302,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.6 2012/11/15 19:33:08 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.7 2012/11/15 20:26:27 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
@@ -348,15 +348,15 @@ def _ActionShow(options, elf):
 
 def _ActionCopy(options, elf):
 	"""Copy the ELF and its dependencies to a destination tree"""
-	def _copy(file):
-		if file is None:
+	def _copy(src):
+		if src is None:
 			return
 
-		dest = options.dest + file
-		if os.path.exists(dest):
+		dst = options.dest + src
+		if os.path.exists(dst):
 			# See if they're the same file.
-			ostat = os.stat(file)
-			nstat = os.stat(dest)
+			ostat = os.stat(src)
+			nstat = os.stat(dst)
 			for field in ('mode', 'mtime', 'size'):
 				if getattr(ostat, 'st_' + field) != \
 				   getattr(nstat, 'st_' + field):
@@ -365,19 +365,19 @@ def _ActionCopy(options, elf):
 				return
 
 		if options.verbose:
-			print('%s -> %s' % (file, dest))
+			print('%s -> %s' % (src, dst))
 
 		try:
-			os.makedirs(os.path.dirname(dest))
+			os.makedirs(os.path.dirname(dst))
 		except OSError as e:
 			if e.errno != os.errno.EEXIST:
 				raise
 		try:
-			shutil.copy2(file, dest)
+			shutil.copy2(src, dst)
 			return
 		except IOError:
-			os.unlink(dest)
-		shutil.copy2(file, dest)
+			os.unlink(dst)
+		shutil.copy2(src, dst)
 
 	_copy(elf['path'])
 	_copy(elf['interp'])
@@ -412,9 +412,10 @@ Display ELF dependencies as a tree""")
 	parser.add_option('-V', '--version',
 		action='callback', callback=_ShowVersion,
 		help=('Show version information'))
-	(options, files) = parser.parse_args(argv)
+	(options, paths) = parser.parse_args(argv)
 
-	files.pop(0)
+	# Throw away argv[0].
+	paths.pop(0)
 	if options.root != '/':
 		options.root += '/'
 
@@ -422,7 +423,7 @@ Display ELF dependencies as a tree""")
 		print('root =', options.root)
 		if options.dest:
 			print('dest =', options.dest)
-	if not files:
+	if not paths:
 		err('missing ELF files to scan')
 
 	ldpaths = LoadLdpaths(options.root)
@@ -432,12 +433,12 @@ Display ELF dependencies as a tree""")
 
 	# Process all the files specified.
 	ret = 0
-	for file in files:
+	for path in paths:
 		try:
-			elf = ParseELF(file, options.root, ldpaths)
+			elf = ParseELF(path, options.root, ldpaths)
 		except (exceptions.ELFError, IOError) as e:
 			ret = 1
-			warn('%s: %s' % (file, e))
+			warn('%s: %s' % (path, e))
 			continue
 		if options.dest is None:
 			_ActionShow(options, elf)
