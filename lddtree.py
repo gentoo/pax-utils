@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.9 2012/11/15 20:35:04 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.10 2012/11/15 20:39:20 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -13,6 +13,7 @@ files on disk), and we should the ELFs as a tree rather than a flat list.
 from __future__ import print_function
 
 import glob
+import errno
 import optparse
 import os
 import shutil
@@ -101,8 +102,9 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
 						paths += ParseLdSoConf(path, root=root, _first=False)
 				else:
 					paths += [normpath(root + line)]
-	except IOError:
-		pass
+	except IOError as e:
+		if e.errno != errno.ENOENT:
+			warn(e)
 
 	if _first:
 		# Remove duplicate entries to speed things up.
@@ -305,7 +307,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.9 2012/11/15 20:35:04 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.10 2012/11/15 20:39:20 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
