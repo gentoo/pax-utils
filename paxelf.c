@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.73 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.74 2012/11/18 07:39:45 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -720,24 +720,6 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 	return ret;
 }
 
-int elf_max_pt_load(elfobj *elf)
-{
-#define MAX_PT_LOAD(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	switch (EGET(ehdr->e_ident[EI_OSABI])) { \
-	case ELFOSABI_NONE: \
-	case ELFOSABI_NETBSD: \
-	case ELFOSABI_FREEBSD: \
-	case ELFOSABI_LINUX: \
-	case ELFOSABI_ARM:     return 2; \
-	case ELFOSABI_OPENBSD: return 7; \
-	} }
-	MAX_PT_LOAD(32)
-	MAX_PT_LOAD(64)
-
-	return 1;
-}
 #if 0
  # define ELFOSABI_NONE           0       /* UNIX System V ABI */
  # define ELFOSABI_SYSV           0       /* Alias.  */

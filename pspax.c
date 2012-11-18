@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char rcsid[] = "$Id: pspax.c,v 1.50 2011/09/27 19:58:09 vapier Exp $";
+static const char rcsid[] = "$Id: pspax.c,v 1.51 2012/11/18 07:39:45 vapier Exp $";
 const char argv0[] = "pspax";
 
 #include "paxinc.h"
@@ -261,12 +261,10 @@ static char *scanelf_file_phdr(elfobj *elf)
 {
 	static char ret[8];
 	unsigned long i, off, multi_stack, multi_load;
-	int max_pt_load;
 
 	memcpy(ret, "--- ---\0", 8);
 
 	multi_stack = multi_load = 0;
-	max_pt_load = elf_max_pt_load(elf);
 
 	if (elf->phdr) {
 	uint32_t flags;
@@ -279,7 +277,6 @@ static char *scanelf_file_phdr(elfobj *elf)
 			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
 			off = 0; \
 		} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-			if (multi_load++ > max_pt_load) warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 			off = 4; \
 		} else \
 			continue; \

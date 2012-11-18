@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.251 2012/11/10 09:43:00 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.252 2012/11/18 07:39:45 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.251 2012/11/10 09:43:00 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.252 2012/11/18 07:39:45 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -321,7 +321,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	static char ret[12];
 	char *found;
 	unsigned long i, shown, multi_stack, multi_relro, multi_load;
-	int max_pt_load;
 
 	if (!show_phdr) return NULL;
 
@@ -329,7 +328,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 
 	shown = 0;
 	multi_stack = multi_relro = multi_load = 0;
-	max_pt_load = elf_max_pt_load(elf);
 
 #define NOTE_GNU_STACK ".note.GNU-stack"
 #define SHOW_PHDR(B) \
@@ -355,9 +353,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				offset = 4; \
 				check_flags = PF_X; \
 			} else if (EGET(phdr[i].p_type) == PT_LOAD) { \
-				if (EGET(ehdr->e_type) == ET_DYN || EGET(ehdr->e_type) == ET_EXEC) \
-					if (multi_load++ > max_pt_load) \
-						warnf("%s: more than %i PT_LOAD's !?", elf->filename, max_pt_load); \
 				if (file_matches_list(elf->filename, qa_wx_load)) \
 					continue; \
 				found = found_load; \
