@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.14 2012/11/24 17:01:48 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.15 2012/11/24 19:44:03 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -173,10 +173,9 @@ def CompatibleELFs(elf1, elf2):
 		compat_sets = (
 			frozenset(['ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX']),
 		)
+		osabis = frozenset([osabi1, osabi2])
 		for cs in compat_sets:
-			cs1 = cs | set([osabi1])
-			cs2 = cs | set([osabi2])
-			if cs1 == cs2:
+			if osabis.issubset(cs):
 				return True
 		return False
 	else:
@@ -311,7 +310,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.14 2012/11/24 17:01:48 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.15 2012/11/24 19:44:03 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
