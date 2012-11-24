@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.12 2012/11/17 00:11:39 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.13 2012/11/24 16:54:32 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -64,8 +64,8 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
 		if ldpath == '':
 			# The ldso treats "" paths as $PWD.
 			ldpath = os.getcwd()
-		elif ldpath == '$ORIGIN':
-			ldpath = os.path.dirname(path)
+		else:
+			ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
 		ldpath = normpath(root + ldpath)
 		if not ldpath in ldpaths:
 			ldpaths.append(ldpath)
@@ -141,7 +141,9 @@ def LoadLdpaths(root='/'):
 		if root != '/':
 			warn('ignoring LD_LIBRARY_PATH due to ROOT usage')
 		else:
-			ldpaths['env'] = ParseLdPaths(env_ldpath)
+			# XXX: If this contains $ORIGIN, we probably have to parse this
+			# on a per-ELF basis so it can get turned into the right thing.
+			ldpaths['env'] = ParseLdPaths(env_ldpath, path='')
 
 	# Load up /etc/ld.so.conf.
 	ldpaths['conf'] = ParseLdSoConf(root + 'etc/ld.so.conf', root=root)
@@ -309,7 +311,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.12 2012/11/17 00:11:39 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.13 2012/11/24 16:54:32 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
