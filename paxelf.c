@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.77 2012/11/24 19:53:49 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.78 2012/11/24 20:16:26 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -50,6 +50,7 @@ static pairtype elf_ei_osabi[] = {
 	QUERY(ELFOSABI_SYSV),
 	QUERY(ELFOSABI_HPUX),
 	QUERY(ELFOSABI_NETBSD),
+	QUERY(ELFOSABI_GNU),
 	QUERY(ELFOSABI_LINUX),
 	QUERY(ELFOSABI_SOLARIS),
 	QUERY(ELFOSABI_AIX),
@@ -58,6 +59,7 @@ static pairtype elf_ei_osabi[] = {
 	QUERY(ELFOSABI_TRU64),
 	QUERY(ELFOSABI_MODESTO),
 	QUERY(ELFOSABI_OPENBSD),
+	QUERY(ELFOSABI_ARM_AEABI),
 	QUERY(ELFOSABI_ARM),
 	QUERY(ELFOSABI_STANDALONE),
 	{ 0, 0 }
@@ -80,10 +82,6 @@ static pairtype elf_etypes[] = {
 	QUERY(ET_EXEC),
 	QUERY(ET_DYN),
 	QUERY(ET_CORE),
-	QUERY(ET_LOOS),
-	QUERY(ET_HIOS),
-	QUERY(ET_LOPROC),
-	QUERY(ET_HIPROC),
 	{ 0, 0 }
 };
 
@@ -270,6 +268,8 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_ARCA),
 	QUERY(EM_UNICORE),
 	QUERY(EM_ALPHA),
+	QUERY(EM_TILEPRO),
+	QUERY(EM_TILEGX),
 	{ 0, 0 }
 };
 
@@ -345,6 +345,22 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_ENCODING),
 	QUERY(DT_PREINIT_ARRAY),
 	QUERY(DT_PREINIT_ARRAYSZ),
+	QUERY(DT_GNU_PRELINKED),
+	QUERY(DT_GNU_CONFLICTSZ),
+	QUERY(DT_GNU_LIBLISTSZ),
+	QUERY(DT_CHECKSUM),
+	QUERY(DT_PLTPADSZ),
+	QUERY(DT_MOVEENT),
+	QUERY(DT_MOVESZ),
+	QUERY(DT_ADDRRNGLO),
+	QUERY(DT_GNU_HASH),
+	QUERY(DT_TLSDESC_PLT),
+	QUERY(DT_TLSDESC_GOT),
+	QUERY(DT_GNU_CONFLICT),
+	QUERY(DT_GNU_LIBLIST),
+	QUERY(DT_CONFIG),
+	QUERY(DT_DEPAUDIT),
+	QUERY(DT_AUDIT),
 	{ 0, 0 }
 };
 const char *get_elfdtype(int type)
@@ -371,22 +387,16 @@ static pairtype elf_shttypes[] = {
 	QUERY(SHT_PREINIT_ARRAY),
 	QUERY(SHT_GROUP),
 	QUERY(SHT_SYMTAB_SHNDX),
-	QUERY(SHT_LOOS),
+	QUERY(SHT_GNU_ATTRIBUTES),
+	QUERY(SHT_GNU_HASH),
 	QUERY(SHT_GNU_LIBLIST),
 	QUERY(SHT_CHECKSUM),
-	QUERY(SHT_LOSUNW),
 	QUERY(SHT_SUNW_move),
 	QUERY(SHT_SUNW_COMDAT),
 	QUERY(SHT_SUNW_syminfo),
 	QUERY(SHT_GNU_verdef),
 	QUERY(SHT_GNU_verneed),
 	QUERY(SHT_GNU_versym),
-	QUERY(SHT_HISUNW),
-	QUERY(SHT_HIOS),
-	QUERY(SHT_LOPROC),
-	QUERY(SHT_HIPROC),
-	QUERY(SHT_LOUSER),
-	QUERY(SHT_HIUSER),
 	{ 0, 0 }
 };
 const char *get_elfshttype(int type)
@@ -401,8 +411,9 @@ static pairtype elf_stttypes[] = {
 	QUERY(STT_FUNC),
 	QUERY(STT_SECTION),
 	QUERY(STT_FILE),
-	QUERY(STT_LOPROC),
-	QUERY(STT_HIPROC),
+	QUERY(STT_COMMON),
+	QUERY(STT_TLS),
+	QUERY(STT_GNU_IFUNC),
 	{ 0, 0 }
 };
 const char *get_elfstttype(int type)
@@ -415,8 +426,7 @@ static pairtype elf_stbtypes[] = {
 	QUERY(STB_LOCAL),
 	QUERY(STB_GLOBAL),
 	QUERY(STB_WEAK),
-	QUERY(STB_LOPROC),
-	QUERY(STB_HIPROC),
+	QUERY(STB_GNU_UNIQUE),
 	{ 0, 0 }
 };
 const char *get_elfstbtype(int type)
@@ -427,12 +437,10 @@ const char *get_elfstbtype(int type)
 /* translate elf SHN_ defines */
 static pairtype elf_shntypes[] = {
 	QUERY(SHN_UNDEF),
-	QUERY(SHN_LORESERVE),
-	QUERY(SHN_LOPROC),
-	QUERY(SHN_HIPROC),
+	QUERY(SHN_BEFORE),
+	QUERY(SHN_AFTER),
 	QUERY(SHN_ABS),
 	QUERY(SHN_COMMON),
-	QUERY(SHN_HIRESERVE),
 	{ 0, 0 }
 };
 const char *get_elfshntype(int type)
