@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.74 2012/11/18 07:39:45 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.75 2012/11/24 19:32:09 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -150,10 +150,9 @@ const char *get_elf_eabi(elfobj *elf)
 const char *get_elfosabi(elfobj *elf)
 {
 	const char *str = get_elfeitype(EI_OSABI, elf->data[EI_OSABI]);
-	if (str)
-		if (strlen(str) > 9)
-			return str + 9;
-	return "";
+	if (strncmp(str, "ELFOSABI_", 9) == 0)
+		str += 9;
+	return str;
 }
 
 void print_etypes(FILE *stream)
