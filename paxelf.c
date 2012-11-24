@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.75 2012/11/24 19:32:09 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.76 2012/11/24 19:52:50 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -45,7 +45,6 @@ static pairtype elf_ei_data[] = {
 static pairtype elf_ei_version[] = {
 	QUERY(EV_NONE),
 	QUERY(EV_CURRENT),
-	QUERY(EV_NUM),
 	{ 0, 0 }
 };
 static pairtype elf_ei_osabi[] = {
@@ -83,7 +82,6 @@ static pairtype elf_etypes[] = {
 	QUERY(ET_EXEC),
 	QUERY(ET_DYN),
 	QUERY(ET_CORE),
-	QUERY(ET_NUM),
 	QUERY(ET_LOOS),
 	QUERY(ET_HIOS),
 	QUERY(ET_LOPROC),
@@ -273,7 +271,6 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_SEP),
 	QUERY(EM_ARCA),
 	QUERY(EM_UNICORE),
-	QUERY(EM_NUM),
 	QUERY(EM_ALPHA),
 	{ 0, 0 }
 };
@@ -303,7 +300,6 @@ static pairtype elf_ptypes[] = {
 	QUERY(PT_SHLIB),
 	QUERY(PT_PHDR),
 	QUERY(PT_TLS),
-	QUERY(PT_NUM),
 	QUERY(PT_GNU_EH_FRAME),
 	QUERY(PT_GNU_STACK),
 	QUERY(PT_GNU_RELRO),
@@ -351,7 +347,6 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_ENCODING),
 	QUERY(DT_PREINIT_ARRAY),
 	QUERY(DT_PREINIT_ARRAYSZ),
-	QUERY(DT_NUM),
 	{ 0, 0 }
 };
 const char *get_elfdtype(int type)
@@ -378,7 +373,6 @@ static pairtype elf_shttypes[] = {
 	QUERY(SHT_PREINIT_ARRAY),
 	QUERY(SHT_GROUP),
 	QUERY(SHT_SYMTAB_SHNDX),
-	QUERY(SHT_NUM),
 	QUERY(SHT_LOOS),
 	QUERY(SHT_GNU_LIBLIST),
 	QUERY(SHT_CHECKSUM),
