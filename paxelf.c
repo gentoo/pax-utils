@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.76 2012/11/24 19:52:50 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.77 2012/11/24 19:53:49 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -32,14 +32,12 @@ static pairtype elf_ei_class[] = {
 	QUERY(ELFCLASSNONE),
 	QUERY(ELFCLASS32),
 	QUERY(ELFCLASS64),
-	QUERY(ELFCLASSNUM),
 	{ 0, 0 }
 };
 static pairtype elf_ei_data[] = {
 	QUERY(ELFDATANONE),
 	QUERY(ELFDATA2LSB),
 	QUERY(ELFDATA2MSB),
-	QUERY(ELFDATANUM),
 	{ 0, 0 }
 };
 static pairtype elf_ei_version[] = {
