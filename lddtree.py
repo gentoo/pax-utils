@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.13 2012/11/24 16:54:32 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.14 2012/11/24 17:01:48 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -45,6 +45,12 @@ def normpath(path):
 	return os.path.normpath(path).replace('//', '/')
 
 
+def dedupe(input):
+	"""Remove all duplicates from input (keeping order)"""
+	seen = {}
+	return [seen.setdefault(x, x) for x in input if x not in seen]
+
+
 def ParseLdPaths(str_ldpaths, root='', path=None):
 	"""Parse the colon-delimited list of paths and apply ldso rules to each
 
@@ -66,10 +72,8 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
 			ldpath = os.getcwd()
 		else:
 			ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
-		ldpath = normpath(root + ldpath)
-		if not ldpath in ldpaths:
-			ldpaths.append(ldpath)
-	return ldpaths
+		ldpaths.append(normpath(root + ldpath))
+	return dedupe(ldpaths)
 
 
 def ParseLdSoConf(ldso_conf, root='/', _first=True):
@@ -107,13 +111,9 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
 			warn(e)
 
 	if _first:
-		# Remove duplicate entries to speed things up.
 		# XXX: Load paths from ldso itself.
-		new_paths = []
-		for path in paths:
-			if not path in new_paths:
-				new_paths.append(path)
-		paths = new_paths
+		# Remove duplicate entries to speed things up.
+		paths = dedupe(paths)
 
 	return paths
 
@@ -311,7 +311,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.13 2012/11/24 16:54:32 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.14 2012/11/24 17:01:48 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
