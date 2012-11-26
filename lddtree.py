@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.15 2012/11/24 19:44:03 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.16 2012/11/26 20:06:54 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -163,23 +163,14 @@ def CompatibleELFs(elf1, elf2):
 	Returns:
 	  True if compatible, False otherwise
 	"""
-	osabi1 = elf1.header['e_ident']['EI_OSABI']
-	osabi2 = elf2.header['e_ident']['EI_OSABI']
-	if elf1.elfclass != elf2.elfclass or \
-	   elf1.little_endian != elf2.little_endian or \
-	   elf1.header['e_machine'] != elf2.header['e_machine']:
-		return False
-	elif osabi1 != osabi2:
-		compat_sets = (
-			frozenset(['ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX']),
-		)
-		osabis = frozenset([osabi1, osabi2])
-		for cs in compat_sets:
-			if osabis.issubset(cs):
-				return True
-		return False
-	else:
-		return True
+	osabis = frozenset([e.header['e_ident']['EI_OSABI'] for e in (elf1, elf2)])
+	compat_sets = (
+		frozenset(['ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX']),
+	)
+	return ((len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets)) and
+		elf1.elfclass == elf2.elfclass and
+		elf1.little_endian == elf2.little_endian and
+		elf1.header['e_machine'] == elf2.header['e_machine'])
 
 
 def FindLib(elf, lib, ldpaths):
@@ -310,7 +301,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.15 2012/11/24 19:44:03 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.16 2012/11/26 20:06:54 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
