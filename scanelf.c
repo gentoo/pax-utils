@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.252 2012/11/18 07:39:45 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.253 2012/11/30 23:25:07 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.252 2012/11/18 07:39:45 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.253 2012/11/30 23:25:07 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -765,6 +765,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 		xstrcat(ret, "  -  ", ret_len);
 }
 
+/* Defines can be seen in glibc's sysdeps/generic/ldconfig.h */
 #define LDSO_CACHE_MAGIC "ld.so-"
 #define LDSO_CACHE_MAGIC_LEN (sizeof LDSO_CACHE_MAGIC -1)
 #define LDSO_CACHE_VER "1.7.0"
@@ -783,6 +784,9 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 #define FLAG_POWERPC_LIB64  0x0500
 #define FLAG_MIPS64_LIBN32  0x0600
 #define FLAG_MIPS64_LIBN64  0x0700
+#define FLAG_X8664_LIBX32   0x0800
+#define FLAG_ARM_LIBHF      0x0900
+#define FLAG_AARCH64_LIB64  0x0a00
 
 #if defined(__GLIBC__) || defined(__UCLIBC__)
 
