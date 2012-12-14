@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.16 2012/11/26 20:06:54 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.17 2012/12/14 04:22:52 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -270,7 +270,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 					libs.append(t.needed)
 			if runpaths:
 				# If both RPATH and RUNPATH are set, only the latter is used.
-				rpath = []
+				rpaths = []
 
 			break
 		ret['needed'] = libs
@@ -301,7 +301,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.16 2012/11/26 20:06:54 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.17 2012/12/14 04:22:52 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
