@@ -73,6 +73,7 @@ find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
 testit src.use.xfuncs
 
 
+
 #
 # check for style
 #
@@ -86,6 +87,7 @@ find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
 		-e '(^|[^:])//' \
 	| sed -e "s:^\.\./\.\./::g" > src.style
 testit src.style
+
 
 
 #
@@ -103,5 +105,17 @@ for x in $(find ../.. '(' -name '*.c' -o -name '*.h' ')' ); do
 	fi
 done > src.space
 testit src.space
+
+
+
+#
+# Python checks
+#
+if pyflakes </dev/null 2>/dev/null; then
+	find "${top_srcdir}" -name '*.py' -exec pyflakes {} + > src.pyflakes
+	testit src.pyflakes
+fi
+
+
 
 exit ${ret}
