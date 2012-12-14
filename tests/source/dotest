@@ -92,6 +92,9 @@ testit src.style
 # Auto clean up the space issues
 #
 for x in $(find ../.. '(' -name '*.c' -o -name '*.h' ')' ); do
+	case ${x} in
+	*/elf.h) continue ;; # Not our files
+	esac
 	./space "$x" > "$x~"
 	if ! diff -u "$x" "$x~" ; then
 		echo "New file: $x~"
