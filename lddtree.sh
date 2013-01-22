@@ -2,7 +2,7 @@
 # Copyright 2007-2012 Gentoo Foundation
 # Copyright 2007-2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.18 2013/01/02 17:37:27 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.19 2013/01/22 02:12:35 vapier Exp $
 
 argv0=${0##*/}
 
@@ -20,7 +20,7 @@ usage() {
 	  -a          Show all duplicated dependencies
 	  -x          Run with debugging
 	  -R <root>   Use this ROOT filesystem tree
-      -l          Display output in a flat format
+	  -l          Display output in a flat format
 	  -h          Show this help output
 	  -V          Show version information
 	EOF
@@ -28,7 +28,7 @@ usage() {
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.18 2013/01/02 17:37:27 vapier Exp $'
+	local id='$Id: lddtree.sh,v 1.19 2013/01/22 02:12:35 vapier Exp $'
 	id=${id##*,v }
 	exec echo "lddtree-${id% * Exp*}"
 }
