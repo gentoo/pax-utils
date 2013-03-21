@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.19 2013/03/21 03:03:32 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.20 2013/03/21 03:04:58 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -50,10 +50,10 @@ def normpath(path):
 	return os.path.normpath(path).replace('//', '/')
 
 
-def dedupe(input):
-	"""Remove all duplicates from input (keeping order)"""
+def dedupe(items):
+	"""Remove all duplicates from |items| (keeping order)"""
 	seen = {}
-	return [seen.setdefault(x, x) for x in input if x not in seen]
+	return [seen.setdefault(x, x) for x in items if x not in seen]
 
 
 def ParseLdPaths(str_ldpaths, root='', path=None):
@@ -318,8 +318,8 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.19 2013/03/21 03:03:32 vapier Exp $'.split()
-	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
+	d = '$Id: lddtree.py,v 1.20 2013/03/21 03:04:58 vapier Exp $'.split()
+	print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
 	sys.exit(0)
 
 
