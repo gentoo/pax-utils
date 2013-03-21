@@ -2,7 +2,7 @@
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.18 2013/01/05 20:39:56 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.19 2013/03/21 03:03:32 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -32,6 +32,11 @@ def err(msg, status=1):
 	"""Write |msg| to stderr and exit with |status|"""
 	warn(msg, prefix='error')
 	sys.exit(status)
+
+
+def bstr(buf):
+	"""Decode the byte string into a string"""
+	return buf.decode('utf-8')
 
 
 def normpath(path):
@@ -186,7 +191,7 @@ def FindLib(elf, lib, ldpaths):
 	for ldpath in ldpaths:
 		path = os.path.join(ldpath, lib)
 		if os.path.exists(path):
-			with open(path) as f:
+			with open(path, 'rb') as f:
 				libelf = ELFFile(f)
 				if CompatibleELFs(elf, libelf):
 					return path
@@ -234,7 +239,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 		'libs': _all_libs,
 	}
 
-	with open(path) as f:
+	with open(path, 'rb') as f:
 		elf = ELFFile(f)
 
 		# If this is the first ELF, extract the interpreter.
@@ -243,7 +248,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 				if segment.header.p_type != 'PT_INTERP':
 					continue
 
-				interp = segment.get_interp_name()
+				interp = bstr(segment.get_interp_name())
 				ret['interp'] = normpath(root + interp)
 				ret['libs'][os.path.basename(interp)] = {
 					'path': ret['interp'],
@@ -266,11 +271,11 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
 
 			for t in segment.iter_tags():
 				if t.entry.d_tag == 'DT_RPATH':
-					rpaths = ParseLdPaths(t.rpath, root=root, path=path)
+					rpaths = ParseLdPaths(bstr(t.rpath), root=root, path=path)
 				elif t.entry.d_tag == 'DT_RUNPATH':
-					runpaths = ParseLdPaths(t.runpath, root=root, path=path)
+					runpaths = ParseLdPaths(bstr(t.runpath), root=root, path=path)
 				elif t.entry.d_tag == 'DT_NEEDED':
-					libs.append(t.needed)
+					libs.append(bstr(t.needed))
 			if runpaths:
 				# If both RPATH and RUNPATH are set, only the latter is used.
 				rpaths = []
@@ -313,7 +318,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	id = '$Id: lddtree.py,v 1.18 2013/01/05 20:39:56 vapier Exp $'.split()
+	id = '$Id: lddtree.py,v 1.19 2013/03/21 03:03:32 vapier Exp $'.split()
 	print('%s-%s %s %s' % (id[1].split('.')[0], id[2], id[3], id[4]))
 	sys.exit(0)
 
