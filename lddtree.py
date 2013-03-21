@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # Copyright 2012 Gentoo Foundation
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
-# Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.20 2013/03/21 03:04:58 vapier Exp $
+# Use of this source code is governed by a BSD-style license (BSD-3)
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.21 2013/03/21 22:55:15 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -318,7 +318,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-	d = '$Id: lddtree.py,v 1.20 2013/03/21 03:04:58 vapier Exp $'.split()
+	d = '$Id: lddtree.py,v 1.21 2013/03/21 22:55:15 vapier Exp $'.split()
 	print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
 	sys.exit(0)
 
