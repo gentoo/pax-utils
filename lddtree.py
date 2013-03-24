@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.23 2013/03/24 05:27:49 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.24 2013/03/24 05:37:34 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -319,7 +319,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.23 2013/03/24 05:27:49 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.24 2013/03/24 05:37:34 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -412,7 +412,7 @@ Display ELF dependencies as a tree""")
   parser.add_option('-R', '--root',
     dest='root', default=os.environ.get('ROOT', ''), type='string',
     action='callback', callback=_NormalizePath,
-    help=('Show all duplicated dependencies'))
+    help=('Search for all files/dependencies in ROOT'))
   parser.add_option('--copy-to-tree',
     dest='dest', default=None, type='string',
     action='callback', callback=_NormalizePath,
