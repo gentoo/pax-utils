@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.24 2013/03/24 05:37:34 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.25 2013/03/25 22:35:59 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -319,7 +319,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.24 2013/03/24 05:37:34 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.25 2013/03/25 22:35:59 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -365,11 +365,16 @@ def _ActionShow(options, elf):
 
 def _ActionCopy(options, elf):
   """Copy the ELF and its dependencies to a destination tree"""
-  def _copy(src):
+  def _copy(src, striproot=True):
     if src is None:
       return
 
-    dst = options.dest + src
+    if striproot:
+      subdst = src[len(options.root) - 1:]
+    else:
+      subdst = src
+    dst = options.dest + subdst
+
     if os.path.exists(dst):
       # See if they're the same file.
       ostat = os.stat(src)
@@ -396,7 +401,7 @@ def _ActionCopy(options, elf):
       os.unlink(dst)
     shutil.copy2(src, dst)
 
-  _copy(elf['path'])
+  _copy(elf['path'], striproot=options.auto_root)
   _copy(elf['interp'])
   for lib in elf['libs']:
     _copy(elf['libs'][lib]['path'])
@@ -405,14 +410,30 @@ def _ActionCopy(options, elf):
 def main(argv):
   parser = optparse.OptionParser("""%prog [options] <ELFs>
 
-Display ELF dependencies as a tree""")
+Display ELF dependencies as a tree
+
+When using the --root option, all paths are implicitly prefixed by that.
+  e.g. lddtree -R /my/magic/root /bin/bash
+This will load up the ELF found at /my/magic/root/bin/bash and then resolve
+all libraries via that path.  If you wish to actually read /bin/bash (and
+so use the ROOT path as an alternative library tree), you can specify the
+--no-auto-root option.
+
+When pairing --root with --copy-to-tree, the ROOT path will be stripped.
+  e.g. lddtree -R /my/magic/root --copy-to-tree /foo /bin/bash
+You will see /foo/bin/bash and /foo/lib/libc.so.6 and not paths like
+/foo/my/magic/root/bin/bash.  If you want that, you'll have to manually
+add the ROOT path to the output path.""")
   parser.add_option('-a', '--all',
     action='store_true', default=False,
     help=('Show all duplicated dependencies'))
   parser.add_option('-R', '--root',
-    dest='root', default=os.environ.get('ROOT', ''), type='string',
+    default=os.environ.get('ROOT', ''), type='string',
     action='callback', callback=_NormalizePath,
     help=('Search for all files/dependencies in ROOT'))
+  parser.add_option('--no-auto-root',
+    dest='auto_root', action='store_false', default=True,
+    help=('Do not automatically prefix input ELFs with ROOT'))
   parser.add_option('--copy-to-tree',
     dest='dest', default=None, type='string',
     action='callback', callback=_NormalizePath,
@@ -449,6 +470,8 @@ Display ELF dependencies as a tree""")
   # Process all the files specified.
   ret = 0
   for path in paths:
+    if options.auto_root:
+      path = options.root + path.lstrip('/')
     try:
       elf = ParseELF(path, options.root, ldpaths)
     except (exceptions.ELFError, IOError) as e:
