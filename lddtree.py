@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.26 2013/03/26 04:50:47 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.27 2013/03/26 05:03:42 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -367,7 +367,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.26 2013/03/26 04:50:47 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.27 2013/03/26 05:03:42 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -419,6 +419,11 @@ def _ActionCopy(options, elf):
   def _copy(src, striproot=True, wrapit=False, libpaths=()):
     if src is None:
       return
+
+    if wrapit:
+      # Static ELFs don't need to be wrapped.
+      if not elf['interp']:
+        wrapit = False
 
     striproot = _StripRoot if striproot else lambda x: x
 
