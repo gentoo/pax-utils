@@ -3,7 +3,9 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.27 2013/03/26 05:03:42 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.28 2013/03/26 05:22:28 vapier Exp $
+
+# TODO: Handle symlinks.
 
 """Read the ELF dependency tree and show it
 
@@ -367,7 +369,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.27 2013/03/26 05:03:42 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.28 2013/03/26 05:22:28 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -416,7 +418,7 @@ def _ActionCopy(options, elf):
   def _StripRoot(path):
     return path[len(options.root) - 1:]
 
-  def _copy(src, striproot=True, wrapit=False, libpaths=()):
+  def _copy(src, striproot=True, wrapit=False, libpaths=(), outdir=None):
     if src is None:
       return
 
@@ -427,7 +429,10 @@ def _ActionCopy(options, elf):
 
     striproot = _StripRoot if striproot else lambda x: x
 
-    subdst = striproot(src)
+    if outdir:
+      subdst = os.path.join(outdir, os.path.basename(src))
+    else:
+      subdst = striproot(src)
     dst = options.dest + subdst
 
     try:
@@ -458,8 +463,11 @@ def _ActionCopy(options, elf):
       if options.verbose:
         print('generate wrapper %s' % (dst,))
 
-      GenerateLdsoWrapper(options.dest, subdst, _StripRoot(elf['interp']),
-                          libpaths)
+      if options.libdir:
+        interp = os.path.join(options.libdir, os.path.basename(elf['interp']))
+      else:
+        interp = _StripRoot(elf['interp'])
+      GenerateLdsoWrapper(options.dest, subdst, interp, libpaths)
 
   # XXX: We should automatically import libgcc_s.so whenever libpthread.so
   # is copied over (since we know it can be dlopen-ed by NPTL at runtime).
@@ -469,18 +477,23 @@ def _ActionCopy(options, elf):
   libpaths = set()
   for lib in elf['libs']:
     path = elf['libs'][lib]['path']
-    libpaths.add(_StripRoot(os.path.dirname(path)))
-    _copy(path)
+    if not options.libdir:
+      libpaths.add(_StripRoot(os.path.dirname(path)))
+    _copy(path, outdir=options.libdir)
 
-  libpaths = list(libpaths)
-  if elf['runpath']:
-    libpaths = elf['runpath'] + libpaths
+  if not options.libdir:
+    libpaths = list(libpaths)
+    if elf['runpath']:
+      libpaths = elf['runpath'] + libpaths
+    else:
+      libpaths = elf['rpath'] + libpaths
   else:
-    libpaths = elf['rpath'] + libpaths
+    libpaths.add(options.libdir)
 
-  _copy(elf['interp'])
+  _copy(elf['interp'], outdir=options.libdir)
   _copy(elf['path'], striproot=options.auto_root,
-        wrapit=options.generate_wrappers, libpaths=libpaths)
+        wrapit=options.generate_wrappers, libpaths=libpaths,
+        outdir=options.bindir)
 
 
 def main(argv):
@@ -514,6 +527,14 @@ add the ROOT path to the output path.""")
     dest='dest', default=None, type='string',
     action='callback', callback=_NormalizePath,
     help=('Copy all files to the specified tree'))
+  parser.add_option('--bindir',
+    default=None, type='string',
+    action='callback', callback=_NormalizePath,
+    help=('Dir to store all ELFs specified on the command line'))
+  parser.add_option('--libdir',
+    default=None, type='string',
+    action='callback', callback=_NormalizePath,
+    help=('Dir to store all ELF libs'))
   parser.add_option('--generate-wrappers',
     action='store_true', default=False,
     help=('Wrap executable ELFs with scripts for local ldso'))
