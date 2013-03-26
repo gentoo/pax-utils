@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.25 2013/03/25 22:35:59 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.26 2013/03/26 04:50:47 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -51,10 +51,58 @@ def normpath(path):
   return os.path.normpath(path).replace('//', '/')
 
 
+def makedirs(path):
+  """Like os.makedirs(), but ignore EEXIST errors"""
+  try:
+    os.makedirs(path)
+  except OSError as e:
+    if e.errno != os.errno.EEXIST:
+      raise
+
+
 def dedupe(items):
   """Remove all duplicates from |items| (keeping order)"""
   seen = {}
   return [seen.setdefault(x, x) for x in items if x not in seen]
+
+
+def GenerateLdsoWrapper(root, path, interp, libpaths=()):
+  """Generate a shell script wrapper which uses local ldso to run the ELF
+
+  Since we cannot rely on the host glibc (or other libraries), we need to
+  execute the local packaged ldso directly and tell it where to find our
+  copies of libraries.
+
+  Args:
+    root: The root tree to generate scripts inside of
+    path: The full path (inside |root|) to the program to wrap
+    interp: The ldso interpreter that we need to execute
+    libpaths: Extra lib paths to search for libraries
+  """
+  basedir = os.path.dirname(path)
+  interp_dir, interp_name = os.path.split(interp)
+  libpaths = dedupe([interp_dir] + list(libpaths))
+  replacements = {
+    'interp': os.path.join(os.path.relpath(interp_dir, basedir),
+                           interp_name),
+    'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
+                          for p in libpaths]),
+  }
+  wrapper = """#!/bin/sh
+base=$(realpath "$0")
+basedir=${base%%/*}
+exec \
+  "${basedir}/%(interp)s" \
+  --library-path "%(libpaths)s" \
+  --inhibit-rpath '' \
+  "${base}.elf" \
+  "$@"
+"""
+  wrappath = root + path
+  os.rename(wrappath, wrappath + '.elf')
+  with open(wrappath, 'w') as f:
+    f.write(wrapper % replacements)
+  os.chmod(wrappath, 0755)
 
 
 def ParseLdPaths(str_ldpaths, root='', path=None):
@@ -319,7 +367,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.25 2013/03/25 22:35:59 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.26 2013/03/26 04:50:47 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -365,46 +413,69 @@ def _ActionShow(options, elf):
 
 def _ActionCopy(options, elf):
   """Copy the ELF and its dependencies to a destination tree"""
-  def _copy(src, striproot=True):
+  def _StripRoot(path):
+    return path[len(options.root) - 1:]
+
+  def _copy(src, striproot=True, wrapit=False, libpaths=()):
     if src is None:
       return
 
-    if striproot:
-      subdst = src[len(options.root) - 1:]
-    else:
-      subdst = src
+    striproot = _StripRoot if striproot else lambda x: x
+
+    subdst = striproot(src)
     dst = options.dest + subdst
 
-    if os.path.exists(dst):
+    try:
       # See if they're the same file.
+      nstat = os.stat(dst + ('.elf' if wrapit else ''))
       ostat = os.stat(src)
-      nstat = os.stat(dst)
       for field in ('mode', 'mtime', 'size'):
         if getattr(ostat, 'st_' + field) != \
            getattr(nstat, 'st_' + field):
           break
       else:
         return
+    except OSError as e:
+      if e.errno != errno.ENOENT:
+        raise
 
     if options.verbose:
       print('%s -> %s' % (src, dst))
 
-    try:
-      os.makedirs(os.path.dirname(dst))
-    except OSError as e:
-      if e.errno != os.errno.EEXIST:
-        raise
+    makedirs(os.path.dirname(dst))
     try:
       shutil.copy2(src, dst)
-      return
     except IOError:
       os.unlink(dst)
-    shutil.copy2(src, dst)
+      shutil.copy2(src, dst)
 
-  _copy(elf['path'], striproot=options.auto_root)
-  _copy(elf['interp'])
+    if wrapit:
+      if options.verbose:
+        print('generate wrapper %s' % (dst,))
+
+      GenerateLdsoWrapper(options.dest, subdst, _StripRoot(elf['interp']),
+                          libpaths)
+
+  # XXX: We should automatically import libgcc_s.so whenever libpthread.so
+  # is copied over (since we know it can be dlopen-ed by NPTL at runtime).
+  # Similarly, we should provide an option for automatically copying over
+  # the libnsl.so and libnss_*.so libraries, as well as an open ended list
+  # for known libs that get loaded (e.g. curl will dlopen(libresolv)).
+  libpaths = set()
   for lib in elf['libs']:
-    _copy(elf['libs'][lib]['path'])
+    path = elf['libs'][lib]['path']
+    libpaths.add(_StripRoot(os.path.dirname(path)))
+    _copy(path)
+
+  libpaths = list(libpaths)
+  if elf['runpath']:
+    libpaths = elf['runpath'] + libpaths
+  else:
+    libpaths = elf['rpath'] + libpaths
+
+  _copy(elf['interp'])
+  _copy(elf['path'], striproot=options.auto_root,
+        wrapit=options.generate_wrappers, libpaths=libpaths)
 
 
 def main(argv):
@@ -438,6 +509,9 @@ add the ROOT path to the output path.""")
     dest='dest', default=None, type='string',
     action='callback', callback=_NormalizePath,
     help=('Copy all files to the specified tree'))
+  parser.add_option('--generate-wrappers',
+    action='store_true', default=False,
+    help=('Wrap executable ELFs with scripts for local ldso'))
   parser.add_option('-l', '--list',
     action='store_true', default=False,
     help=('Display output in a simple list (easy for copying)'))
