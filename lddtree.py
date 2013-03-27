@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.30 2013/03/27 03:20:04 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.31 2013/03/27 03:20:52 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -369,7 +369,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.30 2013/03/27 03:20:04 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.31 2013/03/27 03:20:52 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -541,6 +541,9 @@ add the ROOT path to the output path.""")
   parser.add_option('--generate-wrappers',
     action='store_true', default=False,
     help=('Wrap executable ELFs with scripts for local ldso'))
+  parser.add_option('--copy-non-elfs',
+    action='store_true', default=False,
+    help=('Copy over plain (non-ELF) files rather than warn+ignore'))
   parser.add_option('-l', '--list',
     action='store_true', default=False,
     help=('Display output in a simple list (easy for copying)'))
@@ -582,6 +585,18 @@ add the ROOT path to the output path.""")
       try:
         elf = ParseELF(p, options.root, ldpaths)
       except (exceptions.ELFError, IOError) as e:
+        # XXX: Ugly.  Should unify with _Action* somehow.
+        if options.dest is not None and options.copy_non_elfs:
+          if os.path.exists(p):
+            elf = {
+              'interp': None,
+              'libs': [],
+              'runpath': [],
+              'rpath': [],
+              'path': p,
+            }
+            _ActionCopy(options, elf)
+            continue
         ret = 1
         warn('%s: %s' % (p, e))
         continue
