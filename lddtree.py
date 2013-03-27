@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.28 2013/03/26 05:22:28 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.29 2013/03/27 03:07:46 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -369,7 +369,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.28 2013/03/26 05:22:28 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.29 2013/03/27 03:07:46 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -501,6 +501,9 @@ def main(argv):
 
 Display ELF dependencies as a tree
 
+<ELFs> can be globs that lddtree will take care of expanding.
+Useful when you want to glob a path under the ROOT path.
+
 When using the --root option, all paths are implicitly prefixed by that.
   e.g. lddtree -R /my/magic/root /bin/bash
 This will load up the ELF found at /my/magic/root/bin/bash and then resolve
@@ -572,16 +575,17 @@ add the ROOT path to the output path.""")
   for path in paths:
     if options.auto_root:
       path = options.root + path.lstrip('/')
-    try:
-      elf = ParseELF(path, options.root, ldpaths)
-    except (exceptions.ELFError, IOError) as e:
-      ret = 1
-      warn('%s: %s' % (path, e))
-      continue
-    if options.dest is None:
-      _ActionShow(options, elf)
-    else:
-      _ActionCopy(options, elf)
+    for p in glob.glob(path):
+      try:
+        elf = ParseELF(p, options.root, ldpaths)
+      except (exceptions.ELFError, IOError) as e:
+        ret = 1
+        warn('%s: %s' % (p, e))
+        continue
+      if options.dest is None:
+        _ActionShow(options, elf)
+      else:
+        _ActionCopy(options, elf)
   return ret
 
 
