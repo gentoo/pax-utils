@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.34 2013/03/28 01:17:14 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.35 2013/03/28 17:14:10 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -374,7 +374,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.34 2013/03/28 01:17:14 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.35 2013/03/28 17:14:10 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -536,44 +536,44 @@ This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
 they need will be placed into /foo/lib/ only.""")
   parser.add_option('-a', '--all',
     action='store_true', default=False,
-    help=('Show all duplicated dependencies'))
+    help='Show all duplicated dependencies')
   parser.add_option('-R', '--root',
     default=os.environ.get('ROOT', ''), type='string',
     action='callback', callback=_NormalizePath,
-    help=('Search for all files/dependencies in ROOT'))
+    help='Search for all files/dependencies in ROOT')
   parser.add_option('--no-auto-root',
     dest='auto_root', action='store_false', default=True,
-    help=('Do not automatically prefix input ELFs with ROOT'))
+    help='Do not automatically prefix input ELFs with ROOT')
   parser.add_option('--copy-to-tree',
     dest='dest', default=None, type='string',
     action='callback', callback=_NormalizePath,
-    help=('Copy all files to the specified tree'))
+    help='Copy all files to the specified tree')
   parser.add_option('--bindir',
     default=None, type='string',
     action='callback', callback=_NormalizePath,
-    help=('Dir to store all ELFs specified on the command line'))
+    help='Dir to store all ELFs specified on the command line')
   parser.add_option('--libdir',
     default=None, type='string',
     action='callback', callback=_NormalizePath,
-    help=('Dir to store all ELF libs'))
+    help='Dir to store all ELF libs')
   parser.add_option('--generate-wrappers',
     action='store_true', default=False,
-    help=('Wrap executable ELFs with scripts for local ldso'))
+    help='Wrap executable ELFs with scripts for local ldso')
   parser.add_option('--copy-non-elfs',
     action='store_true', default=False,
-    help=('Copy over plain (non-ELF) files instead of warn+ignore'))
+    help='Copy over plain (non-ELF) files instead of warn+ignore')
   parser.add_option('-l', '--list',
     action='store_true', default=False,
-    help=('Display output in a simple list (easy for copying)'))
+    help='Display output in a simple list (easy for copying)')
   parser.add_option('-x', '--debug',
     action='store_true', default=False,
-    help=('Run with debugging'))
+    help='Run with debugging')
   parser.add_option('-v', '--verbose',
     action='store_true', default=False,
-    help=('Be verbose'))
+    help='Be verbose')
   parser.add_option('-V', '--version',
     action='callback', callback=_ShowVersion,
-    help=('Show version information'))
+    help='Show version information')
   (options, paths) = parser.parse_args(argv)
 
   if options.root != '/':
