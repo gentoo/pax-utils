@@ -3,7 +3,7 @@
 # Copyright 2012 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.32 2013/03/27 03:22:00 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.33 2013/03/28 00:58:20 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -369,7 +369,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.32 2013/03/27 03:22:00 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.33 2013/03/28 00:58:20 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -515,7 +515,20 @@ When pairing --root with --copy-to-tree, the ROOT path will be stripped.
   e.g. lddtree -R /my/magic/root --copy-to-tree /foo /bin/bash
 You will see /foo/bin/bash and /foo/lib/libc.so.6 and not paths like
 /foo/my/magic/root/bin/bash.  If you want that, you'll have to manually
-add the ROOT path to the output path.""")
+add the ROOT path to the output path.
+
+The --bindir and --libdir flags are used to normalize the output subdirs
+when used with --copy-to-tree.
+  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof
+This will mirror the input paths in the output.  So you will end up with
+/foo/bin/bash and /foo/usr/sbin/lspci and /foo/usr/bin/lsof.  Similarly,
+the libraries needed will be scattered among /foo/lib/ and /foo/usr/lib/
+and perhaps other paths (like /foo/lib64/ and /usr/lib/gcc/...).  You can
+collapse all that down into nice directory structure.
+  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof \\
+               --bindir /bin --libdir /lib
+This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
+they need will be placed into /foo/lib/ only.""")
   parser.add_option('-a', '--all',
     action='store_true', default=False,
     help=('Show all duplicated dependencies'))
@@ -543,7 +556,7 @@ add the ROOT path to the output path.""")
     help=('Wrap executable ELFs with scripts for local ldso'))
   parser.add_option('--copy-non-elfs',
     action='store_true', default=False,
-    help=('Copy over plain (non-ELF) files rather than warn+ignore'))
+    help=('Copy over plain (non-ELF) files instead of warn+ignore'))
   parser.add_option('-l', '--list',
     action='store_true', default=False,
     help=('Display output in a simple list (easy for copying)'))
@@ -560,6 +573,11 @@ add the ROOT path to the output path.""")
 
   if options.root != '/':
     options.root += '/'
+
+  if options.bindir and options.bindir[0] != '/':
+    parser.error('--bindir accepts absolute paths only')
+  if options.libdir and options.libdir[0] != '/':
+    parser.error('--libdir accepts absolute paths only')
 
   if options.debug:
     print('root =', options.root)
