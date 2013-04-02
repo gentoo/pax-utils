@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.253 2012/11/30 23:25:07 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.254 2013/04/02 21:13:05 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.253 2012/11/30 23:25:07 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.254 2013/04/02 21:13:05 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -2192,8 +2192,8 @@ static int parseargs(int argc, char *argv[])
 		case 'b': show_bind = 1; break;
 		case 'S': show_soname = 1; break;
 		case 'T': show_textrels = 1; break;
-		case 'q': be_quiet = 1; break;
-		case 'v': be_verbose = (be_verbose % 20) + 1; break;
+		case 'q': be_quiet = min(be_quiet, 20) + 1; break;
+		case 'v': be_verbose = min(be_verbose, 20) + 1; break;
 		case 'a': show_perms = show_pax = show_phdr = show_textrel = show_rpath = show_bind = show_endian = 1; break;
 		case 'D': show_endian = 1; break;
 		case 'I': show_osabi = 1; break;

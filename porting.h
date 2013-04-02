@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.43 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.44 2013/04/02 21:13:05 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -118,6 +118,15 @@
 			 (((x) & 0x00000000000000ff) << 56))
 #  endif
 # endif
+#endif
+
+#define _minmax(x, y, op) \
+	({ typeof(x) __x = (x); typeof(y) __y = (y); (__x op __y ? __x : __y); })
+#if !defined(min)
+# define min(x, y) _minmax(x, y, <)
+#endif
+#if !defined(max)
+# define max(x, y) _minmax(x, y, >)
 #endif
 
 #if !defined(_POSIX_PATH_MAX) && !defined(PATH_MAX) /* __PAX_UTILS_PATH_MAX */
