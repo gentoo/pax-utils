@@ -2,7 +2,7 @@
 # Copyright 2007-2013 Gentoo Foundation
 # Copyright 2007-2013 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.20 2013/04/05 22:04:41 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.21 2013/04/05 22:45:48 vapier Exp $
 
 argv0=${0##*/}
 
@@ -17,18 +17,19 @@ usage() {
 	Usage: ${argv0} [options] <ELF file[s]>
 
 	Options:
-	  -a          Show all duplicated dependencies
-	  -x          Run with debugging
-	  -R <root>   Use this ROOT filesystem tree
-	  -l          Display output in a flat format
-	  -h          Show this help output
-	  -V          Show version information
+	  -a              Show all duplicated dependencies
+	  -x              Run with debugging
+	  -R <root>       Use this ROOT filesystem tree
+	  --no-auto-root  Do not automatically prefix input ELFs with ROOT
+	  -l              Display output in a flat format
+	  -h              Show this help output
+	  -V              Show version information
 	EOF
 	exit ${1:-0}
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.20 2013/04/05 22:04:41 vapier Exp $'
+	local id='$Id: lddtree.sh,v 1.21 2013/04/05 22:45:48 vapier Exp $'
 	id=${id##*,v }
 	exec echo "lddtree-${id% * Exp*}"
 }
@@ -189,16 +190,23 @@ if [[ $1 != "/../..source.lddtree" ]] ; then
 SHOW_ALL=false
 SET_X=false
 LIST=false
+AUTO_ROOT=true
 
-while getopts haxVR:l OPT ; do
+while getopts haxVR:l-:  OPT ; do
 	case ${OPT} in
-		a) SHOW_ALL=true;;
-		x) SET_X=true;;
-		h) usage;;
-		V) version;;
-		R) ROOT="${OPTARG%/}/";;
-		l) LIST=true;;
-		?) usage 1;;
+	a) SHOW_ALL=true;;
+	x) SET_X=true;;
+	h) usage;;
+	V) version;;
+	R) ROOT="${OPTARG%/}/";;
+	l) LIST=true;;
+	-) # Long opts ftw.
+		case ${OPTARG} in
+		no-auto-root) AUTO_ROOT=false;;
+		*) usage 1;;
+		esac
+		;;
+	?) usage 1;;
 	esac
 done
 shift $((OPTIND - 1))
@@ -210,6 +218,9 @@ ret=0
 for elf ; do
 	unset lib_paths_ldso
 	unset c_last_needed_by
+	if ${AUTO_ROOT} && [[ ${elf} == /* ]] ; then
+		elf="${ROOT}${elf#/}"
+	fi
 	if [[ ! -e ${elf} ]] ; then
 		error "${elf}: file does not exist"
 	elif [[ ! -r ${elf} ]] ; then
