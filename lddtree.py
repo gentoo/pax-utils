@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.37 2013/04/05 22:04:41 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.38 2013/04/05 22:26:53 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -374,7 +374,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.37 2013/04/05 22:04:41 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.38 2013/04/05 22:26:53 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -603,7 +603,10 @@ they need will be placed into /foo/lib/ only.""")
   # Process all the files specified.
   ret = 0
   for path in paths:
-    if options.auto_root:
+    # Only auto-prefix the path if the ELF is absolute.
+    # If it's a relative path, the user most likely wants
+    # the local path.
+    if options.auto_root and path.startswith('/'):
       path = options.root + path.lstrip('/')
 
     matched = False
