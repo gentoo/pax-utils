@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.38 2013/04/05 22:26:53 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.39 2013/04/07 19:20:09 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -226,7 +226,7 @@ def CompatibleELFs(elf1, elf2):
   """
   osabis = frozenset([e.header['e_ident']['EI_OSABI'] for e in (elf1, elf2)])
   compat_sets = (
-    frozenset(['ELFOSABI_NONE', 'ELFOSABI_SYSV', 'ELFOSABI_LINUX']),
+    frozenset('ELFOSABI_%s' % x for x in ('NONE', 'SYSV', 'GNU', 'LINUX',)),
   )
   return ((len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets)) and
     elf1.elfclass == elf2.elfclass and
@@ -374,7 +374,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.38 2013/04/05 22:26:53 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.39 2013/04/07 19:20:09 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 

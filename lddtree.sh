@@ -2,7 +2,7 @@
 # Copyright 2007-2013 Gentoo Foundation
 # Copyright 2007-2013 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.21 2013/04/05 22:45:48 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.22 2013/04/07 19:20:09 vapier Exp $
 
 argv0=${0##*/}
 
@@ -29,7 +29,7 @@ usage() {
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.21 2013/04/05 22:45:48 vapier Exp $'
+	local id='$Id: lddtree.sh,v 1.22 2013/04/07 19:20:09 vapier Exp $'
 	id=${id##*,v }
 	exec echo "lddtree-${id% * Exp*}"
 }
@@ -41,10 +41,11 @@ error() {
 }
 
 elf_specs() {
-	# With glibc, the NONE, SYSV, and LINUX OSABI's are compatible.
-	# NONE and SYSV are the same thing, so normalize LINUX to NONE. #442024
+	# With glibc, the NONE, SYSV, GNU, and LINUX OSABI's are compatible.
+	# LINUX and GNU are the same thing, as are NONE and SYSV, so normalize
+	# GNU & LINUX to NONE. #442024 #464380
 	scanelf -BF '#F%a %M %D %I' "$1" | \
-		sed 's: LINUX$: NONE:'
+		sed -r 's: (LINUX|GNU)$: NONE:'
 }
 
 lib_paths_fallback="${ROOT}lib* ${ROOT}usr/lib* ${ROOT}usr/local/lib*"
