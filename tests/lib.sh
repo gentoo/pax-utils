@@ -5,6 +5,7 @@ builddir=${srcdir}
 top_builddir=${top_srcdir}
 
 PATH=${top_builddir}:${PATH}
+unset ROOT # who knows!
 
 [ -e /etc/init.d/functions.sh ] && source /etc/init.d/functions.sh
 

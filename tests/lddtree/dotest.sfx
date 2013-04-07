@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. "${0%/*}"/../lib.sh
+
+#
+# smoke tests of sorts
+#
+lddtree.${sfx} /bin/bash | \
+	grep -i 'none' > lddtree.${sfx}.smoke
+testit lddtree.${sfx}.smoke
+
+
+
+exit ${ret}

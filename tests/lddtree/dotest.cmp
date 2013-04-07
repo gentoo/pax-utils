@@ -1,0 +1,17 @@
+#!/bin/bash
+
+. "${0%/*}"/../lib.sh
+
+#
+# make sure list output matches
+#
+for sfx in py sh ; do
+	lddtree.${sfx} -l /bin/bash > lddtree.${sfx}.list &
+done
+wait
+testit lddtree.*.list
+rm -f lddtree.*.list
+
+
+
+exit ${ret}
