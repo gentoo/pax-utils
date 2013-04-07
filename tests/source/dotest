@@ -112,7 +112,10 @@ testit src.space
 # Python checks
 #
 if pyflakes </dev/null 2>/dev/null; then
-	find "${top_srcdir}" -name '*.py' -exec pyflakes {} + > src.pyflakes
+	find "${top_srcdir}" \
+		'!' -ipath '*/tests/*' \
+		-name '*.py' \
+		-exec pyflakes {} + > src.pyflakes
 	testit src.pyflakes
 fi
 
