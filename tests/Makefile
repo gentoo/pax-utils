@@ -1,12 +1,8 @@
 SUBDIRS = $(patsubst %/Makefile,%,$(wildcard */Makefile))
-
-.PHONY: all test check clean
-all test check clean:
-	$(MAKE) $(patsubst %,subdir_%_$@,$(SUBDIRS))
-
-# subdir_source_all
-_SUBTAR = $(patsubst subdir_%,%,$@)
-_SUBDIR = $(shell expr $(_SUBTAR) : '\(.*\)_[^_]*$$')
-_TARGET = $(shell expr $(_SUBTAR) : '.*_\([^_]*\)$$')
-subdir_%:
-	$(MAKE) -C $(_SUBDIR) $(_TARGET)
+# DO NOT STARE AT THE SUN
+all:
+%:; $(MAKE) `printf '%s_$@_ ' $(SUBDIRS)`
+_words = $(subst _, ,$1)
+_dir = $(firstword $(call _words,$@))
+_targ = $(lastword $(call _words,$@))
+%_:; $(MAKE) -C $(_dir) $(_targ)
