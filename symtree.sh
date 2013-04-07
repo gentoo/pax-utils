@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source lddtree /../..source.lddtree || exit 1
-
 argv0=${0##*/}
 
 usage() {
@@ -22,10 +20,14 @@ sym_list() {
 	local type=$1; shift
 	echo "%${type}%$@" | sed "s:,:,%${type}%:g"
 }
+find_elf() {
+	echo "$2" | awk -F/ -v lib="$1" '$NF == lib {print}'
+}
 show_elf() {
 	local elf=$1
 	local rlib lib libs
-	local resolved=$(find_elf "${elf}")
+	local resolved=$(realpath "${elf}")
+	local resolved_libs=$(lddtree -l "${resolved}")
 
 	printf "%s\n" "${resolved}"
 
@@ -35,7 +37,7 @@ show_elf() {
 	u=$(scanelf -q -F'%s#F' -s'%u%' "${elf}")
 	for lib in ${libs//,/ } ; do
 		lib=${lib##*/}
-		rlib=$(find_elf "${lib}" "${resolved}")
+		rlib=$(find_elf "${lib}" "${resolved_libs}")
 
 		d=$(scanelf -qF'%s#F' -s`sym_list d "${u}"` "${rlib}")
 		if [[ -n ${d} ]] ; then
