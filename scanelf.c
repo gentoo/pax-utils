@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.255 2013/04/02 21:15:50 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.256 2013/04/08 06:38:42 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.255 2013/04/02 21:15:50 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.256 2013/04/08 06:38:42 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -2030,10 +2030,23 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	unsigned long i;
+	const char a_arg[] = "<arg>";
+	size_t a_arg_len = strlen(a_arg) + 2;
+	size_t i;
+	int optlen;
 	printf("* Scan ELF binaries for stuff\n\n"
 	       "Usage: %s [options] <dir1/file1> [dir2 dirN file2 fileN ...]\n\n", argv0);
 	printf("Options: -[%s]\n", PARSE_FLAGS);
+
+	/* prescan the --long opt length to auto-align */
+	optlen = 0;
+	for (i = 0; long_opts[i].name; ++i) {
+		int l = strlen(long_opts[i].name);
+		if (long_opts[i].has_arg == a_argument)
+			l += a_arg_len;
+		optlen = max(l, optlen);
+	}
+
 	for (i = 0; long_opts[i].name; ++i) {
 		/* first output the short flag if it has one */
 		if (long_opts[i].val > '~')
@@ -2043,9 +2056,10 @@ static void usage(int status)
 
 		/* then the long flag */
 		if (long_opts[i].has_arg == no_argument)
-			printf("--%-14s", long_opts[i].name);
+			printf("--%-*s", optlen, long_opts[i].name);
 		else
-			printf("--%-7s <arg> ", long_opts[i].name);
+			printf("--%s %s %*s", long_opts[i].name, a_arg,
+				(int)(optlen - strlen(long_opts[i].name) - a_arg_len), "");
 
 		/* finally the help text */
 		printf("* %s\n", opts_help[i]);
