@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char rcsid[] = "$Id: pspax.c,v 1.51 2012/11/18 07:39:45 vapier Exp $";
+static const char rcsid[] = "$Id: pspax.c,v 1.52 2013/04/10 21:54:44 vapier Exp $";
 const char argv0[] = "pspax";
 
 #include "paxinc.h"
@@ -38,8 +38,8 @@ static char noexec = 1;
 static char writeexec = 1;
 static char wide_output = 0;
 static pid_t show_pid = 0;
-static uid_t show_uid = -1;
-static gid_t show_gid = -1;
+static uid_t show_uid = (uid_t)-1;
+static gid_t show_gid = (gid_t)-1;
 
 static FILE *proc_fopen(pid_t pid, const char *file)
 {
@@ -371,13 +371,15 @@ static void pspax(const char *find_name)
 			attr = (have_attr ? get_pid_attr(pid) : NULL);
 			addr = (have_addr ? get_pid_addr(pid) : NULL);
 
-			if (show_uid != -1 && pwd)
-				if (pwd->pw_uid != show_uid)
-					continue;
+			if (pwd) {
+				if (show_uid != (uid_t)-1)
+					if (pwd->pw_uid != show_uid)
+						continue;
 
-			if (show_gid != -1 && pwd)
-				if (pwd->pw_gid != show_gid)
-					continue;
+				if (show_gid != (gid_t)-1)
+					if (pwd->pw_gid != show_gid)
+						continue;
+			}
 
 			/* this is a non-POSIX function */
 			caps = NULL;
