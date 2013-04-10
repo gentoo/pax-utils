@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.256 2013/04/08 06:38:42 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.257 2013/04/10 22:27:20 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.256 2013/04/08 06:38:42 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.257 2013/04/10 22:27:20 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -582,7 +582,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 					elf->filename, \
 					(unsigned long)r_offset); \
 				fflush(stdout); \
-				if (system(sysbuf)) /* don't care */; \
+				if (system(sysbuf)) {/* don't care */} \
 				fflush(stdout); \
 				free(sysbuf); \
 			} \
@@ -903,7 +903,7 @@ static char *lookup_cache_lib(elfobj *elf, const char *fname)
 }
 #endif
 
-static char *lookup_config_lib(elfobj *elf, char *fname)
+static char *lookup_config_lib(const char *fname)
 {
 	static char buf[__PAX_UTILS_PATH_MAX] = "";
 	const char *ldpath;
@@ -965,7 +965,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 						if (!be_wewy_wewy_quiet) { \
 							if (*found_needed) xchrcat(ret, ',', ret_len); \
 							if (use_ldpath) { \
-								if ((p = lookup_config_lib(elf, needed)) != NULL) \
+								if ((p = lookup_config_lib(needed)) != NULL) \
 									needed = p; \
 							} else if (use_ldcache) { \
 								if ((p = lookup_cache_lib(elf, needed)) != NULL) \
@@ -1041,7 +1041,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 
 	return NULL;
 }
-static char *scanelf_file_bind(elfobj *elf, char *found_bind)
+static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 {
 	unsigned long i;
 	struct stat s;
@@ -1084,7 +1084,7 @@ static char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return NULL;
 	} else {
 		*found_bind = 1;
-		return (char *)(dynamic ? "LAZY" : "STATIC");
+		return dynamic ? "LAZY" : "STATIC";
 	}
 }
 static char *scanelf_file_soname(elfobj *elf, char *found_soname)
@@ -1829,7 +1829,7 @@ static int _load_ld_cache_config(const char *fname)
 
 	if (curr_fd != -1) {
 		if (fchdir(curr_fd))
-			/* don't care */;
+			{/* don't care */}
 		close(curr_fd);
 	}
 
