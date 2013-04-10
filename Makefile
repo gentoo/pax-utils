@@ -1,22 +1,25 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.81 2013/04/10 21:42:52 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.82 2013/04/10 21:48:35 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
 	then echo "$(1)"; else echo "$(2)"; fi)
+check_gcc_many = $(foreach flag,$(1),$(call check_gcc,$(flag)))
 
 ####################################################################
 # Avoid CC overhead when installing
 ifneq ($(MAKECMDGOALS),install)
+_WFLAGS   := \
+	-Wdeclaration-after-statement \
+	-Wextra \
+	-Wsequence-point \
+	-Wstrict-overflow
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
              -Wchar-subscripts -Wcast-align -Wno-format-nonliteral \
-             $(call check_gcc,-Wdeclaration-after-statement) \
-             $(call check_gcc,-Wsequence-point) \
-             $(call check_gcc,-Wstrict-overflow) \
-             $(call check_gcc,-Wextra)
+             $(call check_gcc_many,$(_WFLAGS))
 endif
 
 CFLAGS    ?= -O2 -pipe
@@ -61,10 +64,13 @@ SOURCES      = $(OBJS:%.o=%.c)
 all: $(OBJS) $(TARGETS)
 	@:
 
+DEBUG_FLAGS = \
+	-nopie \
+	-fsanitize=address
 debug: clean
-	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_gcc,-nopie)" all
-	@-/sbin/chpax  -permsx $(ELF_TARGETS)
-	@-/sbin/paxctl -permsx $(ELF_TARGETS)
+	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_gcc_many,$(DEBUG_FLAGS))" all
+	@-chpax  -permsx $(ELF_TARGETS)
+	@-paxctl -permsx $(ELF_TARGETS)
 
 compile.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(CPPFLAGS-$<) -o $@ -c $<
 
