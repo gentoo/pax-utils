@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.257 2013/04/10 22:27:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.258 2013/04/16 16:22:31 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.257 2013/04/10 22:27:20 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.258 2013/04/16 16:22:31 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1045,7 +1045,7 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 {
 	unsigned long i;
 	struct stat s;
-	char dynamic = 0;
+	bool dynamic = false;
 
 	if (!show_bind) return NULL;
 	if (!elf->phdr) return NULL;
@@ -1058,7 +1058,7 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		Elf ## B ## _Off offset; \
 		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-			dynamic = 1; \
+			dynamic = true; \
 			offset = EGET(phdr[i].p_offset); \
 			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
 			dyn = DYN ## B (elf->vdata + offset); \
