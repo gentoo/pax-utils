@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.20 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxmacho.c,v 1.21 2013/04/16 16:26:28 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -23,10 +23,10 @@ static const char STR_UNKNOWN[] = "unknown";
 #define QUERY(n) { #n, n }
 typedef const struct {
 	const char *str;
-	int value;
+	unsigned int value;
 } pairtype;
 
-static inline const char *find_pairtype(pairtype *pt, int type)
+static inline const char *find_pairtype(pairtype *pt, unsigned int type)
 {
 	size_t i;
 	for (i = 0; pt[i].str; ++i)
@@ -255,7 +255,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 	 */
 	if (fhdr->magic == FAT_MAGIC || fhdr->magic == FAT_CIGAM) {
 		/* we're indeed in a FAT file */
-		int i;
+		uint32_t i;
 		fatobj *fobj = ret;
 		struct fat_arch *farch;
 		void *dptr = ret->data + sizeof(struct fat_header);
