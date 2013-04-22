@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.39 2013/04/07 19:20:09 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.40 2013/04/22 18:31:10 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -131,9 +131,11 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
     if ldpath == '':
       # The ldso treats "" paths as $PWD.
       ldpath = os.getcwd()
-    else:
+    elif '$ORIGIN' in ldpath:
       ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
-    ldpaths.append(normpath(root + ldpath))
+    else:
+      ldpath = root + ldpath
+    ldpaths.append(normpath(ldpath))
   return dedupe(ldpaths)
 
 
@@ -374,7 +376,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.39 2013/04/07 19:20:09 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.40 2013/04/22 18:31:10 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
