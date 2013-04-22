@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.40 2013/04/22 18:31:10 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.41 2013/04/22 22:02:43 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -376,7 +376,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.40 2013/04/22 18:31:10 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.41 2013/04/22 22:02:43 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -555,6 +555,9 @@ they need will be placed into /foo/lib/ only.""")
   parser.add_option('-v', '--verbose',
     action='store_true', default=False,
     help='Be verbose')
+  parser.add_option('--skip-non-elfs',
+    action='store_true', default=False,
+    help='Skip plain (non-ELF) files instead of warning')
   parser.add_option('-V', '--version',
     action='callback', callback=_ShowVersion,
     help='Show version information')
@@ -590,6 +593,9 @@ they need will be placed into /foo/lib/ only.""")
   if options.libdir and options.libdir[0] != '/':
     parser.error('--libdir accepts absolute paths only')
 
+  if options.skip_non_elfs and options.copy_non_elfs:
+    parser.error('pick one handler for non-ELFs: skip or copy')
+
   if options.debug:
     print('root =', options.root)
     if options.dest:
@@ -616,7 +622,9 @@ they need will be placed into /foo/lib/ only.""")
       matched = True
       try:
         elf = ParseELF(p, options.root, ldpaths)
-      except (exceptions.ELFError, IOError) as e:
+      except exceptions.ELFError as e:
+        if options.skip_non_elfs:
+          continue
         # XXX: Ugly.  Should unify with _Action* somehow.
         if options.dest is not None and options.copy_non_elfs:
           if os.path.exists(p):
@@ -629,6 +637,10 @@ they need will be placed into /foo/lib/ only.""")
             }
             _ActionCopy(options, elf)
             continue
+        ret = 1
+        warn('%s: %s' % (p, e))
+        continue
+      except IOError as e:
         ret = 1
         warn('%s: %s' % (p, e))
         continue
