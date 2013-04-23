@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.41 2013/04/22 22:02:43 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.42 2013/04/23 02:16:59 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -123,6 +123,7 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
   Args:
     str_ldpath: A colon-delimited string of paths
     root: The path to prepend to all paths found
+    path: The object actively being parsed (used for $ORIGIN)
   Returns:
     list of processed paths
   """
@@ -376,7 +377,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.41 2013/04/22 22:02:43 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.42 2013/04/23 02:16:59 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
