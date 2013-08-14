@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.258 2013/04/16 16:22:31 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.259 2013/08/14 21:09:57 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.258 2013/04/16 16:22:31 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.259 2013/08/14 21:09:57 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -379,7 +379,11 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		char *str; \
 		if ((void*)strtbl > elf->data_end) \
 			goto skip_this_shdr##B; \
-		check_flags = SHF_WRITE|SHF_EXECINSTR; \
+		/* let's flag -w/+x object files since the final ELF will most likely
+		 * need write access to the stack (who doesn't !?).  so the combined
+		 * output will bring in +w automatically and that's bad.
+		 */
+		check_flags = /*SHF_WRITE|*/SHF_EXECINSTR; \
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
