@@ -127,6 +127,10 @@
    <listitem><para>Scan directories recursively</para></listitem>
   </varlistentry>
   <varlistentry>
+   <term><option>-r</option>, <option>--rpath</option></term>
+   <listitem><para>Print RPATH encoded in the Mach-O (LC_RPATH)</para></listitem>
+  </varlistentry>
+  <varlistentry>
    <term><option>-S</option>, <option>--soname</option></term>
    <listitem><para>Print the Mach-O's shared library name (install_name).</para></listitem>
   </varlistentry>
@@ -196,6 +200,7 @@
    <listitem><para><emphasis remap='B'>p</emphasis> - filename (minus search)</para></listitem>
    <listitem><para><emphasis remap='B'>o</emphasis> - mh_type</para></listitem>
    <listitem><para><emphasis remap='B'>O</emphasis> - perms</para></listitem>
+   <listitem><para><emphasis remap='B'>r</emphasis> - rpaths</para></listitem>
    <listitem><para><emphasis remap='B'>S</emphasis> - install_name</para></listitem>
   </itemizedlist>
  </para>

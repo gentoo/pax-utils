@@ -1,7 +1,7 @@
 /*
  * Copyright 2008-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.9 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.10 2013/12/16 20:30:38 grobian Exp $
  */
 
 #ifndef _MACHO_H
@@ -136,9 +136,16 @@ struct load_command
 	uint32_t cmdsize;
 };
 
+/* features that are required to be supported are flagged, this is to
+ * make the constants below a bit more readable (although we only use it
+ * once for now) */
+#define LC_REQ_DYLD 0x80000000
+
 /* cmd */
 #define LC_UUID     0x1b    /* Specifies the 128-bit UUID for an image
 							   or its corresponding dSYM file. */
+#define LC_RPATH   (0x1c | LC_REQ_DYLD) /* Defines a runpath addition,
+                               used in @rpath directives in LC_LOAD_DYLIB. */
 #define LC_SEGMENT  0x1     /* Defines a segment of this file to be
 							   mapped into the address space of the
 							   process that loads this file. It also
@@ -243,6 +250,12 @@ struct dylinker_command {
 	uint32_t cmd;
 	uint32_t cmdsize;
 	union lc_str name;
+};
+
+struct rpath_command {
+    uint32_t cmd;
+    uint32_t cmdsize;
+    union lc_str path;
 };
 
 struct fat_header

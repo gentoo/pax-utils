@@ -1,16 +1,16 @@
 /*
  * Copyright 2008-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.23 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.24 2013/12/16 20:30:38 grobian Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  * for Darwin specific fun:
- *           2008-2012 Fabian Groffen  - <grobian@gentoo.org>
+ *           2008-2013 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanmacho.c,v 1.23 2012/11/04 07:26:24 vapier Exp $";
+static const char rcsid[] = "$Id: scanmacho.c,v 1.24 2013/12/16 20:30:38 grobian Exp $";
 const char argv0[] = "scanmacho";
 
 #include "paxinc.h"
@@ -35,6 +35,7 @@ static char dir_recurse = 0;
 static char dir_crossmount = 1;
 static char show_perms = 0;
 static char show_size = 0;
+static char show_rpath = 0;
 static char show_needed = 0;
 static char show_interp = 0;
 static char show_bind = 0;
@@ -52,6 +53,38 @@ static char g_match = 0;
 
 static int match_bits = 0;
 static unsigned int match_perms = 0;
+
+static void scanmacho_file_rpath(
+		fatobj *fobj,
+		char *found_rpath,
+		char **ret,
+		size_t *ret_len)
+{
+	loadcmd *lcmd;
+	uint32_t lc_rpath;
+
+	if (!show_rpath) return;
+
+	lcmd = firstloadcmd(fobj);
+	lc_rpath = MGET(fobj->swapped, LC_RPATH);
+
+	do {
+		if (lcmd->lcmd->cmd == lc_rpath) {
+			struct rpath_command *dlcmd = lcmd->data;
+			char *rpath;
+			rpath = lcmd->data + MGET(fobj->swapped, dlcmd->path.offset);
+			if (*found_rpath)
+				xchrcat(ret, ':', ret_len);
+			xstrcat(ret, rpath, ret_len);
+			*found_rpath = 1;
+		}
+	} while (nextloadcmd(lcmd));
+
+	if (be_wewy_wewy_quiet) return;
+
+	if (!*found_rpath && !be_quiet)
+		xstrcat(ret, "  -  ", ret_len);
+}
 
 static const char *macho_file_needed_lib(
 		fatobj *fobj,
@@ -155,11 +188,12 @@ static char *macho_file_soname(fatobj *fobj, char *found_soname)
 static int scanmacho_fatobj(fatobj *fobj)
 {
 	unsigned long i;
-	char found_needed, found_interp, found_soname, found_lib, found_file;
+	char found_rpath, found_needed, found_interp, found_soname,
+		 found_lib, found_file;
 	static char *out_buffer = NULL;
 	static size_t out_len;
 
-	found_needed = found_interp = found_soname = \
+	found_rpath = found_needed = found_interp = found_soname = \
 	found_lib = found_file = 0;
 
 	if (be_verbose > 2)
@@ -190,6 +224,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 			case 'f': prints("FILE "); found_file = 1; break;
 			case 'o': prints("  TYPE   "); break;
 			case 'M': prints("CPU "); break;
+			case 'r': prints("RPATH "); break;
 			case 'n': prints("NEEDED "); break;
 			case 'i': prints("DYLINKER "); break;
 			case 'b': prints("FLAGS "); break;
@@ -250,6 +285,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 			if (be_wewy_wewy_quiet) break;
 			xstrcat(&out_buffer, fobj->base_filename, &out_len);
 			break;
+		case 'r': scanmacho_file_rpath(fobj, &found_rpath, &out_buffer, &out_len); break;
 		case 'o': out = get_machomhtype(fobj); break;
 		case 'M': out = get_machocputype(fobj); break;
 		case 'D': out = get_machoendian(fobj); break;
@@ -273,7 +309,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 	}
 
 #define FOUND_SOMETHING() \
-	( found_needed || found_interp || found_soname || found_lib )
+	(found_rpath || found_needed || found_interp || found_soname || found_lib)
 
 	if (!found_file && (!be_quiet || (be_quiet && FOUND_SOMETHING()))) {
 		xchrcat(&out_buffer, ' ', &out_len);
@@ -497,8 +533,8 @@ static void scanmacho_envpath(void)
 	free(path);
 }
 
-/* usage / invocation handling functions */ /* Free Flags: c d e j k l r s t u w x z G H I J K L P Q T U W X Y */
-#define PARSE_FLAGS "pRmyAnibSN:gE:M:DO:ZaqvF:f:o:CBhV"
+/* usage / invocation handling functions */ /* Free Flags: c d e j k l s t u w x z G H I J K L P Q T U W X Y */
+#define PARSE_FLAGS "pRmyArnibSN:gE:M:DO:ZaqvF:f:o:CBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -506,6 +542,7 @@ static struct option const long_opts[] = {
 	{"mount",     no_argument, NULL, 'm'},
 	{"symlink",   no_argument, NULL, 'y'},
 	{"archives",  no_argument, NULL, 'A'},
+	{"rpath",     no_argument, NULL, 'r'},
 	{"needed",    no_argument, NULL, 'n'},
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
@@ -536,6 +573,7 @@ static const char * const opts_help[] = {
 	"Don't recursively cross mount points",
 	"Don't scan symlinks",
 	"Scan archives (.a files)\n",
+	"Print LC_RPATH information (ELF: RPATH/RUNPATH)",
 	"Print LC_LOAD_DYLIB information (ELF: NEEDED)",
 	"Print LC_LOAD_DYLINKER information (ELF: INTERP)",
 	"Print flags from mach_header (ELF: BIND)",
@@ -636,6 +674,7 @@ static int parseargs(int argc, char *argv[])
 		case 'p': scan_envpath = 1; break;
 		case 'R': dir_recurse = 1; break;
 		case 'm': dir_crossmount = 0; break;
+		case 'r': show_rpath = 1; break;
 		case 'n': show_needed = 1; break;
 		case 'i': show_interp = 1; break;
 		case 'b': show_bind = 1; break;
@@ -654,7 +693,7 @@ static int parseargs(int argc, char *argv[])
 	}
 	/* let the format option override all other options */
 	if (out_format) {
-		show_needed = show_interp = show_bind = show_soname = \
+		show_rpath = show_needed = show_interp = show_bind = show_soname = \
 		show_perms = show_endian = show_size = 0;
 		for (i = 0; out_format[i]; ++i) {
 			if (!IS_MODIFIER(out_format[i])) continue;
@@ -674,6 +713,7 @@ static int parseargs(int argc, char *argv[])
 			case 'Z': show_size = 1; break;
 			case 'D': show_endian = 1; break;
 			case 'O': show_perms = 1; break;
+			case 'r': show_rpath = 1; break;
 			case 'n': show_needed = 1; break;
 			case 'i': show_interp = 1; break;
 			case 'b': show_bind = 1; break;
@@ -694,6 +734,7 @@ static int parseargs(int argc, char *argv[])
 		if (show_perms)    xstrcat(&out_format, "%O ", &fmt_len);
 		if (show_size)     xstrcat(&out_format, "%Z ", &fmt_len);
 		if (show_endian)   xstrcat(&out_format, "%D ", &fmt_len);
+		if (show_rpath)    xstrcat(&out_format, "%r ", &fmt_len);
 		if (show_needed)   xstrcat(&out_format, "%n ", &fmt_len);
 		if (show_interp)   xstrcat(&out_format, "%i ", &fmt_len);
 		if (show_bind)     xstrcat(&out_format, "%b ", &fmt_len);
