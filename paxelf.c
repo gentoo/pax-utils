@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.79 2014/01/11 00:35:43 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.80 2014/01/11 00:57:16 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -365,6 +365,15 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_PLTPAD),
 	QUERY(DT_MOVETAB),
 	QUERY(DT_SYMINFO),
+	QUERY(DT_VERSYM),
+	QUERY(DT_RELACOUNT),
+	QUERY(DT_RELCOUNT),
+	QUERY(DT_VERDEF),
+	QUERY(DT_VERDEFNUM),
+	QUERY(DT_VERNEED),
+	QUERY(DT_VERNEEDNUM),
+	QUERY(DT_AUXILIARY),
+	QUERY(DT_FILTER),
 	{ 0, 0 }
 };
 const char *get_elfdtype(int type)
