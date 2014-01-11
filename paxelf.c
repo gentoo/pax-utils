@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.78 2012/11/24 20:16:26 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.79 2014/01/11 00:35:43 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -267,9 +267,11 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_SEP),
 	QUERY(EM_ARCA),
 	QUERY(EM_UNICORE),
-	QUERY(EM_ALPHA),
+	QUERY(EM_AARCH64),
 	QUERY(EM_TILEPRO),
+	QUERY(EM_MICROBLAZE),
 	QUERY(EM_TILEGX),
+	QUERY(EM_ALPHA),
 	{ 0, 0 }
 };
 
@@ -352,7 +354,6 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_PLTPADSZ),
 	QUERY(DT_MOVEENT),
 	QUERY(DT_MOVESZ),
-	QUERY(DT_ADDRRNGLO),
 	QUERY(DT_GNU_HASH),
 	QUERY(DT_TLSDESC_PLT),
 	QUERY(DT_TLSDESC_GOT),
@@ -361,6 +362,9 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_CONFIG),
 	QUERY(DT_DEPAUDIT),
 	QUERY(DT_AUDIT),
+	QUERY(DT_PLTPAD),
+	QUERY(DT_MOVETAB),
+	QUERY(DT_SYMINFO),
 	{ 0, 0 }
 };
 const char *get_elfdtype(int type)
@@ -441,6 +445,7 @@ static pairtype elf_shntypes[] = {
 	QUERY(SHN_AFTER),
 	QUERY(SHN_ABS),
 	QUERY(SHN_COMMON),
+	QUERY(SHN_XINDEX),
 	{ 0, 0 }
 };
 const char *get_elfshntype(int type)
