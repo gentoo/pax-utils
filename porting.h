@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.44 2013/04/02 21:13:05 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/porting.h,v 1.45 2014/01/11 00:29:11 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -166,20 +166,6 @@
 # else
 #  error "no idea what the native byte order is"
 # endif
-#endif
-
-/*
- * in case we are not defined by proper/up-to-date system headers,
- * we check for a whole lot of things and copy them from elf.h.
- */
-
-#ifndef PT_GNU_STACK
-# define PT_GNU_STACK	0x6474e551
-#endif
-
-/* not in <=binutils-2.14.90.0.8 (should come in by way of .9) */
-#ifndef PT_GNU_RELRO
-# define PT_GNU_RELRO	0x6474e552
 #endif
 
 /*
