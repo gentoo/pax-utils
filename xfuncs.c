@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.11 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/xfuncs.c,v 1.12 2014/03/20 07:52:07 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -75,7 +75,11 @@ void *xmemdup(const void *src, size_t n)
 void xarraypush(array_t *arr, const void *ele, size_t ele_len)
 {
 	size_t n = arr->num++;
-	arr->eles = xrealloc_array(arr->eles, arr->num, sizeof(ele));
+	/* We allocate one excess element so that array_for_each can
+	 * always safely fetch the next element.  It's minor memory
+	 * wastage to avoid having to do a len check all the time.
+	 */
+	arr->eles = xrealloc_array(arr->eles, arr->num + 1, sizeof(ele));
 	arr->eles[n] = xmemdup(ele, ele_len);
 }
 
