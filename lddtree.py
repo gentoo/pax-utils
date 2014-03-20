@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.42 2013/04/23 02:16:59 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.43 2014/03/20 08:18:06 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -121,9 +121,10 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
    - (TODO) $LIB and friends
 
   Args:
-    str_ldpath: A colon-delimited string of paths
+    str_ldpaths: A colon-delimited string of paths
     root: The path to prepend to all paths found
     path: The object actively being parsed (used for $ORIGIN)
+
   Returns:
     list of processed paths
   """
@@ -149,6 +150,7 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
     ldso_conf: The file to scan
     root: The path to prepend to all paths found
     _first: Recursive use only; is this the first ELF ?
+
   Returns:
     list of paths found
   """
@@ -189,6 +191,7 @@ def LoadLdpaths(root='/'):
 
   Args:
     root: The root tree to prepend to paths
+
   Returns:
     dict containing library paths to search
   """
@@ -224,6 +227,7 @@ def CompatibleELFs(elf1, elf2):
   Args:
     elf1: an ELFFile object
     elf2: an ELFFile object
+
   Returns:
     True if compatible, False otherwise
   """
@@ -244,6 +248,7 @@ def FindLib(elf, lib, ldpaths):
     elf: the elf which the library should be compatible with (ELF wise)
     lib: the library (basename) to search for
     ldpaths: a list of paths to search
+
   Returns:
     the full path to the desired library
   """
@@ -269,6 +274,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
              conf, env, interp
     _first: Recursive use only; is this the first ELF ?
     _all_libs: Recursive use only; dict of all libs we've seen
+
   Returns:
     a dict containing information about all the ELFs; e.g.
     {
@@ -377,7 +383,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.42 2013/04/23 02:16:59 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.43 2014/03/20 08:18:06 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
