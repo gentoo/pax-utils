@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.262 2014/03/20 08:06:01 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.263 2014/03/20 08:08:37 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.262 2014/03/20 08:06:01 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.263 2014/03/20 08:08:37 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1554,33 +1554,35 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 	const char *match_etype;
 	elfobj *elf;
 
-	/* verify this is real ELF */
+	/* Verify this is a real ELF */
 	if ((elf = _readelf_fd(filename, fd, len, !fix_elf)) == NULL) {
 		if (be_verbose > 2) printf("%s: not an ELF\n", filename);
 		return 2;
 	}
+
+	/* Possibly filter based on ELF bitness */
 	switch (match_bits) {
-		case 32:
-			if (elf->elf_class != ELFCLASS32)
-				goto label_done;
-			break;
-		case 64:
-			if (elf->elf_class != ELFCLASS64)
-				goto label_done;
-			break;
-		default: break;
+	case 32:
+		if (elf->elf_class != ELFCLASS32)
+			goto done;
+		break;
+	case 64:
+		if (elf->elf_class != ELFCLASS64)
+			goto done;
+		break;
 	}
 
+	/* Possibly filter based on the ELF's e_type field */
 	array_for_each(match_etypes, n, match_etype)
 		if (etype_lookup(match_etype) == get_etype(elf))
-			goto label_ret;
+			goto scanit;
 	if (array_cnt(match_etypes))
-		goto label_done;
+		goto done;
 
-label_ret:
+ scanit:
 	ret = scanelf_elfobj(elf);
 
-label_done:
+ done:
 	unreadelf(elf);
 	return ret;
 }
