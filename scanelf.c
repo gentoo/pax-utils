@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.261 2014/03/20 07:59:27 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.262 2014/03/20 08:06:01 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.261 2014/03/20 07:59:27 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.262 2014/03/20 08:06:01 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -18,7 +18,7 @@ const char argv0[] = "scanelf";
 static int file_matches_list(const char *filename, char **matchlist);
 
 /* variables to control behavior */
-static char *match_etypes = NULL;
+static array_t _match_etypes = array_init_decl, *match_etypes = &_match_etypes;
 static array_t _ldpaths = array_init_decl, *ldpaths = &_ldpaths;
 static char scan_ldpath = 0;
 static char scan_envpath = 0;
@@ -1550,6 +1550,8 @@ static int scanelf_elfobj(elfobj *elf)
 static int scanelf_elf(const char *filename, int fd, size_t len)
 {
 	int ret = 1;
+	size_t n;
+	const char *match_etype;
 	elfobj *elf;
 
 	/* verify this is real ELF */
@@ -1568,20 +1570,12 @@ static int scanelf_elf(const char *filename, int fd, size_t len)
 			break;
 		default: break;
 	}
-	if (match_etypes) {
-		char sbuf[126];
-		strncpy(sbuf, match_etypes, sizeof(sbuf));
-		if (strchr(match_etypes, ',') != NULL) {
-			char *p;
-			while ((p = strrchr(sbuf, ',')) != NULL) {
-				*p = 0;
-				if (etype_lookup(p+1) == get_etype(elf))
-					goto label_ret;
-			}
-		}
-		if (etype_lookup(sbuf) != get_etype(elf))
-			goto label_done;
-	}
+
+	array_for_each(match_etypes, n, match_etype)
+		if (etype_lookup(match_etype) == get_etype(elf))
+			goto label_ret;
+	if (array_cnt(match_etypes))
+		goto label_done;
 
 label_ret:
 	ret = scanelf_elfobj(elf);
@@ -2080,6 +2074,16 @@ static void usage(int status)
 		flags &= ~PF_NO##flag; \
 		flags |= PF_##flag; \
 	}
+static void parse_delimited(array_t *arr, char *arg, const char *delim)
+{
+	char *ele = strtok(arg, delim);
+	if (!ele)	/* edge case: -s '' */
+		xarraypush_str(arr, "");
+	while (ele) {
+		xarraypush_str(arr, ele);
+		ele = strtok(NULL, delim);
+	}
+}
 static int parseargs(int argc, char *argv[])
 {
 	int i;
@@ -2103,7 +2107,8 @@ static int parseargs(int argc, char *argv[])
 			from_file = optarg;
 			break;
 		case 'E':
-			match_etypes = optarg;
+			/* historically, this was comma delimited */
+			parse_delimited(match_etypes, optarg, ",");
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
@@ -2126,17 +2131,10 @@ static int parseargs(int argc, char *argv[])
 		case 'k':
 			xarraypush_str(find_section_arr, optarg);
 			break;
-		case 's': {
+		case 's':
 			/* historically, this was comma delimited */
-			char *this_sym = strtok(optarg, ",");
-			if (!this_sym)	/* edge case: -s '' */
-				xarraypush_str(find_sym_arr, "");
-			while (this_sym) {
-				xarraypush_str(find_sym_arr, this_sym);
-				this_sym = strtok(NULL, ",");
-			}
+			parse_delimited(find_sym_arr, optarg, ",");
 			break;
-		}
 		case 'N':
 			xarraypush_str(find_lib_arr, optarg);
 			break;
