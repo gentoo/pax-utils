@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.260 2014/01/11 00:28:49 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.261 2014/03/20 07:59:27 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.260 2014/01/11 00:28:49 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.261 2014/03/20 07:59:27 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1897,12 +1897,10 @@ static void load_ld_cache_config(const char *fname)
 	_load_ld_cache_config(fname);
 
 	scan_l = scan_ul = scan_ull = false;
-	if (array_cnt(ldpaths)) {
-		array_for_each(ldpaths, n, ldpath) {
-			if (!scan_l   && !strcmp(ldpath, "/lib"))           scan_l   = true;
-			if (!scan_ul  && !strcmp(ldpath, "/usr/lib"))       scan_ul  = true;
-			if (!scan_ull && !strcmp(ldpath, "/usr/local/lib")) scan_ull = true;
-		}
+	array_for_each(ldpaths, n, ldpath) {
+		if (!scan_l   && !strcmp(ldpath, "/lib"))           scan_l   = true;
+		if (!scan_ul  && !strcmp(ldpath, "/usr/lib"))       scan_ul  = true;
+		if (!scan_ull && !strcmp(ldpath, "/usr/local/lib")) scan_ull = true;
 	}
 
 	if (!scan_l)   xarraypush_str(ldpaths, "/lib");
@@ -2268,12 +2266,9 @@ static int parseargs(int argc, char *argv[])
 		}
 	}
 	/* flatten arrays for display */
-	if (array_cnt(find_sym_arr))
-		find_sym = array_flatten_str(find_sym_arr);
-	if (array_cnt(find_lib_arr))
-		find_lib = array_flatten_str(find_lib_arr);
-	if (array_cnt(find_section_arr))
-		find_section = array_flatten_str(find_section_arr);
+	find_sym = array_flatten_str(find_sym_arr);
+	find_lib = array_flatten_str(find_lib_arr);
+	find_section = array_flatten_str(find_section_arr);
 	/* let the format option override all other options */
 	if (out_format) {
 		show_pax = show_phdr = show_textrel = show_rpath = \
