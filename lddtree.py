@@ -3,7 +3,7 @@
 # Copyright 2012-2013 Mike Frysinger <vapier@gentoo.org>
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.43 2014/03/20 08:18:06 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.44 2014/03/20 08:25:45 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -184,13 +184,14 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
   return paths
 
 
-def LoadLdpaths(root='/'):
+def LoadLdpaths(root='/', prefix=''):
   """Load linker paths from common locations
 
   This parses the ld.so.conf and LD_LIBRARY_PATH env var.
 
   Args:
     root: The root tree to prepend to paths
+    prefix: The path under |root| to search
 
   Returns:
     dict containing library paths to search
@@ -213,7 +214,7 @@ def LoadLdpaths(root='/'):
       ldpaths['env'] = ParseLdPaths(env_ldpath, path='')
 
   # Load up /etc/ld.so.conf.
-  ldpaths['conf'] = ParseLdSoConf(root + 'etc/ld.so.conf', root=root)
+  ldpaths['conf'] = ParseLdSoConf(root + prefix + '/etc/ld.so.conf', root=root)
 
   return ldpaths
 
@@ -262,7 +263,7 @@ def FindLib(elf, lib, ldpaths):
   return None
 
 
-def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
+def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[]},
              _first=True, _all_libs={}):
   """Parse the ELF dependency tree of the specified file
 
@@ -270,6 +271,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
     path: The ELF to scan
     root: The root tree to prepend to paths; this applies to interp and rpaths
           only as |path| and |ldpaths| are expected to be prefixed already
+    prefix: The path under |root| to search
     ldpaths: dict containing library paths to search; should have the keys:
              conf, env, interp
     _first: Recursive use only; is this the first ELF ?
@@ -322,7 +324,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
         # XXX: Should read it and scan for /lib paths.
         ldpaths['interp'] = [
           normpath(root + os.path.dirname(interp)),
-          normpath(root + '/usr' + os.path.dirname(interp)),
+          normpath(root + prefix + '/usr' + os.path.dirname(interp).lstrip(prefix)),
         ]
         break
 
@@ -370,7 +372,7 @@ def ParseELF(path, root='/', ldpaths={'conf':[], 'env':[], 'interp':[]},
         'needed': [],
       }
       if fullpath:
-        lret = ParseELF(fullpath, root, ldpaths, False, _all_libs)
+        lret = ParseELF(fullpath, root, prefix, ldpaths, False, _all_libs)
         _all_libs[lib]['needed'] = lret['needed']
 
     del elf
@@ -383,7 +385,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.43 2014/03/20 08:18:06 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.44 2014/03/20 08:25:45 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -550,6 +552,10 @@ they need will be placed into /foo/lib/ only.""")
     default=os.environ.get('ROOT', ''), type='string',
     action='callback', callback=_NormalizePath,
     help='Search for all files/dependencies in ROOT')
+  parser.add_option('-P', '--prefix',
+    default=os.environ.get('EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type='string',
+    action='callback', callback=_NormalizePath,
+    help='Specify EPREFIX for binaries (for Gentoo Prefix)')
   parser.add_option('--no-auto-root',
     dest='auto_root', action='store_false', default=True,
     help='Do not automatically prefix input ELFs with ROOT')
@@ -594,6 +600,8 @@ they need will be placed into /foo/lib/ only.""")
 
   if options.root != '/':
     options.root += '/'
+  if options.prefix == '@''GENTOO_PORTAGE_EPREFIX''@':
+    options.prefix = ''
 
   if options.bindir and options.bindir[0] != '/':
     parser.error('--bindir accepts absolute paths only')
@@ -610,7 +618,7 @@ they need will be placed into /foo/lib/ only.""")
   if not paths:
     err('missing ELF files to scan')
 
-  ldpaths = LoadLdpaths(options.root)
+  ldpaths = LoadLdpaths(options.root, options.prefix)
   if options.debug:
     print('ldpaths[conf] =', ldpaths['conf'])
     print('ldpaths[env]  =', ldpaths['env'])
@@ -628,7 +636,7 @@ they need will be placed into /foo/lib/ only.""")
     for p in glob.iglob(path):
       matched = True
       try:
-        elf = ParseELF(p, options.root, ldpaths)
+        elf = ParseELF(p, options.root, options.prefix, ldpaths)
       except exceptions.ELFError as e:
         if options.skip_non_elfs:
           continue
