@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.264 2014/03/21 05:27:21 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.265 2014/03/21 05:33:33 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.264 2014/03/21 05:27:21 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.265 2014/03/21 05:33:33 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -72,7 +72,8 @@ static unsigned long setpax = 0UL;
 
 static const char *objdump;
 
-/* find the path to a file by name */
+/* Find the path to a file by name.  Note: we do not currently handle the
+ * empty path element correctly (should behave by searching $PWD). */
 static const char *which(const char *fname, const char *envvar)
 {
 	size_t path_len, fname_len;
