@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.263 2014/03/20 08:08:37 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.264 2014/03/21 05:27:21 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.263 2014/03/20 08:08:37 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.264 2014/03/21 05:27:21 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -70,26 +70,66 @@ static void *ldcache = NULL;
 static size_t ldcache_size = 0;
 static unsigned long setpax = 0UL;
 
-static int has_objdump = 0;
+static const char *objdump;
 
 /* find the path to a file by name */
-static int bin_in_path(const char *fname)
+static const char *which(const char *fname, const char *envvar)
 {
-	char fullpath[__PAX_UTILS_PATH_MAX];
-	char *path, *p;
+	size_t path_len, fname_len;
+	const char *env_path;
+	char *path, *p, *ep;
 
-	path = getenv("PATH");
-	if (!path)
-		return 0;
+	p = getenv(envvar);
+	if (p)
+		return p;
 
-	while ((p = strrchr(path, ':')) != NULL) {
-		snprintf(fullpath, sizeof(fullpath), "%s/%s", p + 1, fname);
-		*p = 0;
-		if (access(fullpath, R_OK) != -1)
-			return 1;
+	env_path = getenv("PATH");
+	if (!env_path)
+		return NULL;
+
+	/* Create a copy of the $PATH that we can safely modify.
+	 * Make it a little bigger so we can append "/fname".
+	 * We do this twice -- once for a perm copy, and once for
+	 * room at the end of the last element. */
+	path_len = strlen(env_path);
+	fname_len = strlen(fname);
+	path = xmalloc(path_len + (fname_len * 2) + 2 + 2);
+	memcpy(path, env_path, path_len + 1);
+
+	p = path + path_len + 1 + fname_len + 1;
+	*p = '/';
+	memcpy(p + 1, fname, fname_len + 1);
+
+	/* Repoint fname to the copy in the env string as it has
+	 * the leading slash which we can include in a single memcpy.
+	 * Increase the fname len to include the '/' and '\0'. */
+	fname = p;
+	fname_len += 2;
+
+	p = path;
+	while (p) {
+		ep = strchr(p, ':');
+		/* Append the /foo path to the current element. */
+		if (ep)
+			memcpy(ep, fname, fname_len);
+		else
+			memcpy(path + path_len, fname, fname_len);
+
+		if (access(p, R_OK) != -1)
+			return p;
+
+		p = ep;
+		if (ep) {
+			/* If not the last element, restore the chunk we clobbered. */
+			size_t offset = ep - path;
+			size_t restore = min(path_len - offset, fname_len);
+			memcpy(ep, env_path + offset, restore);
+			++p;
+		}
 	}
 
-	return 0;
+	free(path);
+	return NULL;
 }
 
 static FILE *fopenat_r(int dir_fd, const char *path)
@@ -570,17 +610,18 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			} else \
 				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
-			if (be_verbose && has_objdump) { \
+			if (be_verbose && objdump) { \
 				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
 				size_t syslen; \
-				const char sysfmt[] = "objdump -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
-				syslen = sizeof(sysfmt) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
+				const char sysfmt[] = "%s -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
+				syslen = sizeof(sysfmt) + strlen(objdump) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
 				sysbuf = xmalloc(syslen); \
 				if (end_addr < r_offset) \
 					/* not uncommon when things are optimized out */ \
 					end_addr = r_offset + 0x100; \
 				snprintf(sysbuf, syslen, sysfmt, \
+					objdump, \
 					(unsigned long)offset_tmp, \
 					(unsigned long)end_addr, \
 					elf->filename, \
@@ -2230,7 +2271,7 @@ static int parseargs(int argc, char *argv[])
 		}
 	}
 	if (show_textrels && be_verbose)
-		has_objdump = bin_in_path("objdump");
+		objdump = which("objdump", "OBJDUMP");
 	/* precompile all the regexes */
 	if (g_match) {
 		regex_t preg;
