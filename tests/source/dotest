@@ -109,6 +109,15 @@ testit src.space
 
 
 #
+# Make sure we don't keep re-importing stuff into elf.h that
+# breaks non-GNU systems. #507470
+#
+grep -E "features.h|_DECLS" "${top_srcdir}"/elf.h > src.elf.h
+testit src.elf.h
+
+
+
+#
 # Python checks
 #
 if pyflakes </dev/null 2>/dev/null; then
