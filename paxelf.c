@@ -1,7 +1,7 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.80 2014/01/11 00:57:16 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.c,v 1.81 2014/06/18 03:16:52 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -445,6 +445,19 @@ static pairtype elf_stbtypes[] = {
 const char *get_elfstbtype(int type)
 {
 	return find_pairtype(elf_stbtypes, type);
+}
+
+/* translate elf STV_ defines */
+static pairtype elf_stvtypes[] = {
+	QUERY(STV_DEFAULT),
+	QUERY(STV_INTERNAL),
+	QUERY(STV_HIDDEN),
+	QUERY(STV_PROTECTED),
+	{ 0, 0 }
+};
+const char *get_elfstvtype(int type)
+{
+	return find_pairtype(elf_stvtypes, type);
 }
 
 /* translate elf SHN_ defines */

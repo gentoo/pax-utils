@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.265 2014/03/21 05:33:33 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.266 2014/06/18 03:16:52 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.265 2014/03/21 05:33:33 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.266 2014/06/18 03:16:52 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1195,6 +1195,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
  *    groups and their types are:
  *        STT group: STT_NOTYPE:n STT_OBJECT:o STT_FUNC:f STT_FILE:F
  *        STB group: STB_LOCAL:l STB_GLOBAL:g STB_WEAK:w
+ *        STV group: STV_DEFAULT:p STV_INTERNAL:i STV_HIDDEN:h STV_PROTECTED:P
  *        SHN group: SHN_UNDEF:u SHN_ABS:a SHN_COMMON:c {defined}:d
  *    The "defined" value in the SHN group does not correspond to a SHN_xxx define.
  * You can search for multiple symbols at once by seperating with a comma (",").
@@ -1213,7 +1214,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
  */
 static void
 scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len, const char *symname,
-	unsigned int stt, unsigned int stb, unsigned int shn, unsigned long size)
+	unsigned int stt, unsigned int stb, unsigned int stv, unsigned int shn, unsigned long size)
 {
 	const char *this_sym;
 	size_t n;
@@ -1221,12 +1222,14 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 	array_for_each(find_sym_arr, n, this_sym) {
 		bool inc_notype, inc_object, inc_func, inc_file,
 		     inc_local, inc_global, inc_weak,
+		     inc_visdef, inc_intern, inc_hidden, inc_prot,
 		     inc_def, inc_undef, inc_abs, inc_common;
 
 		/* symbol selection! */
-		inc_notype = inc_object = inc_func = inc_file = \
-		inc_local = inc_global = inc_weak = \
-		inc_def = inc_undef = inc_abs = inc_common = \
+		inc_notype = inc_object = inc_func = inc_file =
+		inc_local = inc_global = inc_weak =
+		inc_visdef = inc_intern = inc_hidden = inc_prot =
+		inc_def = inc_undef = inc_abs = inc_common =
 			(*this_sym != '%');
 
 		/* parse the contents of %...% */
@@ -1244,6 +1247,10 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 					case 'l': inc_local  = true; break;
 					case 'g': inc_global = true; break;
 					case 'w': inc_weak   = true; break;
+					case 'p': inc_visdef = true; break;
+					case 'i': inc_intern = true; break;
+					case 'h': inc_hidden = true; break;
+					case 'P': inc_prot   = true; break;
 					case 'd': inc_def    = true; break;
 					case 'u': inc_undef  = true; break;
 					case 'a': inc_abs    = true; break;
@@ -1257,6 +1264,8 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 				inc_notype = inc_object = inc_func = inc_file = true;
 			if (!inc_local && !inc_global && !inc_weak)
 				inc_local = inc_global = inc_weak = true;
+			if (!inc_visdef && !inc_intern && !inc_hidden && !inc_prot)
+				inc_visdef = inc_intern = inc_hidden = inc_prot = true;
 			if (!inc_def && !inc_undef && !inc_abs && !inc_common)
 				inc_def = inc_undef = inc_abs = inc_common = true;
 
@@ -1270,27 +1279,32 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 		}
 
 		/* filter symbols */
-		if ((!inc_notype && stt == STT_NOTYPE) || \
-		    (!inc_object && stt == STT_OBJECT) || \
-		    (!inc_func   && stt == STT_FUNC  ) || \
-		    (!inc_file   && stt == STT_FILE  ) || \
-		    (!inc_local  && stb == STB_LOCAL ) || \
-		    (!inc_global && stb == STB_GLOBAL) || \
-		    (!inc_weak   && stb == STB_WEAK  ) || \
+		if ((!inc_notype && stt == STT_NOTYPE   ) || \
+		    (!inc_object && stt == STT_OBJECT   ) || \
+		    (!inc_func   && stt == STT_FUNC     ) || \
+		    (!inc_file   && stt == STT_FILE     ) || \
+		    (!inc_local  && stb == STB_LOCAL    ) || \
+		    (!inc_global && stb == STB_GLOBAL   ) || \
+		    (!inc_weak   && stb == STB_WEAK     ) || \
+		    (!inc_visdef && stv == STV_DEFAULT  ) || \
+		    (!inc_intern && stv == STV_INTERNAL ) || \
+		    (!inc_hidden && stv == STV_HIDDEN   ) || \
+		    (!inc_prot   && stv == STV_PROTECTED) || \
 		    (!inc_def    && shn && shn < SHN_LORESERVE) || \
-		    (!inc_undef  && shn == SHN_UNDEF ) || \
-		    (!inc_abs    && shn == SHN_ABS   ) || \
-		    (!inc_common && shn == SHN_COMMON))
+		    (!inc_undef  && shn == SHN_UNDEF    ) || \
+		    (!inc_abs    && shn == SHN_ABS      ) || \
+		    (!inc_common && shn == SHN_COMMON   ))
 			continue;
 
 		if (*this_sym == '*') {
 			/* a "*" symbol gets you debug output */
-			printf("%s(%s) %5lX %15s %15s %15s %s\n",
+			printf("%s(%s) %5lX %-15s %-15s %-15s %-15s %s\n",
 			       ((*found_sym == 0) ? "\n\t" : "\t"),
 			       elf->base_filename,
 			       size,
 			       get_elfstttype(stt),
 			       get_elfstbtype(stb),
+			       get_elfstvtype(stv),
 			       get_elfshntype(shn),
 			       symname);
 			goto matched;
@@ -1370,6 +1384,7 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 			                          &ret, &ret_len, symname, \
 			                          ELF##B##_ST_TYPE(EGET(sym->st_info)), \
 			                          ELF##B##_ST_BIND(EGET(sym->st_info)), \
+			                          ELF##B##_ST_VISIBILITY(EGET(sym->st_other)), \
 			                          EGET(sym->st_shndx), \
 			    /* st_size can be 64bit, but no one is really that big, so screw em */ \
 			                          EGET(sym->st_size)); \
