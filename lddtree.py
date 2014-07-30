@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.45 2014/07/30 04:06:56 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.46 2014/07/30 04:07:43 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -29,7 +29,7 @@ from elftools.common import exceptions
 
 def warn(msg, prefix='warning'):
   """Write |msg| to stderr with a |prefix| before it"""
-  print('%s: %s: %s' % (sys.argv[0], prefix, msg), file=sys.stderr)
+  print('%s: %s: %s' % (os.path.basename(sys.argv[0]), prefix, msg), file=sys.stderr)
 
 
 def err(msg, status=1):
@@ -386,7 +386,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.45 2014/07/30 04:06:56 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.46 2014/07/30 04:07:43 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
