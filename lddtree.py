@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.50 2014/07/30 08:22:07 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.51 2014/07/30 14:35:38 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -63,6 +63,10 @@ def normpath(path):
 def readlink(path, root, prefixed=False):
   """Like os.readlink(), but relative to a |root|
 
+  This does not currently handle the pathological case:
+    /lib/foo.so -> ../../../../../../../foo.so
+  This relies on the .. entries in / to point to itself.
+
   Args:
     path: The symlink to read
     root: The path to use for resolving absolute symlinks
@@ -81,7 +85,7 @@ def readlink(path, root, prefixed=False):
   while os.path.islink(root + path):
     path = os.path.join(os.path.dirname(path), os.readlink(root + path))
 
-  return (root + path) if prefixed else path
+  return normpath((root + path) if prefixed else path)
 
 
 def makedirs(path):
@@ -284,7 +288,7 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
     debug: Enable debug output
 
   Returns:
-    the full path to the desired library
+    Tuple of the full path to the desired library and the real path to it
   """
   dbg(debug, '  FindLib(%s)' % lib)
 
@@ -293,17 +297,16 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
     target = readlink(path, root, prefixed=True)
     if path != target:
       dbg(debug, '    checking: %s -> %s' % (path, target))
-      path = target
     else:
       dbg(debug, '    checking:', path)
 
-    if os.path.exists(path):
-      with open(path, 'rb') as f:
+    if os.path.exists(target):
+      with open(target, 'rb') as f:
         libelf = ELFFile(f)
         if CompatibleELFs(elf, libelf):
-          return path
+          return (target, path)
 
-  return None
+  return (None, None)
 
 
 def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[]},
@@ -345,6 +348,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
   ret = {
     'interp': None,
     'path': path if display is None else display,
+    'realpath': path,
     'needed': [],
     'rpath': [],
     'runpath': [],
@@ -367,6 +371,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         ret['interp'] = normpath(root + interp)
         ret['libs'][os.path.basename(interp)] = {
           'path': ret['interp'],
+          'realpath': readlink(ret['interp'], root, prefixed=True),
           'needed': [],
         }
         # XXX: Should read it and scan for /lib paths.
@@ -417,8 +422,9 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         continue
       if all_ldpaths is None:
         all_ldpaths = rpaths + ldpaths['rpath'] + ldpaths['env'] + runpaths + ldpaths['runpath'] + ldpaths['conf'] + ldpaths['interp']
-      fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
+      realpath, fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
       _all_libs[lib] = {
+        'realpath': realpath,
         'path': fullpath,
         'needed': [],
       }
@@ -437,7 +443,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.50 2014/07/30 08:22:07 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.51 2014/07/30 14:35:38 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -486,8 +492,9 @@ def _ActionCopy(options, elf):
   def _StripRoot(path):
     return path[len(options.root) - 1:]
 
-  def _copy(src, striproot=True, wrapit=False, libpaths=(), outdir=None):
-    if src is None:
+  def _copy(realsrc, src, striproot=True, wrapit=False, libpaths=(),
+            outdir=None):
+    if realsrc is None:
       return
 
     if wrapit:
@@ -506,7 +513,7 @@ def _ActionCopy(options, elf):
     try:
       # See if they're the same file.
       nstat = os.stat(dst + ('.elf' if wrapit else ''))
-      ostat = os.stat(src)
+      ostat = os.stat(realsrc)
       for field in ('mode', 'mtime', 'size'):
         if getattr(ostat, 'st_' + field) != \
            getattr(nstat, 'st_' + field):
@@ -522,10 +529,10 @@ def _ActionCopy(options, elf):
 
     makedirs(os.path.dirname(dst))
     try:
-      shutil.copy2(src, dst)
+      shutil.copy2(realsrc, dst)
     except IOError:
       os.unlink(dst)
-      shutil.copy2(src, dst)
+      shutil.copy2(realsrc, dst)
 
     if wrapit:
       if options.verbose:
@@ -544,10 +551,11 @@ def _ActionCopy(options, elf):
   # for known libs that get loaded (e.g. curl will dlopen(libresolv)).
   libpaths = set()
   for lib in elf['libs']:
-    path = elf['libs'][lib]['path']
+    libdata = elf['libs'][lib]
+    path = libdata['realpath']
     if not options.libdir:
       libpaths.add(_StripRoot(os.path.dirname(path)))
-    _copy(path, outdir=options.libdir)
+    _copy(path, libdata['path'], outdir=options.libdir)
 
   if not options.libdir:
     libpaths = list(libpaths)
@@ -558,8 +566,10 @@ def _ActionCopy(options, elf):
   else:
     libpaths.add(options.libdir)
 
-  _copy(elf['interp'], outdir=options.libdir)
-  _copy(elf['path'], striproot=options.auto_root,
+  # We don't bother to copy this as ParseElf adds the interp to the 'libs',
+  # so it was already copied in the libs loop above.
+  #_copy(elf['interp'], outdir=options.libdir)
+  _copy(elf['realpath'], elf['path'], striproot=options.auto_root,
         wrapit=options.generate_wrappers, libpaths=libpaths,
         outdir=options.bindir)
 
@@ -718,6 +728,7 @@ they need will be placed into /foo/lib/ only.""")
               'runpath': [],
               'rpath': [],
               'path': p,
+              'realpath': realpath,
             }
             _ActionCopy(options, elf)
             continue
