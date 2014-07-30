@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.49 2014/07/30 04:34:09 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.50 2014/07/30 08:22:07 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -307,7 +307,7 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
 
 
 def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[]},
-             debug=False, _first=True, _all_libs={}):
+             display=None, debug=False, _first=True, _all_libs={}):
   """Parse the ELF dependency tree of the specified file
 
   Args:
@@ -317,6 +317,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
     prefix: The path under |root| to search
     ldpaths: dict containing library paths to search; should have the keys:
              conf, env, interp
+    display: The path to show rather than |path|
     debug: Enable debug output
     _first: Recursive use only; is this the first ELF ?
     _all_libs: Recursive use only; dict of all libs we've seen
@@ -343,7 +344,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
     ldpaths = ldpaths.copy()
   ret = {
     'interp': None,
-    'path': path,
+    'path': path if display is None else display,
     'needed': [],
     'rpath': [],
     'runpath': [],
@@ -422,7 +423,8 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         'needed': [],
       }
       if fullpath:
-        lret = ParseELF(fullpath, root, prefix, ldpaths, debug, False, _all_libs)
+        lret = ParseELF(fullpath, root, prefix, ldpaths, debug=debug,
+                        _first=False, _all_libs=_all_libs)
         _all_libs[lib]['needed'] = lret['needed']
 
     del elf
@@ -435,7 +437,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.49 2014/07/30 04:34:09 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.50 2014/07/30 08:22:07 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -684,10 +686,26 @@ they need will be placed into /foo/lib/ only.""")
 
     matched = False
     for p in glob.iglob(path):
+      # Once we've processed the globs, resolve the symlink.  This way you can
+      # operate on a path that is an absolute symlink itself.  e.g.:
+      #   $ ln -sf /bin/bash $PWD/root/bin/sh
+      #   $ lddtree --root $PWD/root /bin/sh
+      # First we'd turn /bin/sh into $PWD/root/bin/sh, then we want to resolve
+      # the symlink to $PWD/root/bin/bash rather than a plain /bin/bash.
+      dbg(options.debug, '  globbed     =', p)
+      if not path.startswith('/'):
+        realpath = os.path.realpath(path)
+      elif options.auto_root:
+        realpath = readlink(p, options.root, prefixed=True)
+      else:
+        realpath = path
+      if path != realpath:
+        dbg(options.debug, '  resolved    =', realpath)
+
       matched = True
       try:
-        elf = ParseELF(p, options.root, options.prefix, ldpaths,
-                       debug=options.debug)
+        elf = ParseELF(realpath, options.root, options.prefix, ldpaths,
+                       display=p, debug=options.debug)
       except exceptions.ELFError as e:
         if options.skip_non_elfs:
           continue
