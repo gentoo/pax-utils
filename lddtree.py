@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.48 2014/07/30 04:28:41 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.49 2014/07/30 04:34:09 vapier Exp $
 
 # TODO: Handle symlinks.
 
@@ -58,6 +58,30 @@ def normpath(path):
     //..//..// -> ///
   """
   return os.path.normpath(path).replace('//', '/')
+
+
+def readlink(path, root, prefixed=False):
+  """Like os.readlink(), but relative to a |root|
+
+  Args:
+    path: The symlink to read
+    root: The path to use for resolving absolute symlinks
+    prefixed: When False, the |path| must not have |root| prefixed to it, nor
+              will the return value have |root| prefixed.  When True, |path|
+              must have |root| prefixed, and the return value will have |root|
+              added.
+
+  Returns:
+    A fully resolved symlink path
+  """
+  root = root.rstrip('/')
+  if prefixed:
+    path = path[len(root):]
+
+  while os.path.islink(root + path):
+    path = os.path.join(os.path.dirname(path), os.readlink(root + path))
+
+  return (root + path) if prefixed else path
 
 
 def makedirs(path):
@@ -249,27 +273,36 @@ def CompatibleELFs(elf1, elf2):
     elf1.header['e_machine'] == elf2.header['e_machine'])
 
 
-def FindLib(elf, lib, ldpaths, debug=False):
+def FindLib(elf, lib, ldpaths, root='/', debug=False):
   """Try to locate a |lib| that is compatible to |elf| in the given |ldpaths|
 
   Args:
     elf: The elf which the library should be compatible with (ELF wise)
     lib: The library (basename) to search for
     ldpaths: A list of paths to search
+    root: The root path to resolve symlinks
     debug: Enable debug output
 
   Returns:
     the full path to the desired library
   """
   dbg(debug, '  FindLib(%s)' % lib)
+
   for ldpath in ldpaths:
     path = os.path.join(ldpath, lib)
-    dbg(debug, '    checking:', path)
+    target = readlink(path, root, prefixed=True)
+    if path != target:
+      dbg(debug, '    checking: %s -> %s' % (path, target))
+      path = target
+    else:
+      dbg(debug, '    checking:', path)
+
     if os.path.exists(path):
       with open(path, 'rb') as f:
         libelf = ELFFile(f)
         if CompatibleELFs(elf, libelf):
           return path
+
   return None
 
 
@@ -383,7 +416,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         continue
       if all_ldpaths is None:
         all_ldpaths = rpaths + ldpaths['rpath'] + ldpaths['env'] + runpaths + ldpaths['runpath'] + ldpaths['conf'] + ldpaths['interp']
-      fullpath = FindLib(elf, lib, all_ldpaths, debug=debug)
+      fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
       _all_libs[lib] = {
         'path': fullpath,
         'needed': [],
@@ -402,7 +435,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.48 2014/07/30 04:28:41 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.49 2014/07/30 04:34:09 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
