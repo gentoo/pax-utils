@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.52 2014/08/01 01:39:33 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.53 2014/08/01 02:20:20 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -427,8 +427,8 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         'needed': [],
       }
       if fullpath:
-        lret = ParseELF(fullpath, root, prefix, ldpaths, debug=debug,
-                        _first=False, _all_libs=_all_libs)
+        lret = ParseELF(realpath, root, prefix, ldpaths, display=fullpath,
+                        debug=debug, _first=False, _all_libs=_all_libs)
         _all_libs[lib]['needed'] = lret['needed']
 
     del elf
@@ -441,7 +441,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.52 2014/08/01 01:39:33 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.53 2014/08/01 02:20:20 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
