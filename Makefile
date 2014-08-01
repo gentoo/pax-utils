@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.83 2013/05/23 00:09:01 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.84 2014/08/01 01:39:20 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -111,7 +111,7 @@ strip-more:
 install: all
 	$(MKDIR) $(PREFIX)/bin/ $(MANDIR)/man1/ $(PKGDOCDIR)/
 	for sh in *.sh ; do $(INS_EXE) $$sh $(PREFIX)/bin/$${sh%.sh} || exit $$? ; done
-ifeq ($(USE_PYTHON),yes)
+ifneq ($(USE_PYTHON),no)
 	for py in *.py ; do $(INS_EXE) $$py $(PREFIX)/bin/$${py%.py} || exit $$? ; done
 endif
 	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/

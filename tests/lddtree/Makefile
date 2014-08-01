@@ -4,7 +4,7 @@ all: check
 	./dotest.$(@:.check=)
 
 test check: sh.check
-ifeq ($(USE_PYTHON),yes)
+ifneq ($(USE_PYTHON),no)
 test check: py.check cmp.check
 endif
 
