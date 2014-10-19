@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.85 2014/10/19 08:20:55 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.86 2014/10/19 17:06:10 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -57,6 +57,8 @@ MACH_TARGETS = scanmacho
 MACH_OBJS    = paxmacho.o
 COMMON_OBJS  = paxinc.o xfuncs.o
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
+SCRIPTS_SH   = lddtree symtree
+SCRIPTS_PY   = lddtree
 OBJS         = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS) $(TARGETS:%=%.o)
 MPAGES       = $(TARGETS:%=man/%.1)
 SOURCES      = $(OBJS:%.o=%.c)
@@ -110,9 +112,9 @@ strip-more:
 
 install: all
 	$(MKDIR) $(PREFIX)/bin/ $(MANDIR)/man1/ $(PKGDOCDIR)/
-	for sh in *.sh ; do $(INS_EXE) $$sh $(PREFIX)/bin/$${sh%.sh} || exit $$? ; done
+	for sh in $(SCRIPTS_SH) ; do $(INS_EXE) $$sh.sh $(PREFIX)/bin/$$sh || exit $$? ; done
 ifneq ($(USE_PYTHON),no)
-	for py in *.py ; do $(INS_EXE) $$py $(PREFIX)/bin/$${py%.py} || exit $$? ; done
+	for py in $(SCRIPTS_PY) ; do $(INS_EXE) $$py.py $(PREFIX)/bin/$$py || exit $$? ; done
 endif
 	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/
 	$(INS_DATA) README BUGS TODO $(PKGDOCDIR)/
