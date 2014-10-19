@@ -15,13 +15,18 @@ libpaxutils_la_SOURCES = \
 	xfuncs.c
 LDADD = libpaxutils.la
 
+bin_SCRIPTS = lddtree symtree
 bin_PROGRAMS = scanelf dumpelf pspax scanmacho
 
-install-exec-hook:
-	cd $(DESTDIR)$(bindir); \
-	for applet in $(APPLETS) ; do \
-		[ ! -e "$$applet" ] && ln -s q $${applet} ; \
-	done
+if USE_PYTHON
+lddtree: lddtree.py
+else
+lddtree: lddtree.sh
+endif
+	cp $< $@
+
+symtree: symtree.sh
+	cp $< $@
 
 TMAKE = \
 	$(MAKE) -C $(abs_top_srcdir)/tests \
@@ -30,15 +35,10 @@ TMAKE = \
 		abs_top_srcdir="$(abs_top_srcdir)"
 check-hook:
 	$(TMAKE) check
-clean-local:
-	$(TMAKE) clean
-	-rmdir tests/*/ tests/
-	rm -f $(APPLETS)
 check: check-hook
 
 # Start off with base values which we append below
 dist_man_MANS =
-APPLETS =
 EXTRA_DIST = autotools/m4/gnulib-cache.m4
 
 # @@@ GEN START @@@ #

@@ -15,6 +15,15 @@ LT_INIT
 gl_EARLY
 gl_INIT
 
+AC_ARG_WITH([caps], [AS_HELP_STRING([--with-caps], [build with capabilities])])
+AS_IF([test "x$with_caps" = "xyes"], [
+	CPPFLAGS="$CPPFLAGS -DWANT_SYSCAP"
+	LIBS="$LIBS -lcap"
+])
+
+AC_ARG_WITH([python], [AS_HELP_STRING([--with-python], [use lddtree.py])])
+AM_CONDITIONAL([USE_PYTHON], [test "x$with_python" = "xyes"])
+
 AX_CFLAGS_WARN_ALL
 AC_DEFUN([PT_CHECK_CFLAG],[AX_CHECK_COMPILER_FLAGS([$1],[CFLAGS="$CFLAGS $1"])])
 m4_foreach_w([flag], [
