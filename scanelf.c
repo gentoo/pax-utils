@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.266 2014/06/18 03:16:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.267 2014/10/19 07:31:20 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.266 2014/06/18 03:16:52 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.267 2014/10/19 07:31:20 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -178,6 +178,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	 * skip them.  This let's us work sanely with splitdebug ELFs (rather
 	 * than spewing a lot of "corrupt ELF" messages later on).  In malformed
 	 * ELFs, the section might be wrongly set to NOBITS, but screw em.
+	 *
+	 * We need to make sure the debug/runtime sym/str sets are used together
+	 * as they are generated in sync.  Trying to mix them won't work.
 	 */
 #define GET_SYMTABS(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -190,19 +193,28 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		symtab = NULL; \
 	if (dynsym && EGET(edynsym->sh_type) == SHT_NOBITS) \
 		dynsym = NULL; \
-	if (symtab && dynsym) \
-		*sym = (EGET(esymtab->sh_size) > EGET(edynsym->sh_size)) ? symtab : dynsym; \
-	else \
-		*sym = symtab ? symtab : dynsym; \
-	\
 	if (strtab && EGET(estrtab->sh_type) == SHT_NOBITS) \
 		strtab = NULL; \
 	if (dynstr && EGET(edynstr->sh_type) == SHT_NOBITS) \
 		dynstr = NULL; \
-	if (strtab && dynstr) \
-		*str = (EGET(estrtab->sh_size) > EGET(edynstr->sh_size)) ? strtab : dynstr; \
-	else \
-		*str = strtab ? strtab : dynstr; \
+	\
+	/* Use the set with more symbols if both exist. */ \
+	if (symtab && dynsym && strtab && dynstr) { \
+		if (EGET(esymtab->sh_size) > EGET(edynsym->sh_size)) \
+			goto debug##B; \
+		else \
+			goto runtime##B; \
+	} else if (symtab && strtab) { \
+ debug##B: \
+		*sym = symtab; \
+		*str = strtab; \
+		return; \
+	} else if (dynsym && dynstr) { \
+ runtime##B: \
+		*sym = dynsym; \
+		*str = dynstr; \
+		return; \
+	} \
 	}
 	GET_SYMTABS(32)
 	GET_SYMTABS(64)
