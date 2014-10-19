@@ -2,11 +2,17 @@
 
 . "${0%/*}"/../lib.sh
 
+findfiles() {
+	find "${top_srcdir}" \
+		'(' -type d -a '(' -name CVS -o -name .git -o -name autotools ')' -prune ')' \
+		-o '(' '(' -name '*.[ch]' -a ! -name 'config.h' ')' -print0 ')'
+}
+
 #
 # check for misc common typos
 #
 find "${top_srcdir}" \
-	'(' -type d -a '(' -name CVS -o -name tests ')' -prune ')' \
+	'(' -type d -a '(' -name CVS -o -name .git -o -name tests ')' -prune ')' \
 	-o '(' -type f -a -print0 ')' | xargs -0 \
 	grep -n -I \
 		-e '\<compatability\>' \
@@ -34,7 +40,7 @@ testit src.typos
 #
 # don't allow obsolete functions
 #
-find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
+findfiles | xargs -0 \
 	grep -n -E -e '\<(bcmp|bcopy|bzero|getwd|index|mktemp|rindex|utimes)\>[[:space:]]*\(' \
 	| sed -e "s:^\.\./\.\./::g" > src.obsolete.funcs
 testit src.obsolete.funcs
@@ -44,7 +50,7 @@ testit src.obsolete.funcs
 #
 # make sure people use our constants
 #
-find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
+findfiles | xargs -0 \
 	grep -n -E -e '\<PATH_MAX\>' | grep -v __PAX_UTILS_PATH_MAX \
 	| sed -e "s:^\.\./\.\./::g" > src.bad.constants
 testit src.bad.constants
@@ -54,7 +60,7 @@ testit src.bad.constants
 #
 # don't allow obsolete headers
 #
-find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
+findfiles | xargs -0 \
 	grep -n -E -e '\<(malloc|memory|sys/(errno|fcntl|signal|stropts|termios|unistd))\.h\>' \
 	| sed -e "s:^\.\./\.\./::g" > src.obsolete.headers
 testit src.obsolete.headers
@@ -66,7 +72,7 @@ testit src.obsolete.headers
 #
 xfuncs=$(printf '%s|' $(sed -n 's:.*x\([^(]*\)(.*:\1:p' "${top_srcdir}"/xfuncs.h))
 xfuncs=${xfuncs:0:${#xfuncs}-1}
-find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
+findfiles | xargs -0 \
 	grep -n -E -e "\<(${xfuncs})[[:space:]]*\(" \
 	| grep -v xfuncs.c \
 	| sed -e "s:^\.\./\.\./::g" > src.use.xfuncs
@@ -77,7 +83,7 @@ testit src.use.xfuncs
 #
 # check for style
 #
-find "${top_srcdir}" '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
+findfiles | xargs -0 \
 	grep -n -E \
 		-e '\<(for|if|switch|while)\(' \
 		-e '\<(for|if|switch|while) \( ' \
@@ -93,7 +99,7 @@ testit src.style
 #
 # Auto clean up the space issues
 #
-for x in $(find ../.. '(' -name '*.c' -o -name '*.h' ')' ); do
+while read -d'\0' x; do
 	case ${x} in
 	*/elf.h) continue ;; # Not our files
 	esac
@@ -103,7 +109,7 @@ for x in $(find ../.. '(' -name '*.c' -o -name '*.h' ')' ); do
 	else
 		rm -f "$x~"
 	fi
-done > src.space
+done > src.space < <(findfiles)
 testit src.space
 
 

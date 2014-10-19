@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.84 2014/08/01 01:39:20 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.85 2014/10/19 08:20:55 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -131,11 +131,19 @@ dist:
 	cd $(P) && cvs up
 	echo "<releaseinfo>$(PV)</releaseinfo>" > $(P)/man/fragment/version
 	$(MAKE) -C $(P)/man
+	sed -i '/AC_INIT/s:git:$(PV):' $(P)/configure.ac
+	$(MAKE) -C $(P) autotools
 	tar cf - $(P) --exclude=CVS --exclude=.cvsignore | xz > $(P).tar.xz
 	@printf "\n ..... Making sure clean cvs build works ..... \n\n"
+	set -e; \
 	unset CFLAGS; \
-	for t in all check clean debug check ; do \
-		$(MAKE) -C $(P) $$t || exit $$? ; \
+	for t in all check clean debug check clean; do \
+		$(MAKE) -C $(P) $$t; \
+	done; \
+	cd $(P); \
+	./configure -C; \
+	for t in all check; do \
+		$(MAKE) $$t; \
 	done
 	rm -rf $(P)
 	du -b $(P).tar.xz
@@ -146,3 +154,28 @@ check test:
 	$(MAKE) -C tests
 
 .PHONY: all check clean dist install test
+
+#
+# All logic related to autotools is below here
+#
+GEN_MARK_START = \# @@@ GEN START @@@ \#
+GEN_MARK_END   = \# @@@ GEN START @@@ \#
+EXTRA_DIST = \
+	$(shell find '(' -name CVS -prune ')' -o '(' -type f -print ')')
+MAKE_MULTI_LINES = $(patsubst %,\\\\\n\t%,$(sort $(1)))
+# 2nd level of indirection here is so the $(find) doesn't pick up
+# files in EXTRA_DIST that get cleaned up ...
+autotools-update: clean
+	$(MAKE) _autotools-update
+_autotools-update:
+	sed -i '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am
+	printf '%s\ndist_man_MANS += %b\nEXTRA_DIST += %b\n%s\n' \
+		"$(GEN_MARK_START)" \
+		"$(call MAKE_MULTI_LINES,$(wildcard man/*.1))" \
+		"$(call MAKE_MULTI_LINES,$(EXTRA_DIST))" \
+		"$(GEN_MARK_END)" \
+		>> Makefile.am
+autotools: autotools-update
+	./autogen.sh --from=make
+
+.PHONY: autotools autotools-update _autotools-update
