@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.267 2014/10/19 07:31:20 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.268 2014/11/05 02:02:03 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.267 2014/10/19 07:31:20 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.268 2014/11/05 02:02:03 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -214,6 +214,8 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		*sym = dynsym; \
 		*str = dynstr; \
 		return; \
+	} else { \
+		*sym = *str = NULL; \
 	} \
 	}
 	GET_SYMTABS(32)
