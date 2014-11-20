@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.268 2014/11/05 02:02:03 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.269 2014/11/20 01:25:56 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.268 2014/11/05 02:02:03 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.269 2014/11/20 01:25:56 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -679,6 +679,8 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 			warnf("Maybe? sec problem with %s='%s' in %s", dt_type, item, elf->filename);
 			break;
 	}
+	if (fix_elf)
+		warnf("Note: RPATH has been automatically fixed, but this should be fixed in the package itself");
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
