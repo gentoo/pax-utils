@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.54 2014/11/20 01:13:19 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.55 2014/11/20 01:17:23 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -174,7 +174,7 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
   return dedupe(ldpaths)
 
 
-def ParseLdSoConf(ldso_conf, root='/', _first=True):
+def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
   """Load all the paths from a given ldso config file
 
   This should handle comments, whitespace, and "include" statements.
@@ -182,6 +182,7 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
   Args:
     ldso_conf: The file to scan
     root: The path to prepend to all paths found
+    debug: Enable debug output
     _first: Recursive use only; is this the first ELF ?
 
   Returns:
@@ -189,7 +190,9 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
   """
   paths = []
 
+  dbg_pfx = '' if _first else '  '
   try:
+    dbg(debug, '%sParseLdSoConf(%s)' % (dbg_pfx, ldso_conf))
     with open(ldso_conf) as f:
       for line in f.readlines():
         line = line.split('#', 1)[0].strip()
@@ -201,8 +204,9 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
             line = root + line.lstrip('/')
           else:
             line = os.path.dirname(ldso_conf) + '/' + line
+          dbg(debug, '%s  glob: %s' % (dbg_pfx, line))
           for path in glob.glob(line):
-            paths += ParseLdSoConf(path, root=root, _first=False)
+            paths += ParseLdSoConf(path, root=root, debug=debug, _first=False)
         else:
           paths += [normpath(root + line)]
   except IOError as e:
@@ -217,7 +221,7 @@ def ParseLdSoConf(ldso_conf, root='/', _first=True):
   return paths
 
 
-def LoadLdpaths(root='/', prefix=''):
+def LoadLdpaths(root='/', prefix='', debug=False):
   """Load linker paths from common locations
 
   This parses the ld.so.conf and LD_LIBRARY_PATH env var.
@@ -225,6 +229,7 @@ def LoadLdpaths(root='/', prefix=''):
   Args:
     root: The root tree to prepend to paths
     prefix: The path under |root| to search
+    debug: Enable debug output
 
   Returns:
     dict containing library paths to search
@@ -247,7 +252,8 @@ def LoadLdpaths(root='/', prefix=''):
       ldpaths['env'] = ParseLdPaths(env_ldpath, path='')
 
   # Load up /etc/ld.so.conf.
-  ldpaths['conf'] = ParseLdSoConf(root + prefix + '/etc/ld.so.conf', root=root)
+  ldpaths['conf'] = ParseLdSoConf(root + prefix + '/etc/ld.so.conf', root=root,
+                                  debug=debug)
 
   return ldpaths
 
@@ -441,7 +447,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.54 2014/11/20 01:13:19 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.55 2014/11/20 01:17:23 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -678,7 +684,7 @@ they need will be placed into /foo/lib/ only.""")
   if not paths:
     err('missing ELF files to scan')
 
-  ldpaths = LoadLdpaths(options.root, options.prefix)
+  ldpaths = LoadLdpaths(options.root, options.prefix, debug=options.debug)
   dbg(options.debug, 'ldpaths[conf] =', ldpaths['conf'])
   dbg(options.debug, 'ldpaths[env]  =', ldpaths['env'])
 
