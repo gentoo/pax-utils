@@ -4,7 +4,7 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.53 2014/08/01 02:20:20 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.54 2014/11/20 01:13:19 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -118,10 +118,10 @@ def GenerateLdsoWrapper(root, path, interp, libpaths=()):
   interp_dir, interp_name = os.path.split(interp)
   libpaths = dedupe([interp_dir] + list(libpaths))
   replacements = {
-    'interp': os.path.join(os.path.relpath(interp_dir, basedir),
-                           interp_name),
-    'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
-                          for p in libpaths]),
+      'interp': os.path.join(os.path.relpath(interp_dir, basedir),
+                             interp_name),
+      'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
+                            for p in libpaths]),
   }
   wrapper = """#!/bin/sh
 if ! base=$(realpath "$0" 2>/dev/null); then
@@ -230,9 +230,9 @@ def LoadLdpaths(root='/', prefix=''):
     dict containing library paths to search
   """
   ldpaths = {
-    'conf': [],
-    'env': [],
-    'interp': [],
+      'conf': [],
+      'env': [],
+      'interp': [],
   }
 
   # Load up $LD_LIBRARY_PATH.
@@ -267,12 +267,12 @@ def CompatibleELFs(elf1, elf2):
   """
   osabis = frozenset([e.header['e_ident']['EI_OSABI'] for e in (elf1, elf2)])
   compat_sets = (
-    frozenset('ELFOSABI_%s' % x for x in ('NONE', 'SYSV', 'GNU', 'LINUX',)),
+      frozenset('ELFOSABI_%s' % x for x in ('NONE', 'SYSV', 'GNU', 'LINUX',)),
   )
   return ((len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets)) and
-    elf1.elfclass == elf2.elfclass and
-    elf1.little_endian == elf2.little_endian and
-    elf1.header['e_machine'] == elf2.header['e_machine'])
+          elf1.elfclass == elf2.elfclass and
+          elf1.little_endian == elf2.little_endian and
+          elf1.header['e_machine'] == elf2.header['e_machine'])
 
 
 def FindLib(elf, lib, ldpaths, root='/', debug=False):
@@ -344,13 +344,13 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
     _all_libs = {}
     ldpaths = ldpaths.copy()
   ret = {
-    'interp': None,
-    'path': path if display is None else display,
-    'realpath': path,
-    'needed': [],
-    'rpath': [],
-    'runpath': [],
-    'libs': _all_libs,
+      'interp': None,
+      'path': path if display is None else display,
+      'realpath': path,
+      'needed': [],
+      'rpath': [],
+      'runpath': [],
+      'libs': _all_libs,
   }
 
   dbg(debug, 'ParseELF(%s)' % path)
@@ -368,14 +368,14 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         dbg(debug, '  interp           =', interp)
         ret['interp'] = normpath(root + interp)
         ret['libs'][os.path.basename(interp)] = {
-          'path': ret['interp'],
-          'realpath': readlink(ret['interp'], root, prefixed=True),
-          'needed': [],
+            'path': ret['interp'],
+            'realpath': readlink(ret['interp'], root, prefixed=True),
+            'needed': [],
         }
         # XXX: Should read it and scan for /lib paths.
         ldpaths['interp'] = [
-          normpath(root + os.path.dirname(interp)),
-          normpath(root + prefix + '/usr' + os.path.dirname(interp).lstrip(prefix)),
+            normpath(root + os.path.dirname(interp)),
+            normpath(root + prefix + '/usr' + os.path.dirname(interp).lstrip(prefix)),
         ]
         dbg(debug, '  ldpaths[interp]  =', ldpaths['interp'])
         break
@@ -422,9 +422,9 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         all_ldpaths = rpaths + ldpaths['rpath'] + ldpaths['env'] + runpaths + ldpaths['runpath'] + ldpaths['conf'] + ldpaths['interp']
       realpath, fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
       _all_libs[lib] = {
-        'realpath': realpath,
-        'path': fullpath,
-        'needed': [],
+          'realpath': realpath,
+          'path': fullpath,
+          'needed': [],
       }
       if fullpath:
         lret = ParseELF(realpath, root, prefix, ldpaths, display=fullpath,
@@ -441,7 +441,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.53 2014/08/01 02:20:20 vapier Exp $'.split()
+  d = '$Id: lddtree.py,v 1.54 2014/11/20 01:13:19 vapier Exp $'.split()
   print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
   sys.exit(0)
 
@@ -606,54 +606,55 @@ collapse all that down into nice directory structure.
 This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
 they need will be placed into /foo/lib/ only.""")
   parser.add_option('-a', '--all',
-    action='store_true', default=False,
-    help='Show all duplicated dependencies')
+                    action='store_true', default=False,
+                    help='Show all duplicated dependencies')
   parser.add_option('-R', '--root',
-    default=os.environ.get('ROOT', ''), type='string',
-    action='callback', callback=_NormalizePath,
-    help='Search for all files/dependencies in ROOT')
+                    default=os.environ.get('ROOT', ''), type='string',
+                    action='callback', callback=_NormalizePath,
+                    help='Search for all files/dependencies in ROOT')
   parser.add_option('-P', '--prefix',
-    default=os.environ.get('EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type='string',
-    action='callback', callback=_NormalizePath,
-    help='Specify EPREFIX for binaries (for Gentoo Prefix)')
+                    default=os.environ.get(
+                        'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type='string',
+                    action='callback', callback=_NormalizePath,
+                    help='Specify EPREFIX for binaries (for Gentoo Prefix)')
   parser.add_option('--no-auto-root',
-    dest='auto_root', action='store_false', default=True,
-    help='Do not automatically prefix input ELFs with ROOT')
+                    dest='auto_root', action='store_false', default=True,
+                    help='Do not automatically prefix input ELFs with ROOT')
   parser.add_option('-l', '--list',
-    action='store_true', default=False,
-    help='Display output in a simple list (easy for copying)')
+                    action='store_true', default=False,
+                    help='Display output in a simple list (easy for copying)')
   parser.add_option('-x', '--debug',
-    action='store_true', default=False,
-    help='Run with debugging')
+                    action='store_true', default=False,
+                    help='Run with debugging')
   parser.add_option('-v', '--verbose',
-    action='store_true', default=False,
-    help='Be verbose')
+                    action='store_true', default=False,
+                    help='Be verbose')
   parser.add_option('--skip-non-elfs',
-    action='store_true', default=False,
-    help='Skip plain (non-ELF) files instead of warning')
+                    action='store_true', default=False,
+                    help='Skip plain (non-ELF) files instead of warning')
   parser.add_option('-V', '--version',
-    action='callback', callback=_ShowVersion,
-    help='Show version information')
+                    action='callback', callback=_ShowVersion,
+                    help='Show version information')
 
   group = optparse.OptionGroup(parser, 'Copying options')
   group.add_option('--copy-to-tree',
-    dest='dest', default=None, type='string',
-    action='callback', callback=_NormalizePath,
-    help='Copy all files to the specified tree')
+                   dest='dest', default=None, type='string',
+                   action='callback', callback=_NormalizePath,
+                   help='Copy all files to the specified tree')
   group.add_option('--bindir',
-    default=None, type='string',
-    action='callback', callback=_NormalizePath,
-    help='Dir to store all ELFs specified on the command line')
+                   default=None, type='string',
+                   action='callback', callback=_NormalizePath,
+                   help='Dir to store all ELFs specified on the command line')
   group.add_option('--libdir',
-    default=None, type='string',
-    action='callback', callback=_NormalizePath,
-    help='Dir to store all ELF libs')
+                   default=None, type='string',
+                   action='callback', callback=_NormalizePath,
+                   help='Dir to store all ELF libs')
   group.add_option('--generate-wrappers',
-    action='store_true', default=False,
-    help='Wrap executable ELFs with scripts for local ldso')
+                   action='store_true', default=False,
+                   help='Wrap executable ELFs with scripts for local ldso')
   group.add_option('--copy-non-elfs',
-    action='store_true', default=False,
-    help='Copy over plain (non-ELF) files instead of warn+ignore')
+                   action='store_true', default=False,
+                   help='Copy over plain (non-ELF) files instead of warn+ignore')
   parser.add_option_group(group)
 
   (options, paths) = parser.parse_args(argv)
@@ -721,12 +722,12 @@ they need will be placed into /foo/lib/ only.""")
         if options.dest is not None and options.copy_non_elfs:
           if os.path.exists(p):
             elf = {
-              'interp': None,
-              'libs': [],
-              'runpath': [],
-              'rpath': [],
-              'path': p,
-              'realpath': realpath,
+                'interp': None,
+                'libs': [],
+                'runpath': [],
+                'rpath': [],
+                'path': p,
+                'realpath': realpath,
             }
             _ActionCopy(options, elf)
             continue
