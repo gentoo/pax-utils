@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.269 2014/11/20 01:25:56 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.270 2015/02/21 19:30:59 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.269 2014/11/20 01:25:56 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.270 2015/02/21 19:30:59 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -443,7 +443,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 			str = elf->data + offset; \
-			if (str > elf->data + offset + sizeof(NOTE_GNU_STACK)) continue; \
+			if (str + sizeof(NOTE_GNU_STACK) > elf->data + elf->len) continue; \
 			if (!strcmp(str, NOTE_GNU_STACK)) { \
 				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
 				flags = EGET(shdr[i].sh_flags); \
