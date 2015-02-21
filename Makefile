@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.86 2014/10/19 17:06:10 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.87 2015/02/21 19:30:45 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -68,7 +68,9 @@ all: $(OBJS) $(TARGETS)
 
 DEBUG_FLAGS = \
 	-nopie \
-	-fsanitize=address
+	-fsanitize=address \
+	-fsanitize=leak \
+	-fsanitize=undefined
 debug: clean
 	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_gcc_many,$(DEBUG_FLAGS))" all
 	@-chpax  -permsx $(ELF_TARGETS)
