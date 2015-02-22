@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.270 2015/02/21 19:30:59 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.271 2015/02/22 00:10:27 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.270 2015/02/21 19:30:59 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.271 2015/02/22 00:10:27 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -431,7 +431,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		/* no program headers which means this is prob an object file */ \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
-		char *str; \
 		if ((void*)strtbl > elf->data_end) \
 			goto skip_this_shdr##B; \
 		/* let's flag -w/+x object files since the final ELF will most likely \
@@ -442,9 +441,9 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
-			str = elf->data + offset; \
-			if (str + sizeof(NOTE_GNU_STACK) > elf->data + elf->len) continue; \
-			if (!strcmp(str, NOTE_GNU_STACK)) { \
+			if (offset >= elf->len - sizeof(NOTE_GNU_STACK)) \
+				continue; \
+			if (!strcmp(elf->data + offset, NOTE_GNU_STACK)) { \
 				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
 				flags = EGET(shdr[i].sh_flags); \
 				if (be_quiet && ((flags & check_flags) != check_flags)) \
