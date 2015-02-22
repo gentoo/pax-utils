@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.273 2015/02/22 01:38:28 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.274 2015/02/22 02:27:39 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.273 2015/02/22 01:38:28 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.274 2015/02/22 02:27:39 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -1069,37 +1069,51 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 }
 static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 {
-	void *strtbl_void;
+	uint64_t offset = 0;
 
 	if (!show_interp) return NULL;
 
-	strtbl_void = elf_findsecbyname(elf, ".interp");
-
-	if (strtbl_void) {
-#define SHOW_INTERP(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
-			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-			*found_interp = 1; \
-			return (be_wewy_wewy_quiet ? NULL : elf->data + EGET(strtbl->sh_offset)); \
-		}
-		SHOW_INTERP(32)
-		SHOW_INTERP(64)
-	} else if (elf->phdr) {
+	if (elf->phdr) {
 		/* Walk all the program headers to find the PT_INTERP */
 #define SHOW_PT_INTERP(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
-		unsigned long i; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_INTERP) \
-				continue; \
-			*found_interp = 1; \
-			return (be_wewy_wewy_quiet ? NULL : elf->data + EGET(phdr[i].p_offset)); \
-		} \
+			size_t i; \
+			Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+			Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+			for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+				if (EGET(phdr[i].p_type) == PT_INTERP) { \
+					offset = EGET(phdr[i].p_offset); \
+					break; \
+				} \
+			} \
 		}
 		SHOW_PT_INTERP(32)
 		SHOW_PT_INTERP(64)
+	} else if (elf->shdr) {
+		/* Use the section headers to find it */
+		void *strtbl_void = elf_findsecbyname(elf, ".interp");
+
+#define SHOW_INTERP(B) \
+		if (elf->elf_class == ELFCLASS ## B) { \
+			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+			offset = EGET(strtbl->sh_offset); \
+		}
+		if (strtbl_void) {
+			SHOW_INTERP(32)
+			SHOW_INTERP(64)
+		}
+	}
+
+	/* Validate the pointer even if we don't use it in output */
+	if (offset && offset <= (uint64_t)elf->len) {
+		char *interp = elf->data + offset;
+
+		/* If it isn't a C pointer, it's garbage */
+		if (memchr(interp, 0, elf->len - offset)) {
+			*found_interp = 1;
+			if (!be_wewy_wewy_quiet)
+				return interp;
+		}
 	}
 
 	return NULL;
