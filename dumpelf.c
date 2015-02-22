@@ -1,13 +1,13 @@
 /*
  * Copyright 2005-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.32 2012/11/04 07:26:24 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/dumpelf.c,v 1.33 2015/02/22 00:54:34 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: dumpelf.c,v 1.32 2012/11/04 07:26:24 vapier Exp $";
+static const char rcsid[] = "$Id: dumpelf.c,v 1.33 2015/02/22 00:54:34 vapier Exp $";
 const char argv0[] = "dumpelf";
 
 #include "paxinc.h"
@@ -355,9 +355,9 @@ static void parseargs(int argc, char *argv[])
 		switch (flag) {
 
 		case 'V':                        /* version info */
-			printf("pax-utils-%s: %s compiled %s\n%s\n"
+			printf("pax-utils-%s: %s\n%s\n"
 			       "%s written for Gentoo by <solar and vapier @ gentoo.org>\n",
-			       VERSION, __FILE__, __DATE__, rcsid, argv0);
+			       VERSION, __FILE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;

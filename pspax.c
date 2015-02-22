@@ -12,7 +12,7 @@
  *  cc -o pspax pspax.c -DWANT_SYSCAP -lcap
  */
 
-static const char rcsid[] = "$Id: pspax.c,v 1.52 2013/04/10 21:54:44 vapier Exp $";
+static const char rcsid[] = "$Id: pspax.c,v 1.53 2015/02/22 00:54:34 vapier Exp $";
 const char argv0[] = "pspax";
 
 #include "paxinc.h"
@@ -483,9 +483,9 @@ static void parseargs(int argc, char *argv[])
 		switch (flag) {
 
 		case 'V':                        /* version info */
-			printf("pax-utils-%s: %s compiled %s\n%s\n"
+			printf("pax-utils-%s: %s\n%s\n"
 			       "%s written for Gentoo by <solar and vapier @ gentoo.org>\n",
-			       VERSION, __FILE__, __DATE__, rcsid, argv0);
+			       VERSION, __FILE__, rcsid, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;
