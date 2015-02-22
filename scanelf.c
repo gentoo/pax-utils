@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.272 2015/02/22 00:54:34 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.273 2015/02/22 01:38:28 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.272 2015/02/22 00:54:34 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.273 2015/02/22 01:38:28 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -229,6 +229,8 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	 * reconstruct the section header info out of the dynamic
 	 * tags so we can see what symbols this guy uses at runtime.
 	 */
+	if (!elf->phdr)
+		return;
 #define GET_SYMTABS_DT(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	size_t i; \
@@ -1082,7 +1084,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		}
 		SHOW_INTERP(32)
 		SHOW_INTERP(64)
-	} else {
+	} else if (elf->phdr) {
 		/* Walk all the program headers to find the PT_INTERP */
 #define SHOW_PT_INTERP(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
