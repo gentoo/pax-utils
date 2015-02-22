@@ -167,7 +167,7 @@
  <para>
   Note that when you use a format string, generally information related flags
   should be omitted.  In other words, you do not want to try and request NEEDED
-  output (<option>-n</option>) and try to specify a format output at the sametime
+  output (<option>-n</option>) and try to specify a format output at the same time
   as these operations are mutually exclusive.  Each information related flag has
   an equivalent conversion specifier, so use those instead.  You can of course
   continue to use non-information related flags (such as <option>--verbose</option>).

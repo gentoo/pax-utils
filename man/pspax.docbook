@@ -29,7 +29,7 @@
  <para>
   <command>pspax</command> is a user-space utility that scans the proc
   directory and list ELF types, as well as their respective PaX flags and
-  filenames and attributes.  Depending on build options, it may additionaly
+  filenames and attributes.  Depending on build options, it may additionally
   display the process running set of capabilities.
  </para>
 </refsect1>
