@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.274 2015/02/22 02:27:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.275 2015/02/24 06:58:39 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.274 2015/02/22 02:27:39 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.275 2015/02/24 06:58:39 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -289,13 +289,21 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 			Elf32_Word *buckets = &hashtbl[2]; \
 			Elf32_Word *chains = &buckets[nbuckets]; \
 			Elf32_Word sym_idx; \
+			Elf32_Word chained; \
 			\
 			for (b = 0; b < nbuckets; ++b) { \
 				if (!buckets[b]) \
 					continue; \
-				for (sym_idx = buckets[b]; sym_idx < nchains && sym_idx; sym_idx = chains[sym_idx]) \
+				for (sym_idx = buckets[b], chained = 0; \
+				     sym_idx < nchains && sym_idx && chained <= nchains; \
+				     sym_idx = chains[sym_idx], ++chained) { \
 					if (max_sym_idx < sym_idx) \
 						max_sym_idx = sym_idx; \
+				} \
+				if (chained > nchains) { \
+					warnf("corrupt ELF bucket"); \
+					break; \
+				} \
 			} \
 			ESET(sym_shdr.sh_size, sym_shdr.sh_entsize * max_sym_idx); \
 		} \
