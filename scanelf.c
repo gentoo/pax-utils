@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.275 2015/02/24 06:58:39 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.276 2015/02/28 22:57:40 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.275 2015/02/24 06:58:39 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.276 2015/02/28 22:57:40 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -189,13 +189,13 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	Elf ## B ## _Shdr *edynsym = dynsym; \
 	Elf ## B ## _Shdr *edynstr = dynstr; \
 	\
-	if (symtab && EGET(esymtab->sh_type) == SHT_NOBITS) \
+	if (!VALID_SHDR(elf, esymtab)) \
 		symtab = NULL; \
-	if (dynsym && EGET(edynsym->sh_type) == SHT_NOBITS) \
+	if (!VALID_SHDR(elf, edynsym)) \
 		dynsym = NULL; \
-	if (strtab && EGET(estrtab->sh_type) == SHT_NOBITS) \
+	if (!VALID_SHDR(elf, estrtab)) \
 		strtab = NULL; \
-	if (dynstr && EGET(edynstr->sh_type) == SHT_NOBITS) \
+	if (!VALID_SHDR(elf, edynstr)) \
 		dynstr = NULL; \
 	\
 	/* Use the set with more symbols if both exist. */ \
@@ -1404,6 +1404,8 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
 		size_t ret_len = 0; \
+		if (!VALID_SHDR(elf, symtab) || !VALID_SHDR(elf, strtab)) \
+			goto break_out; \
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \

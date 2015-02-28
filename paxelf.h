@@ -1,7 +1,7 @@
 /*
  * Copyright 2005-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.60 2014/06/18 03:16:52 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/paxelf.h,v 1.61 2015/02/28 22:57:40 vapier Exp $
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
@@ -39,6 +39,13 @@ typedef struct {
 #define DYN64(ptr) ((Elf64_Dyn *)(ptr))
 #define SYM32(ptr) ((Elf32_Sym *)(ptr))
 #define SYM64(ptr) ((Elf64_Sym *)(ptr))
+
+#define VALID_SHDR(elf, shdr) \
+	(shdr && \
+	 EGET(shdr->sh_type) != SHT_NOBITS && \
+	 EGET(shdr->sh_offset) < (uint64_t)elf->len && \
+	 EGET(shdr->sh_size) < (uint64_t)elf->len && \
+	 EGET(shdr->sh_offset) < elf->len - EGET(shdr->sh_size))
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);
