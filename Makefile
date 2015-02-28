@@ -1,6 +1,6 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.87 2015/02/21 19:30:45 vapier Exp $
+# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.88 2015/02/28 22:49:13 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -75,6 +75,12 @@ debug: clean
 	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_gcc_many,$(DEBUG_FLAGS))" all
 	@-chpax  -permsx $(ELF_TARGETS)
 	@-paxctl -permsx $(ELF_TARGETS)
+
+fuzz: clean
+	$(MAKE) AFL_HARDEN=1 CC=afl-gcc all
+	@rm -rf findings
+	@printf '\nNow run:\n%s\n' \
+		"afl-fuzz -t 100 -i tests/fuzz/small/ -o findings/ ./scanelf -s '*' -axetrnibSDIYZB @@"
 
 compile.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(CPPFLAGS-$<) -o $@ -c $<
 
