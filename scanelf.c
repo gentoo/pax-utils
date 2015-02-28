@@ -1,13 +1,13 @@
 /*
  * Copyright 2003-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.276 2015/02/28 22:57:40 vapier Exp $
+ * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanelf.c,v 1.277 2015/02/28 22:59:34 vapier Exp $
  *
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanelf.c,v 1.276 2015/02/28 22:57:40 vapier Exp $";
+static const char rcsid[] = "$Id: scanelf.c,v 1.277 2015/02/28 22:59:34 vapier Exp $";
 const char argv0[] = "scanelf";
 
 #include "paxinc.h"
@@ -275,21 +275,40 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
 		Elf ## B ## _Addr filesz = EGET(phdr[i].p_filesz); \
-		offset = EGET(phdr[i].p_offset); \
+		Elf ## B ## _Off hash_offset = offset + (vhash - vaddr); \
 		\
 		if (EGET(phdr[i].p_type) != PT_LOAD) \
 			continue; \
 		\
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= (uint64_t)elf->len) \
+			goto corrupt_hash; \
+		if (filesz >= (uint64_t)elf->len) \
+			goto corrupt_hash; \
+		if (hash_offset + (sizeof(Elf32_Word) * 4) > (uint64_t)elf->len) \
+			goto corrupt_hash; \
+		\
 		if (vhash >= vaddr && vhash < vaddr + filesz) { \
 			/* Scan the hash table to see how many entries we have */ \
 			Elf32_Word max_sym_idx = 0; \
-			Elf32_Word *hashtbl = elf->vdata + offset + (vhash - vaddr); \
+			Elf32_Word *hashtbl = elf->vdata + hash_offset; \
 			Elf32_Word b, nbuckets = EGET(hashtbl[0]); \
 			Elf32_Word nchains = EGET(hashtbl[1]); \
 			Elf32_Word *buckets = &hashtbl[2]; \
 			Elf32_Word *chains = &buckets[nbuckets]; \
 			Elf32_Word sym_idx; \
 			Elf32_Word chained; \
+			\
+			if (hash_offset >= (uint64_t)elf->len) \
+				goto corrupt_hash; \
+			if (nbuckets >= UINT32_MAX / 4) \
+				goto corrupt_hash; \
+			if (nchains >= UINT32_MAX / 4) \
+				goto corrupt_hash; \
+			if (nbuckets * 4 > elf->len - offset) \
+				goto corrupt_hash; \
+			if (nchains * 4 > elf->len - offset) \
+				goto corrupt_hash; \
 			\
 			for (b = 0; b < nbuckets; ++b) { \
 				if (!buckets[b]) \
@@ -300,10 +319,8 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 					if (max_sym_idx < sym_idx) \
 						max_sym_idx = sym_idx; \
 				} \
-				if (chained > nchains) { \
-					warnf("corrupt ELF bucket"); \
-					break; \
-				} \
+				if (chained > nchains) \
+					goto corrupt_hash; \
 			} \
 			ESET(sym_shdr.sh_size, sym_shdr.sh_entsize * max_sym_idx); \
 		} \
@@ -321,6 +338,10 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	}
 	GET_SYMTABS_DT(32)
 	GET_SYMTABS_DT(64)
+	return;
+
+ corrupt_hash:
+	warn("%s: ELF hash table is corrupt", elf->filename);
 }
 
 static char *scanelf_file_pax(elfobj *elf, char *found_pax)
@@ -440,8 +461,9 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 	} else if (elf->shdr != NULL) { \
 		/* no program headers which means this is prob an object file */ \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
-		Elf ## B ## _Shdr *strtbl = shdr + EGET(ehdr->e_shstrndx); \
-		if ((void*)strtbl > elf->data_end) \
+		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
+		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
+		if (shstrndx >= elf->len - sizeof(*strtbl) || !VALID_SHDR(elf, strtbl)) \
 			goto skip_this_shdr##B; \
 		/* let's flag -w/+x object files since the final ELF will most likely \
 		 * need write access to the stack (who doesn't !?).  so the combined \
@@ -1409,26 +1431,23 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
-			if ((void*)sym > elf->data_end) { \
-				warnf("%s: corrupt ELF symbols - aborting", elf->filename); \
+			if ((void *)sym >= elf->data_end - sizeof(*sym)) \
 				goto break_out;	\
-			} \
 			if (sym->st_name) { \
 				/* make sure the symbol name is in acceptable memory range */ \
 				symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
-				if ((void*)symname > elf->data_end) { \
-					warnf("%s: corrupt ELF symbols", elf->filename); \
-					++sym; \
-					continue; \
-				} \
+				if (EGET(sym->st_name) >= (uint64_t)elf->len || \
+				    EGET(strtab->sh_offset) + EGET(sym->st_name) >= (uint64_t)elf->len || \
+				    !memchr(symname, 0, elf->len - EGET(strtab->sh_offset) + EGET(sym->st_name))) \
+					goto break_out; \
 				scanelf_match_symname(elf, found_sym, \
-			                          &ret, &ret_len, symname, \
-			                          ELF##B##_ST_TYPE(EGET(sym->st_info)), \
-			                          ELF##B##_ST_BIND(EGET(sym->st_info)), \
-			                          ELF##B##_ST_VISIBILITY(EGET(sym->st_other)), \
-			                          EGET(sym->st_shndx), \
-			    /* st_size can be 64bit, but no one is really that big, so screw em */ \
-			                          EGET(sym->st_size)); \
+				                      &ret, &ret_len, symname, \
+				                      ELF##B##_ST_TYPE(EGET(sym->st_info)), \
+				                      ELF##B##_ST_BIND(EGET(sym->st_info)), \
+				                      ELF##B##_ST_VISIBILITY(EGET(sym->st_other)), \
+				                      EGET(sym->st_shndx), \
+				/* st_size can be 64bit, but no one is really that big, so screw em */ \
+				                      EGET(sym->st_size)); \
 			} \
 			++sym; \
 		} \
@@ -1437,7 +1456,6 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		FIND_SYM(64)
 	}
 
-break_out:
 	if (be_wewy_wewy_quiet) return NULL;
 
 	if (*find_sym != '*' && *found_sym)
@@ -1446,6 +1464,10 @@ break_out:
 		return NULL;
 	else
 		return " - ";
+
+ break_out:
+	warnf("%s: corrupt ELF symbols", elf->filename);
+	return NULL;
 }
 
 static const char *scanelf_file_sections(elfobj *elf, char *found_section)
