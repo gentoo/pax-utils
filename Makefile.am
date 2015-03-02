@@ -44,28 +44,16 @@ EXTRA_DIST = autotools/m4/gnulib-cache.m4
 # @@@ GEN START @@@ #
 dist_man_MANS += 
 EXTRA_DIST += \
-	tests/CVS/Entries \
-	tests/CVS/Repository \
-	tests/CVS/Root \
 	tests/Makefile \
-	tests/lddtree/CVS/Entries \
-	tests/lddtree/CVS/Repository \
-	tests/lddtree/CVS/Root \
 	tests/lddtree/Makefile \
 	tests/lddtree/dotest.cmp \
 	tests/lddtree/dotest.py \
 	tests/lddtree/dotest.sfx \
 	tests/lddtree/dotest.sh \
 	tests/lib.sh \
-	tests/scanelf/CVS/Entries \
-	tests/scanelf/CVS/Repository \
-	tests/scanelf/CVS/Root \
 	tests/scanelf/Makefile \
 	tests/scanelf/dotest \
 	tests/scanelf/scanelf.simple.good \
-	tests/source/CVS/Entries \
-	tests/source/CVS/Repository \
-	tests/source/CVS/Root \
 	tests/source/Makefile \
 	tests/source/dotest \
 	tests/source/space

@@ -1,7 +1,6 @@
 /*
  * Copyright 2008-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/scanmacho.c,v 1.25 2015/02/22 00:54:34 vapier Exp $
  *
  * based on scanelf by:
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
@@ -10,7 +9,6 @@
  *           2008-2013 Fabian Groffen  - <grobian@gentoo.org>
  */
 
-static const char rcsid[] = "$Id: scanmacho.c,v 1.25 2015/02/22 00:54:34 vapier Exp $";
 const char argv0[] = "scanmacho";
 
 #include "paxinc.h"
@@ -630,9 +628,9 @@ static int parseargs(int argc, char *argv[])
 		switch (i) {
 
 		case 'V':
-			printf("pax-utils-%s: %s\n%s\n"
+			printf("pax-utils-%s: %s\n"
 			       "%s written for Gentoo by <solar, vapier and grobian @ gentoo.org>\n",
-			       VERSION, __FILE__, rcsid, argv0);
+			       VERSION, VCSID, argv0);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'h': usage(EXIT_SUCCESS); break;

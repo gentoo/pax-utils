@@ -1,6 +1,5 @@
 # Copyright 2003-2006 Ned Ludd <solar@linbsd.net>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/Makefile,v 1.88 2015/02/28 22:49:13 vapier Exp $
 ####################################################################
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -48,7 +47,10 @@ endif
 
 ifdef PV
 override CPPFLAGS  += -DVERSION=\"$(PV)\"
+else
+VCSID     := $(shell git describe --tags HEAD)
 endif
+override CPPFLAGS  += -DVCSID='"$(VCSID)"'
 
 ####################################################################
 ELF_TARGETS  = scanelf dumpelf $(shell echo | $(CC) -dM -E - | grep -q __svr4__ || echo pspax)
@@ -131,32 +133,13 @@ endif
 PN = pax-utils
 P = $(PN)-$(PV)
 dist:
-	@if [ "$(PV)" = "" ] ; then \
-		echo "Please run 'make dist PV=<ver>'" ; \
-		exit 1 ; \
-	fi
+	./make-tarball.sh $(PV)
+distcheck: dist
 	rm -rf $(P)
-	mkdir $(P)
-	cp -a CVS $(P)/
-	cd $(P) && cvs up
-	echo "<releaseinfo>$(PV)</releaseinfo>" > $(P)/man/fragment/version
-	$(MAKE) -C $(P)/man
-	sed -i '/AC_INIT/s:git:$(PV):' $(P)/configure.ac
-	$(MAKE) -C $(P) autotools
-	tar cf - $(P) --exclude=CVS --exclude=.cvsignore | xz > $(P).tar.xz
-	@printf "\n ..... Making sure clean cvs build works ..... \n\n"
-	set -e; \
-	unset CFLAGS; \
-	for t in all check clean debug check clean; do \
-		$(MAKE) -C $(P) $$t; \
-	done; \
-	cd $(P); \
-	./configure -C; \
-	for t in all check; do \
-		$(MAKE) $$t; \
-	done
+	tar xf $(P).tar.xz
+	$(MAKE) -C $(P)
+	$(MAKE) -C $(P) check
 	rm -rf $(P)
-	du -b $(P).tar.xz
 
 -include .depend
 
@@ -171,7 +154,7 @@ check test:
 GEN_MARK_START = \# @@@ GEN START @@@ \#
 GEN_MARK_END   = \# @@@ GEN START @@@ \#
 EXTRA_DIST = \
-	$(shell find '(' -name CVS -prune ')' -o '(' -type f -print ')')
+	$(shell find -type f)
 MAKE_MULTI_LINES = $(patsubst %,\\\\\n\t%,$(sort $(1)))
 # 2nd level of indirection here is so the $(find) doesn't pick up
 # files in EXTRA_DIST that get cleaned up ...

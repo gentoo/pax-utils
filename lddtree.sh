@@ -2,7 +2,6 @@
 # Copyright 2007-2013 Gentoo Foundation
 # Copyright 2007-2013 Mike Frysinger <vapier@gentoo.org>
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.sh,v 1.22 2013/04/07 19:20:09 vapier Exp $
 
 argv0=${0##*/}
 
@@ -29,9 +28,7 @@ usage() {
 }
 
 version() {
-	local id='$Id: lddtree.sh,v 1.22 2013/04/07 19:20:09 vapier Exp $'
-	id=${id##*,v }
-	exec echo "lddtree-${id% * Exp*}"
+	exec echo "lddtree by Mike Frysinger <vapier@gentoo.org>"
 }
 
 error() {

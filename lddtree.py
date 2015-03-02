@@ -4,7 +4,6 @@
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 # pylint: disable=C0301
-# $Header: /var/cvsroot/gentoo-projects/pax-utils/lddtree.py,v 1.56 2014/11/20 01:22:36 vapier Exp $
 
 """Read the ELF dependency tree and show it
 
@@ -447,8 +446,7 @@ def _NormalizePath(option, _opt, value, parser):
 
 
 def _ShowVersion(_option, _opt, _value, _parser):
-  d = '$Id: lddtree.py,v 1.56 2014/11/20 01:22:36 vapier Exp $'.split()
-  print('%s-%s %s %s' % (d[1].split('.')[0], d[2], d[3], d[4]))
+  print('lddtree by Mike Frysinger <vapier@gentoo.org>')
   sys.exit(0)
 
 

@@ -1,6 +1,6 @@
 HOMEPAGE: http://hardened.gentoo.org/pax-utils.xml
-CVS: cvs -d :pserver:anonymous@anoncvs.gentoo.org:/var/cvsroot co gentoo-projects/pax-utils
-VIEWVCS: http://sources.gentoo.org/gentoo-projects/pax-utils/
+GIT: git clone git://git.overlays.gentoo.org/proj/pax-utils.git
+VIEWVCS: http://git.overlays.gentoo.org/gitweb/?p=proj/pax-utils.git
 
 pax-utils is a small set of various PaX aware and related utilities for 
 ELF binaries. It was written for ELF Q/A on Gentoo systems but can be 
@@ -23,7 +23,7 @@ see the homepage at http://pax.grsecurity.net/
 
 (Gentoo)
 http://www.gentoo.org/proj/en/hardened/pax-utils.xml
-http://sources.gentoo.org/viewcvs.py/gentoo-projects/pax-utils/
+http://git.overlays.gentoo.org/gitweb/?p=proj/pax-utils.git
 Maintainer: solar@gentoo.org,vapier@gentoo.org
 
 (openSUSE)

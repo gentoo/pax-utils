@@ -1,7 +1,6 @@
 /*
  * Copyright 2008-2012 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
- * $Header: /var/cvsroot/gentoo-projects/pax-utils/macho.h,v 1.10 2013/12/16 20:30:38 grobian Exp $
  */
 
 #ifndef _MACHO_H

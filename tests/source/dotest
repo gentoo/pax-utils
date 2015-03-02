@@ -4,7 +4,7 @@
 
 findfiles() {
 	find "${top_srcdir}" \
-		'(' -type d -a '(' -name CVS -o -name .git -o -name autotools ')' -prune ')' \
+		'(' -type d -a '(' -name .git -o -name autotools ')' -prune ')' \
 		-o '(' '(' -name '*.[ch]' -a ! -name 'config.h' ')' -print0 ')'
 }
 
@@ -12,7 +12,7 @@ findfiles() {
 # check for misc common typos
 #
 find "${top_srcdir}" \
-	'(' -type d -a '(' -name CVS -o -name .git -o -name tests ')' -prune ')' \
+	'(' -type d -a '(' -name .git -o -name tests ')' -prune ')' \
 	-o '(' -type f -a -print0 ')' | xargs -0 \
 	grep -n -I \
 		-e '\<compatability\>' \
