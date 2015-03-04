@@ -133,13 +133,9 @@ endif
 PN = pax-utils
 P = $(PN)-$(PV)
 dist:
-	./make-tarball.sh $(PV)
-distcheck: dist
-	rm -rf $(P)
-	tar xf $(P).tar.xz
-	$(MAKE) -C $(P)
-	$(MAKE) -C $(P) check
-	rm -rf $(P)
+	./make-tarball.sh $(DISTCHECK) $(PV)
+distcheck:
+	$(MAKE) dist DISTCHECK=--check
 
 -include .depend
 

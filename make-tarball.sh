@@ -12,6 +12,12 @@ v() { printf '\t%s\n' "$*"; "$@"; }
 
 : ${MAKE:=make}
 
+CHECK=false
+if [[ $1 == "--check" ]] ; then
+	CHECK=true
+	shift
+fi
+
 if [[ $# -ne 1 ]] ; then
 	die "Usage: $0 <ver>"
 fi
@@ -20,7 +26,7 @@ case $1 in
 snap) ver=$(date -u +%Y%m%d) ;;
 git) ver="HEAD" ;;
 *)
-	ver="v$1"
+	ver="v${1#v}"
 	if ! git describe --tags "${ver}" >&/dev/null ; then
 		die "Please create the tag first: git tag ${ver}"
 	fi
@@ -33,7 +39,12 @@ mkdir "${p}"
 
 einfo "Checking out clean git sources ..."
 git archive "${ver}" | tar xf - -C "${p}"
-cd "${p}"
+
+pushd "${p}" >/dev/null
+
+einfo "Building docs ..."
+echo "<releaseinfo>${ver#v}</releaseinfo>" > man/fragment/version
+make -C man
 
 einfo "Building autotools ..."
 sed -i "/^AC_INIT/s:git:${ver}:" configure.ac
@@ -41,15 +52,13 @@ sed -i "1iPV := ${ver}" Makefile
 LC_ALL=C ${MAKE} -s autotools >/dev/null
 rm -rf autom4te.cache
 
-einfo "Building docs ..."
-echo "<releaseinfo>${ver#v}</releaseinfo>" > man/fragment/version
-make -C man
-cd ..
+popd >/dev/null
 
 einfo "Generating tarball ..."
 tar cf - "${p}" | xz > "${p}".tar.xz
 rm -r "${p}"
-du -b "${p}".tar.*
+
+if ${CHECK} ; then
 
 einfo "Checking tarball (simple) ..."
 tar xf "${p}".tar.*
@@ -67,6 +76,8 @@ v ${MAKE} -s
 v ${MAKE} -s check
 popd >/dev/null
 rm -rf "${p}"
+
+fi
 
 echo
 einfo "All ready for distribution!"
