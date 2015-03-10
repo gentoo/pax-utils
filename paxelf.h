@@ -44,7 +44,7 @@ typedef struct {
 	 EGET(shdr->sh_type) != SHT_NOBITS && \
 	 EGET(shdr->sh_offset) < (uint64_t)elf->len && \
 	 EGET(shdr->sh_size) < (uint64_t)elf->len && \
-	 EGET(shdr->sh_offset) < elf->len - EGET(shdr->sh_size))
+	 EGET(shdr->sh_offset) <= elf->len - EGET(shdr->sh_size))
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);

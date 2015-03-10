@@ -1426,8 +1426,6 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
 		char *symname; \
 		size_t ret_len = 0; \
-		if (!VALID_SHDR(elf, symtab) || !VALID_SHDR(elf, strtab)) \
-			goto break_out; \
 		if (cnt) \
 			cnt = EGET(symtab->sh_size) / cnt; \
 		for (i = 0; i < cnt; ++i) { \
