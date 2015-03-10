@@ -475,6 +475,8 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				continue; \
 			if (!strcmp(elf->data + offset, NOTE_GNU_STACK)) { \
 				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
+				if (file_matches_list(elf->filename, qa_execstack)) \
+					continue; \
 				flags = EGET(shdr[i].sh_flags); \
 				if (be_quiet && ((flags & check_flags) != check_flags)) \
 					continue; \
