@@ -372,15 +372,25 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
         interp = bstr(segment.get_interp_name())
         dbg(debug, '  interp           =', interp)
         ret['interp'] = normpath(root + interp)
+        real_interp = readlink(ret['interp'], root, prefixed=True)
         ret['libs'][os.path.basename(interp)] = {
             'path': ret['interp'],
-            'realpath': readlink(ret['interp'], root, prefixed=True),
+            'realpath': real_interp,
             'needed': [],
         }
-        # XXX: Should read it and scan for /lib paths.
+        # XXX: Could read it and scan for /lib paths.
+        # If the interp is a symlink, lets follow it on the assumption that it
+        # is in this path purely for ABI reasons, and the distro is using a
+        # different (probably more correct) path.  This can come up in some
+        # multilib situations like s390x where /lib64/ contains all the native
+        # libraries, but /lib/ld64.so.1 is the interp hardcoded in gcc, so the
+        # ld64.so.1 is really a symlink to ../lib64/ld64.so.1.  In the multiarch
+        # setup, it'll be /lib/ld64.so.1 -> /lib/s390x-linux-gnu/ld64.so.1.
+        # That is why we use |real_interp| here instead of |interp|.
         ldpaths['interp'] = [
-            normpath(root + os.path.dirname(interp)),
-            normpath(root + prefix + '/usr' + os.path.dirname(interp).lstrip(prefix)),
+            os.path.dirname(real_interp),
+            normpath(root + prefix + '/usr/' + os.path.dirname(
+                real_interp)[len(root) + len(prefix):]),
         ]
         dbg(debug, '  ldpaths[interp]  =', ldpaths['interp'])
         break
