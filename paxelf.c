@@ -266,6 +266,7 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_SEP),
 	QUERY(EM_ARCA),
 	QUERY(EM_UNICORE),
+	QUERY(EM_ALTERA_NIOS2),
 	QUERY(EM_AARCH64),
 	QUERY(EM_TILEPRO),
 	QUERY(EM_MICROBLAZE),
@@ -367,6 +368,7 @@ static pairtype elf_dtypes[] = {
 	QUERY(DT_VERSYM),
 	QUERY(DT_RELACOUNT),
 	QUERY(DT_RELCOUNT),
+	QUERY(DT_FLAGS_1),
 	QUERY(DT_VERDEF),
 	QUERY(DT_VERDEFNUM),
 	QUERY(DT_VERNEED),
@@ -744,32 +746,3 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 
 	return ret;
 }
-
-#if 0
- # define ELFOSABI_NONE           0       /* UNIX System V ABI */
- # define ELFOSABI_SYSV           0       /* Alias.  */
- # define ELFOSABI_HPUX           1       /* HP-UX */
- # define ELFOSABI_NETBSD         2       /* NetBSD.  */
- # define ELFOSABI_LINUX          3       /* Linux.  */
- # define ELFOSABI_SOLARIS        6       /* Sun Solaris.  */
- # define ELFOSABI_AIX            7       /* IBM AIX.  */
- # define ELFOSABI_IRIX           8       /* SGI Irix.  */
- # define ELFOSABI_FREEBSD        9       /* FreeBSD.  */
- # define ELFOSABI_TRU64          10      /* Compaq TRU64 UNIX.  */
- # define ELFOSABI_MODESTO        11      /* Novell Modesto.  */
- # define ELFOSABI_OPENBSD        12      /* OpenBSD.  */
- # define ELFOSABI_ARM            97      /* ARM */
- # define ELFOSABI_STANDALONE     255     /* Standalone (embedded) application */
-
- /* These 3 ABIs should be in elf.h but are not.
-  * http://www.caldera.com/developers/gabi/latest/ch4.eheader.html#generic_osabi_values
-  */
-
- # define ELFOSABI_OPENVMS 13     /* OpenVMS */
- # define ELFOSABI_NSK     14     /* Hewlett-Packard Non-Stop Kernel */
- # define ELFOSABI_AROS    15     /* Amiga Research OS */
-
- #4 reserved for IA32 GNU Mach/Hurd
- #5 reserved for 86Open common IA32 ABI
-
-#endif

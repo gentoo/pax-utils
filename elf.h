@@ -1,5 +1,5 @@
 /* This file defines standard ELF types, structures, and macros.
-   Copyright (C) 1995-2014 Free Software Foundation, Inc.
+   Copyright (C) 1995-2015 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -262,6 +262,7 @@ typedef struct
 #define EM_ARCA 	109		/* Arca RISC Microprocessor */
 #define EM_UNICORE	110		/* Microprocessor series from PKU-Unity Ltd. */
 					/* and MPRC of Peking University */
+#define EM_ALTERA_NIOS2 113		/* Altera Nios II */
 #define EM_AARCH64	183		/* ARM AARCH64 */
 #define EM_TILEPRO	188		/* Tilera TILEPro */
 #define EM_MICROBLAZE	189		/* Xilinx MicroBlaze */
@@ -1396,6 +1397,7 @@ typedef struct
 #define EF_MIPS_64BIT_WHIRL	16
 #define EF_MIPS_ABI2		32
 #define EF_MIPS_ABI_ON32	64
+#define EF_MIPS_FP64		512  /* Uses FP64 (12 callee-saved).  */
 #define EF_MIPS_NAN2008	1024  /* Uses IEEE 754-2008 NaN encoding.  */
 #define EF_MIPS_ARCH		0xf0000000 /* MIPS architecture level.  */
 
@@ -1644,9 +1646,10 @@ typedef struct
 
 /* Legal values for p_type field of Elf32_Phdr.  */
 
-#define PT_MIPS_REGINFO	0x70000000	/* Register usage information */
-#define PT_MIPS_RTPROC  0x70000001	/* Runtime procedure table. */
-#define PT_MIPS_OPTIONS 0x70000002
+#define PT_MIPS_REGINFO	  0x70000000	/* Register usage information. */
+#define PT_MIPS_RTPROC	  0x70000001	/* Runtime procedure table. */
+#define PT_MIPS_OPTIONS	  0x70000002
+#define PT_MIPS_ABIFLAGS  0x70000003	/* FP mode requirement. */
 
 /* Special program header types.  */
 
@@ -1768,6 +1771,101 @@ typedef struct
 
 typedef Elf32_Addr Elf32_Conflict;
 
+typedef struct
+{
+  /* Version of flags structure.  */
+  Elf32_Half version;
+  /* The level of the ISA: 1-5, 32, 64.  */
+  unsigned char isa_level;
+  /* The revision of ISA: 0 for MIPS V and below, 1-n otherwise.  */
+  unsigned char isa_rev;
+  /* The size of general purpose registers.  */
+  unsigned char gpr_size;
+  /* The size of co-processor 1 registers.  */
+  unsigned char cpr1_size;
+  /* The size of co-processor 2 registers.  */
+  unsigned char cpr2_size;
+  /* The floating-point ABI.  */
+  unsigned char fp_abi;
+  /* Processor-specific extension.  */
+  Elf32_Word isa_ext;
+  /* Mask of ASEs used.  */
+  Elf32_Word ases;
+  /* Mask of general flags.  */
+  Elf32_Word flags1;
+  Elf32_Word flags2;
+} Elf_MIPS_ABIFlags_v0;
+
+/* Values for the register size bytes of an abi flags structure.  */
+
+#define MIPS_AFL_REG_NONE	0x00	 /* No registers.  */
+#define MIPS_AFL_REG_32		0x01	 /* 32-bit registers.  */
+#define MIPS_AFL_REG_64		0x02	 /* 64-bit registers.  */
+#define MIPS_AFL_REG_128	0x03	 /* 128-bit registers.  */
+
+/* Masks for the ases word of an ABI flags structure.  */
+
+#define MIPS_AFL_ASE_DSP	0x00000001 /* DSP ASE.  */
+#define MIPS_AFL_ASE_DSPR2	0x00000002 /* DSP R2 ASE.  */
+#define MIPS_AFL_ASE_EVA	0x00000004 /* Enhanced VA Scheme.  */
+#define MIPS_AFL_ASE_MCU	0x00000008 /* MCU (MicroController) ASE.  */
+#define MIPS_AFL_ASE_MDMX	0x00000010 /* MDMX ASE.  */
+#define MIPS_AFL_ASE_MIPS3D	0x00000020 /* MIPS-3D ASE.  */
+#define MIPS_AFL_ASE_MT		0x00000040 /* MT ASE.  */
+#define MIPS_AFL_ASE_SMARTMIPS	0x00000080 /* SmartMIPS ASE.  */
+#define MIPS_AFL_ASE_VIRT	0x00000100 /* VZ ASE.  */
+#define MIPS_AFL_ASE_MSA	0x00000200 /* MSA ASE.  */
+#define MIPS_AFL_ASE_MIPS16	0x00000400 /* MIPS16 ASE.  */
+#define MIPS_AFL_ASE_MICROMIPS	0x00000800 /* MICROMIPS ASE.  */
+#define MIPS_AFL_ASE_XPA	0x00001000 /* XPA ASE.  */
+#define MIPS_AFL_ASE_MASK	0x00001fff /* All ASEs.  */
+
+/* Values for the isa_ext word of an ABI flags structure.  */
+
+#define MIPS_AFL_EXT_XLR	  1   /* RMI Xlr instruction.  */
+#define MIPS_AFL_EXT_OCTEON2	  2   /* Cavium Networks Octeon2.  */
+#define MIPS_AFL_EXT_OCTEONP	  3   /* Cavium Networks OcteonP.  */
+#define MIPS_AFL_EXT_LOONGSON_3A  4   /* Loongson 3A.  */
+#define MIPS_AFL_EXT_OCTEON	  5   /* Cavium Networks Octeon.  */
+#define MIPS_AFL_EXT_5900	  6   /* MIPS R5900 instruction.  */
+#define MIPS_AFL_EXT_4650	  7   /* MIPS R4650 instruction.  */
+#define MIPS_AFL_EXT_4010	  8   /* LSI R4010 instruction.  */
+#define MIPS_AFL_EXT_4100	  9   /* NEC VR4100 instruction.  */
+#define MIPS_AFL_EXT_3900	  10  /* Toshiba R3900 instruction.  */
+#define MIPS_AFL_EXT_10000	  11  /* MIPS R10000 instruction.  */
+#define MIPS_AFL_EXT_SB1	  12  /* Broadcom SB-1 instruction.  */
+#define MIPS_AFL_EXT_4111	  13  /* NEC VR4111/VR4181 instruction.  */
+#define MIPS_AFL_EXT_4120	  14  /* NEC VR4120 instruction.  */
+#define MIPS_AFL_EXT_5400	  15  /* NEC VR5400 instruction.  */
+#define MIPS_AFL_EXT_5500	  16  /* NEC VR5500 instruction.  */
+#define MIPS_AFL_EXT_LOONGSON_2E  17  /* ST Microelectronics Loongson 2E.  */
+#define MIPS_AFL_EXT_LOONGSON_2F  18  /* ST Microelectronics Loongson 2F.  */
+
+/* Masks for the flags1 word of an ABI flags structure.  */
+#define MIPS_AFL_FLAGS1_ODDSPREG  1  /* Uses odd single-precision registers.  */
+
+/* Object attribute values.  */
+enum
+{
+  /* Not tagged or not using any ABIs affected by the differences.  */
+  Val_GNU_MIPS_ABI_FP_ANY = 0,
+  /* Using hard-float -mdouble-float.  */
+  Val_GNU_MIPS_ABI_FP_DOUBLE = 1,
+  /* Using hard-float -msingle-float.  */
+  Val_GNU_MIPS_ABI_FP_SINGLE = 2,
+  /* Using soft-float.  */
+  Val_GNU_MIPS_ABI_FP_SOFT = 3,
+  /* Using -mips32r2 -mfp64.  */
+  Val_GNU_MIPS_ABI_FP_OLD_64 = 4,
+  /* Using -mfpxx.  */
+  Val_GNU_MIPS_ABI_FP_XX = 5,
+  /* Using -mips32r2 -mfp64.  */
+  Val_GNU_MIPS_ABI_FP_64 = 6,
+  /* Using -mips32r2 -mfp64 -mno-odd-spreg.  */
+  Val_GNU_MIPS_ABI_FP_64A = 7,
+  /* Maximum allocated FP ABI value.  */
+  Val_GNU_MIPS_ABI_FP_MAX = 7
+};
 
 /* HPPA specific definitions.  */
 
@@ -2296,7 +2394,7 @@ typedef Elf32_Addr Elf32_Conflict;
 #define DT_PPC64_OPD	(DT_LOPROC + 1)
 #define DT_PPC64_OPDSZ	(DT_LOPROC + 2)
 #define DT_PPC64_OPT	(DT_LOPROC + 3)
-#define DT_PPC64_NUM    3
+#define DT_PPC64_NUM    4
 
 /* PowerPC64 specific values for the DT_PPC64_OPT Dyn entry.  */
 #define PPC64_OPT_TLS		1
@@ -2375,6 +2473,20 @@ typedef Elf32_Addr Elf32_Conflict;
 /* AArch64 relocs.  */
 
 #define R_AARCH64_NONE            0	/* No relocation.  */
+
+/* ILP32 AArch64 relocs.  */
+#define R_AARCH64_P32_ABS32		  1	/* Direct 32 bit.  */
+#define R_AARCH64_P32_COPY		180	/* Copy symbol at runtime.  */
+#define R_AARCH64_P32_GLOB_DAT		181	/* Create GOT entry.  */
+#define R_AARCH64_P32_JUMP_SLOT		182	/* Create PLT entry.  */
+#define R_AARCH64_P32_RELATIVE		183	/* Adjust by program base.  */
+#define R_AARCH64_P32_TLS_DTPMOD	184	/* Module number, 32 bit.  */
+#define R_AARCH64_P32_TLS_DTPREL	185	/* Module-relative offset, 32 bit.  */
+#define R_AARCH64_P32_TLS_TPREL		186	/* TP-relative offset, 32 bit.  */
+#define R_AARCH64_P32_TLSDESC		187	/* TLS Descriptor.  */
+#define R_AARCH64_P32_IRELATIVE		188	/* STT_GNU_IFUNC relocation. */
+
+/* LP64 AArch64 relocs.  */
 #define R_AARCH64_ABS64         257	/* Direct 64 bit. */
 #define R_AARCH64_ABS32         258	/* Direct 32 bit.  */
 #define R_AARCH64_ABS16		259	/* Direct 16-bit.  */
@@ -2492,9 +2604,9 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_AARCH64_GLOB_DAT     1025	/* Create GOT entry.  */
 #define R_AARCH64_JUMP_SLOT    1026	/* Create PLT entry.  */
 #define R_AARCH64_RELATIVE     1027	/* Adjust by program base.  */
-#define R_AARCH64_TLS_DTPMOD64 1028	/* Module number, 64 bit.  */
-#define R_AARCH64_TLS_DTPREL64 1029	/* Module-relative offset, 64 bit.  */
-#define R_AARCH64_TLS_TPREL64  1030	/* TP-relative offset, 64 bit.  */
+#define R_AARCH64_TLS_DTPMOD   1028	/* Module number, 64 bit.  */
+#define R_AARCH64_TLS_DTPREL   1029	/* Module-relative offset, 64 bit.  */
+#define R_AARCH64_TLS_TPREL    1030	/* TP-relative offset, 64 bit.  */
 #define R_AARCH64_TLSDESC      1031	/* TLS Descriptor.  */
 #define R_AARCH64_IRELATIVE	1032	/* STT_GNU_IFUNC relocation.  */
 
@@ -3144,6 +3256,58 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_MICROBLAZE_TLSDTPREL64	27	/* TLS Offset Within TLS Block. */
 #define R_MICROBLAZE_TLSGOTTPREL32	28	/* TLS Offset From Thread Pointer. */
 #define R_MICROBLAZE_TLSTPREL32 	29	/* TLS Offset From Thread Pointer. */
+
+/* Legal values for d_tag (dynamic entry type).  */
+#define DT_NIOS2_GP             0x70000002 /* Address of _gp.  */
+
+/* Nios II relocations.  */
+#define R_NIOS2_NONE		0	/* No reloc.  */
+#define R_NIOS2_S16		1	/* Direct signed 16 bit.  */
+#define R_NIOS2_U16		2	/* Direct unsigned 16 bit.  */
+#define R_NIOS2_PCREL16		3	/* PC relative 16 bit.  */
+#define R_NIOS2_CALL26		4	/* Direct call.  */
+#define R_NIOS2_IMM5		5	/* 5 bit constant expression.  */
+#define R_NIOS2_CACHE_OPX	6	/* 5 bit expression, shift 22.  */
+#define R_NIOS2_IMM6		7	/* 6 bit constant expression.  */
+#define R_NIOS2_IMM8		8	/* 8 bit constant expression.  */
+#define R_NIOS2_HI16		9	/* High 16 bit.  */
+#define R_NIOS2_LO16		10	/* Low 16 bit.  */
+#define R_NIOS2_HIADJ16		11	/* High 16 bit, adjusted.  */
+#define R_NIOS2_BFD_RELOC_32	12	/* 32 bit symbol value + addend.  */
+#define R_NIOS2_BFD_RELOC_16	13	/* 16 bit symbol value + addend.  */
+#define R_NIOS2_BFD_RELOC_8	14	/* 8 bit symbol value + addend.  */
+#define R_NIOS2_GPREL		15	/* 16 bit GP pointer offset.  */
+#define R_NIOS2_GNU_VTINHERIT	16	/* GNU C++ vtable hierarchy.  */
+#define R_NIOS2_GNU_VTENTRY	17	/* GNU C++ vtable member usage.  */
+#define R_NIOS2_UJMP		18	/* Unconditional branch.  */
+#define R_NIOS2_CJMP		19	/* Conditional branch.  */
+#define R_NIOS2_CALLR		20	/* Indirect call through register.  */
+#define R_NIOS2_ALIGN		21	/* Alignment requirement for
+					   linker relaxation.  */
+#define R_NIOS2_GOT16		22	/* 16 bit GOT entry.  */
+#define R_NIOS2_CALL16		23	/* 16 bit GOT entry for function.  */
+#define R_NIOS2_GOTOFF_LO	24	/* %lo of offset to GOT pointer.  */
+#define R_NIOS2_GOTOFF_HA	25	/* %hiadj of offset to GOT pointer.  */
+#define R_NIOS2_PCREL_LO	26	/* %lo of PC relative offset.  */
+#define R_NIOS2_PCREL_HA	27	/* %hiadj of PC relative offset.  */
+#define R_NIOS2_TLS_GD16	28	/* 16 bit GOT offset for TLS GD.  */
+#define R_NIOS2_TLS_LDM16	29	/* 16 bit GOT offset for TLS LDM.  */
+#define R_NIOS2_TLS_LDO16	30	/* 16 bit module relative offset.  */
+#define R_NIOS2_TLS_IE16	31	/* 16 bit GOT offset for TLS IE.  */
+#define R_NIOS2_TLS_LE16	32	/* 16 bit LE TP-relative offset.  */
+#define R_NIOS2_TLS_DTPMOD	33	/* Module number.  */
+#define R_NIOS2_TLS_DTPREL	34	/* Module-relative offset.  */
+#define R_NIOS2_TLS_TPREL	35	/* TP-relative offset.  */
+#define R_NIOS2_COPY		36	/* Copy symbol at runtime.  */
+#define R_NIOS2_GLOB_DAT	37	/* Create GOT entry.  */
+#define R_NIOS2_JUMP_SLOT	38	/* Create PLT entry.  */
+#define R_NIOS2_RELATIVE	39	/* Adjust by program base.  */
+#define R_NIOS2_GOTOFF		40	/* 16 bit offset to GOT pointer.  */
+#define R_NIOS2_CALL26_NOAT	41	/* Direct call in .noat section.  */
+#define R_NIOS2_GOT_LO		42	/* %lo() of GOT entry.  */
+#define R_NIOS2_GOT_HA		43	/* %hiadj() of GOT entry.  */
+#define R_NIOS2_CALL_LO		44	/* %lo() of function GOT entry.  */
+#define R_NIOS2_CALL_HA		45	/* %hiadj() of function GOT entry.  */
 
 /* TILEPro relocations.  */
 #define R_TILEPRO_NONE		0	/* No reloc */
