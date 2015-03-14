@@ -461,8 +461,9 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
 		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
-		if (shstrndx >= elf->len - sizeof(*strtbl) || !VALID_SHDR(elf, strtbl)) \
-			goto skip_this_shdr##B; \
+		if (shstrndx * sizeof(*shdr) >= elf->len - sizeof(*shdr) || \
+		    !VALID_SHDR(elf, strtbl)) \
+			goto corrupt_shdr; \
 		/* let's flag -w/+x object files since the final ELF will most likely \
 		 * need write access to the stack (who doesn't !?).  so the combined \
 		 * output will bring in +w automatically and that's bad. \
@@ -489,7 +490,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 				break; \
 			} \
 		} \
-		skip_this_shdr##B: \
 		if (!multi_stack) { \
 			if (file_matches_list(elf->filename, qa_execstack)) \
 				return NULL; \
@@ -506,6 +506,10 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		return NULL;
 	else
 		return ret;
+
+ corrupt_shdr:
+	warnf("%s: section table is corrupt", elf->filename);
+	return NULL;
 }
 
 /*
