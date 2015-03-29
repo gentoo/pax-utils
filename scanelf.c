@@ -1080,7 +1080,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 							int invert = 1; \
 							if (find_lib_name[0] == '!') \
 								invert = 0, ++find_lib_name; \
-							if (!strcmp(find_lib_name, needed) == invert) \
+							if ((!strcmp(find_lib_name, needed)) == invert) \
 								++matched; \
 						} \
 						\
