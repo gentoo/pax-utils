@@ -1,6 +1,6 @@
-HOMEPAGE: http://hardened.gentoo.org/pax-utils.xml
-GIT: git clone git://git.overlays.gentoo.org/proj/pax-utils.git
-VIEWVCS: http://git.overlays.gentoo.org/gitweb/?p=proj/pax-utils.git
+HOMEPAGE: https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities
+GIT: git clone git://anongit.gentoo.org/proj/pax-utils.git
+VIEWVCS: https://gitweb.gentoo.org/proj/pax-utils.git/
 
 pax-utils is a small set of various PaX aware and related utilities for 
 ELF binaries. It was written for ELF Q/A on Gentoo systems but can be 
@@ -22,8 +22,8 @@ see the homepage at http://pax.grsecurity.net/
 == LINKS ==
 
 (Gentoo)
-http://www.gentoo.org/proj/en/hardened/pax-utils.xml
-http://git.overlays.gentoo.org/gitweb/?p=proj/pax-utils.git
+https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities
+https://gitweb.gentoo.org/proj/pax-utils.git/
 Maintainer: solar@gentoo.org,vapier@gentoo.org
 
 (openSUSE)
