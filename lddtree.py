@@ -9,13 +9,42 @@
 
 This does not work like `ldd` in that we do not execute/load code (only read
 files on disk), and we should the ELFs as a tree rather than a flat list.
+
+Paths may be globs that lddtree will take care of expanding.
+Useful when you want to glob a path under the ROOT path.
+
+When using the --root option, all paths are implicitly prefixed by that.
+  e.g. lddtree -R /my/magic/root /bin/bash
+This will load up the ELF found at /my/magic/root/bin/bash and then resolve
+all libraries via that path.  If you wish to actually read /bin/bash (and
+so use the ROOT path as an alternative library tree), you can specify the
+--no-auto-root option.
+
+When pairing --root with --copy-to-tree, the ROOT path will be stripped.
+  e.g. lddtree -R /my/magic/root --copy-to-tree /foo /bin/bash
+You will see /foo/bin/bash and /foo/lib/libc.so.6 and not paths like
+/foo/my/magic/root/bin/bash.  If you want that, you'll have to manually
+add the ROOT path to the output path.
+
+The --bindir and --libdir flags are used to normalize the output subdirs
+when used with --copy-to-tree.
+  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof
+This will mirror the input paths in the output.  So you will end up with
+/foo/bin/bash and /foo/usr/sbin/lspci and /foo/usr/bin/lsof.  Similarly,
+the libraries needed will be scattered among /foo/lib/ and /foo/usr/lib/
+and perhaps other paths (like /foo/lib64/ and /usr/lib/gcc/...).  You can
+collapse all that down into nice directory structure.
+  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof \\
+               --bindir /bin --libdir /lib
+This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
+they need will be placed into /foo/lib/ only.
 """
 
 from __future__ import print_function
 
+import argparse
 import glob
 import errno
-import optparse
 import os
 import shutil
 import sys
@@ -451,13 +480,9 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
   return ret
 
 
-def _NormalizePath(option, _opt, value, parser):
-  setattr(parser.values, option.dest, normpath(value))
-
-
-def _ShowVersion(_option, _opt, _value, _parser):
-  print('lddtree by Mike Frysinger <vapier@gentoo.org>')
-  sys.exit(0)
+class _NormalizePathAction(argparse.Action):
+  def __call__(self, parser, namespace, values, option_string=None):
+    setattr(namespace, self.dest, normpath(values))
 
 
 def _ActionShow(options, elf):
@@ -590,91 +615,64 @@ def _ActionCopy(options, elf):
 
 
 def main(argv):
-  parser = optparse.OptionParser("""%prog [options] <ELFs>
+  parser = argparse.ArgumentParser(
+      description=__doc__,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  parser.add_argument('-a', '--all',
+                      action='store_true', default=False,
+                      help='Show all duplicated dependencies')
+  parser.add_argument('-R', '--root',
+                      default=os.environ.get('ROOT', ''), type=str,
+                      action=_NormalizePathAction,
+                      help='Search for all files/dependencies in ROOT')
+  parser.add_argument('-P', '--prefix',
+                      default=os.environ.get(
+                          'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type=str,
+                      action=_NormalizePathAction,
+                      help='Specify EPREFIX for binaries (for Gentoo Prefix)')
+  parser.add_argument('--no-auto-root',
+                      dest='auto_root', action='store_false', default=True,
+                      help='Do not automatically prefix input ELFs with ROOT')
+  parser.add_argument('-l', '--list',
+                      action='store_true', default=False,
+                      help='Display output in a simple list (easy for copying)')
+  parser.add_argument('-x', '--debug',
+                      action='store_true', default=False,
+                      help='Run with debugging')
+  parser.add_argument('-v', '--verbose',
+                      action='store_true', default=False,
+                      help='Be verbose')
+  parser.add_argument('--skip-non-elfs',
+                      action='store_true', default=False,
+                      help='Skip plain (non-ELF) files instead of warning')
+  parser.add_argument('-V', '--version',
+                      action='version',
+                      version='lddtree by Mike Frysinger <vapier@gentoo.org>',
+                      help='Show version information')
+  parser.add_argument('path', nargs='+')
 
-Display ELF dependencies as a tree
+  group = parser.add_argument_group('Copying options')
+  group.add_argument('--copy-to-tree',
+                     dest='dest', default=None, type=str,
+                     action=_NormalizePathAction,
+                     help='Copy all files to the specified tree')
+  group.add_argument('--bindir',
+                     default=None, type=str,
+                     action=_NormalizePathAction,
+                     help='Dir to store all ELFs specified on the command line')
+  group.add_argument('--libdir',
+                     default=None, type=str,
+                     action=_NormalizePathAction,
+                     help='Dir to store all ELF libs')
+  group.add_argument('--generate-wrappers',
+                     action='store_true', default=False,
+                     help='Wrap executable ELFs with scripts for local ldso')
+  group.add_argument('--copy-non-elfs',
+                     action='store_true', default=False,
+                     help='Copy over plain (non-ELF) files instead of warn+ignore')
 
-<ELFs> can be globs that lddtree will take care of expanding.
-Useful when you want to glob a path under the ROOT path.
-
-When using the --root option, all paths are implicitly prefixed by that.
-  e.g. lddtree -R /my/magic/root /bin/bash
-This will load up the ELF found at /my/magic/root/bin/bash and then resolve
-all libraries via that path.  If you wish to actually read /bin/bash (and
-so use the ROOT path as an alternative library tree), you can specify the
---no-auto-root option.
-
-When pairing --root with --copy-to-tree, the ROOT path will be stripped.
-  e.g. lddtree -R /my/magic/root --copy-to-tree /foo /bin/bash
-You will see /foo/bin/bash and /foo/lib/libc.so.6 and not paths like
-/foo/my/magic/root/bin/bash.  If you want that, you'll have to manually
-add the ROOT path to the output path.
-
-The --bindir and --libdir flags are used to normalize the output subdirs
-when used with --copy-to-tree.
-  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof
-This will mirror the input paths in the output.  So you will end up with
-/foo/bin/bash and /foo/usr/sbin/lspci and /foo/usr/bin/lsof.  Similarly,
-the libraries needed will be scattered among /foo/lib/ and /foo/usr/lib/
-and perhaps other paths (like /foo/lib64/ and /usr/lib/gcc/...).  You can
-collapse all that down into nice directory structure.
-  e.g. lddtree --copy-to-tree /foo /bin/bash /usr/sbin/lspci /usr/bin/lsof \\
-               --bindir /bin --libdir /lib
-This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
-they need will be placed into /foo/lib/ only.""")
-  parser.add_option('-a', '--all',
-                    action='store_true', default=False,
-                    help='Show all duplicated dependencies')
-  parser.add_option('-R', '--root',
-                    default=os.environ.get('ROOT', ''), type='string',
-                    action='callback', callback=_NormalizePath,
-                    help='Search for all files/dependencies in ROOT')
-  parser.add_option('-P', '--prefix',
-                    default=os.environ.get(
-                        'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type='string',
-                    action='callback', callback=_NormalizePath,
-                    help='Specify EPREFIX for binaries (for Gentoo Prefix)')
-  parser.add_option('--no-auto-root',
-                    dest='auto_root', action='store_false', default=True,
-                    help='Do not automatically prefix input ELFs with ROOT')
-  parser.add_option('-l', '--list',
-                    action='store_true', default=False,
-                    help='Display output in a simple list (easy for copying)')
-  parser.add_option('-x', '--debug',
-                    action='store_true', default=False,
-                    help='Run with debugging')
-  parser.add_option('-v', '--verbose',
-                    action='store_true', default=False,
-                    help='Be verbose')
-  parser.add_option('--skip-non-elfs',
-                    action='store_true', default=False,
-                    help='Skip plain (non-ELF) files instead of warning')
-  parser.add_option('-V', '--version',
-                    action='callback', callback=_ShowVersion,
-                    help='Show version information')
-
-  group = optparse.OptionGroup(parser, 'Copying options')
-  group.add_option('--copy-to-tree',
-                   dest='dest', default=None, type='string',
-                   action='callback', callback=_NormalizePath,
-                   help='Copy all files to the specified tree')
-  group.add_option('--bindir',
-                   default=None, type='string',
-                   action='callback', callback=_NormalizePath,
-                   help='Dir to store all ELFs specified on the command line')
-  group.add_option('--libdir',
-                   default=None, type='string',
-                   action='callback', callback=_NormalizePath,
-                   help='Dir to store all ELF libs')
-  group.add_option('--generate-wrappers',
-                   action='store_true', default=False,
-                   help='Wrap executable ELFs with scripts for local ldso')
-  group.add_option('--copy-non-elfs',
-                   action='store_true', default=False,
-                   help='Copy over plain (non-ELF) files instead of warn+ignore')
-  parser.add_option_group(group)
-
-  (options, paths) = parser.parse_args(argv)
+  options = parser.parse_args(argv)
+  paths = options.path
 
   if options.root != '/':
     options.root += '/'
