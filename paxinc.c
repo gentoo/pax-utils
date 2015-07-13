@@ -40,7 +40,7 @@ archive_handle *ar_open(const char *filename)
 	archive_handle *ret;
 
 	if ((fd=open(filename, O_RDONLY)) == -1)
-		err("Could not open '%s'", filename);
+		errp("%s: could not open", filename);
 
 	ret = ar_open_fd(filename, fd);
 	if (ret == NULL)
@@ -76,13 +76,13 @@ close_and_ret:
 	}
 
 	if ((ret.buf.formatted.magic[0] != '`') || (ret.buf.formatted.magic[1] != '\n')) {
-		warn("Invalid ar entry");
+		warn("%s: invalid ar entry", ar->filename);
 		goto close_and_ret;
 	}
 
 	if (ret.buf.formatted.name[0] == '/' && ret.buf.formatted.name[1] == '/') {
 		if (ar->extfn != NULL) {
-			warn("Duplicate GNU extended filename section");
+			warn("%s: Duplicate GNU extended filename section", ar->filename);
 			goto close_and_ret;
 		}
 		len = atoi(ret.buf.formatted.size);
@@ -112,7 +112,7 @@ close_and_ret:
 	} else if (s[0] == '/' && s[1] >= '0' && s[1] <= '9') {
 		/* GNU extended filename */
 		if (ar->extfn == NULL) {
-			warn("GNU extended filename without special data section");
+			warn("%s: GNU extended filename without special data section", ar->filename);
 			goto close_and_ret;
 		}
 		s = ar->extfn + atoi(s + 1);
