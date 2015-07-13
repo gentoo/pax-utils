@@ -37,6 +37,7 @@ typedef struct {
 	const char *filename;
 	size_t skip;
 	char *extfn;
+	bool verbose;
 } archive_handle;
 #else
 typedef void archive_handle;
@@ -63,8 +64,8 @@ typedef struct {
 	} buf;
 #endif
 } archive_member;
-archive_handle *ar_open_fd(const char *filename, int fd);
-archive_handle *ar_open(const char *filename);
+archive_handle *ar_open_fd(const char *filename, int fd, bool verbose);
+archive_handle *ar_open(const char *filename, bool verbose);
 archive_member *ar_next(archive_handle *);
 
 const char *strfileperms(const char *fname);

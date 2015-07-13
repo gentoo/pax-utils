@@ -1717,7 +1717,7 @@ static int scanelf_archive(const char *filename, int fd, size_t len)
 	char *ar_buffer;
 	elfobj *elf;
 
-	ar = ar_open_fd(filename, fd);
+	ar = ar_open_fd(filename, fd, be_verbose);
 	if (ar == NULL)
 		return 1;
 

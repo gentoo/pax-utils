@@ -17,7 +17,7 @@ char do_reverse_endian;
 
 #define AR_MAGIC "!<arch>"
 #define AR_MAGIC_SIZE (sizeof(AR_MAGIC)-1) /* dont count null byte */
-archive_handle *ar_open_fd(const char *filename, int fd)
+archive_handle *ar_open_fd(const char *filename, int fd, bool verbose)
 {
 	static archive_handle ret;
 	char buf[AR_MAGIC_SIZE];
@@ -26,6 +26,7 @@ archive_handle *ar_open_fd(const char *filename, int fd)
 	ret.fd = fd;
 	ret.skip = 0;
 	ret.extfn = NULL;
+	ret.verbose = verbose;
 
 	if (read(ret.fd, buf, AR_MAGIC_SIZE) != AR_MAGIC_SIZE)
 		return NULL;
@@ -34,7 +35,7 @@ archive_handle *ar_open_fd(const char *filename, int fd)
 
 	return &ret;
 }
-archive_handle *ar_open(const char *filename)
+archive_handle *ar_open(const char *filename, bool verbose)
 {
 	int fd;
 	archive_handle *ret;
@@ -42,7 +43,7 @@ archive_handle *ar_open(const char *filename)
 	if ((fd=open(filename, O_RDONLY)) == -1)
 		errp("%s: could not open", filename);
 
-	ret = ar_open_fd(filename, fd);
+	ret = ar_open_fd(filename, fd, verbose);
 	if (ret == NULL)
 		close(fd);
 
@@ -76,7 +77,10 @@ close_and_ret:
 	}
 
 	if ((ret.buf.formatted.magic[0] != '`') || (ret.buf.formatted.magic[1] != '\n')) {
-		warn("%s: invalid ar entry", ar->filename);
+		/* When dealing with corrupt or random embedded cross-compilers, they might
+		 * be abusing the archive format; only complain when in verbose mode. */
+		if (ar->verbose)
+			warn("%s: invalid ar entry", ar->filename);
 		goto close_and_ret;
 	}
 
