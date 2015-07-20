@@ -13,5 +13,15 @@ testit lddtree.*.list
 rm -f lddtree.*.list
 
 
+#
+# Same as above but with the -a flag
+#
+for sfx in py sh ; do
+	lddtree.${sfx} -l -a /bin/bash > lddtree.${sfx}.list-all &
+done
+wait
+testit lddtree.*.list-all
+rm -f lddtree.*.list-all
+
 
 exit ${ret}

@@ -510,17 +510,26 @@ def _ActionShow(options, elf):
     chain_libs.pop()
 
   shown_libs = set(elf['needed'])
+  new_libs = elf['needed'][:]
   chain_libs = []
   interp = elf['interp']
   if interp:
-    shown_libs.add(os.path.basename(interp))
+    lib = os.path.basename(interp)
+    shown_libs.add(lib)
+    # If we are in non-list mode, then we want to show the "duplicate" interp
+    # lines -- first the header (interp=>xxx), and then the DT_NEEDED line to
+    # show that the ELF is directly linked against the interp.
+    # If we're in list mode though, we only want to show the interp once.
+    # Unless of course we have the --all flag active, then we show everything.
+    if not options.all and options.list and lib in new_libs:
+      new_libs.remove(lib)
   if options.list:
     print(elf['path'])
     if not interp is None:
       print(interp)
   else:
     print('%s (interpreter => %s)' % (elf['path'], interp))
-  for lib in elf['needed']:
+  for lib in new_libs:
     _show(lib, 1)
 
 

@@ -160,6 +160,11 @@ show_elf() {
 			)
 		fi
 		interp=${interp##*/}
+		# If we are in non-list mode, then we want to show the "duplicate" interp
+		# lines -- first the header (interp=>xxx), and then the DT_NEEDED line to
+		# show that the ELF is directly linked against the interp.
+		# If we're in list mode though, we only want to show the interp once.
+		${LIST} && allhits+=",${interp}"
 	fi
 	${LIST} || printf "\n"
 
@@ -170,12 +175,14 @@ show_elf() {
 	local my_allhits
 	if ! ${SHOW_ALL} ; then
 		my_allhits="${allhits}"
-		allhits="${allhits},${interp},${libs}"
+		allhits+=",${libs}"
 	fi
 
 	for lib in ${libs//,/ } ; do
 		lib=${lib##*/}
-		[[ ,${my_allhits}, == *,${lib},* ]] && continue
+		# No need for leading comma w/my_allhits as we guarantee it always
+		# starts with one due to the way we append the value above.
+		[[ ${my_allhits}, == *,${lib},* ]] && continue
 		find_elf "${lib}" "${resolved}"
 		rlib=${_find_elf}
 		show_elf "${rlib:-${lib}}" $((indent + 4)) "${parent_elfs}"
