@@ -124,7 +124,7 @@
 #endif
 
 #define _minmax(x, y, op) \
-	({ typeof(x) __x = (x); typeof(y) __y = (y); (__x op __y ? __x : __y); })
+	({ __typeof__(x) __x = (x); __typeof__(y) __y = (y); (__x op __y ? __x : __y); })
 #if !defined(min)
 # define min(x, y) _minmax(x, y, <)
 #endif

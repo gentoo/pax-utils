@@ -14,7 +14,7 @@
 
 #include "macho.h"
 
-#define MGET(swapped, value) (swapped ? (typeof(value))bswap_32(value) : value)
+#define MGET(swapped, value) (swapped ? (__typeof__(value))bswap_32(value) : value)
 #define MOBJGET(obj, member) MGET((obj)->swapped, (obj)->member)
 
 typedef struct _fatobj {
