@@ -13,6 +13,7 @@
 
 #include "porting.h"
 #include "xfuncs.h"
+#include "security.h"
 
 #ifndef VERSION
 # define VERSION "git"

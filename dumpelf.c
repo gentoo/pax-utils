@@ -384,6 +384,7 @@ static void parseargs(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	security_init(false);
 	if (argc < 2)
 		usage(EXIT_FAILURE);
 	parseargs(argc, argv);

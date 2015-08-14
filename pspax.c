@@ -535,6 +535,10 @@ int main(int argc, char *argv[])
 {
 	char *name = NULL;
 
+	/* We unshare pidns but don't actually enter it.  That means
+	 * we still get to scan /proc, but just not fork children.  */
+	security_init(false);
+
 	color_init(false);
 	parseargs(argc, argv);
 

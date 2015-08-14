@@ -2472,6 +2472,10 @@ static int parseargs(int argc, char *argv[])
 	}
 	if (be_verbose > 2) printf("Format: %s\n", out_format);
 
+	/* Now lock down the pidns since we know whether we'll be forking. */
+	if (!show_textrels || !be_verbose)
+		security_init_pid();
+
 	/* now lets actually do the scanning */
 	if (load_cache_config)
 		load_ld_cache_config(__PAX_UTILS_DEFAULT_LD_CACHE_CONFIG);
@@ -2570,6 +2574,7 @@ static void cleanup(void)
 int main(int argc, char *argv[])
 {
 	int ret;
+	security_init(true);
 	if (argc < 2)
 		usage(EXIT_FAILURE);
 	parseenv();

@@ -764,6 +764,7 @@ static int parseargs(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	int ret;
+	security_init(false);
 	if (argc < 2)
 		usage(EXIT_FAILURE);
 	color_init(false);

@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <pwd.h>
 #include <regex.h>
+#include <sched.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

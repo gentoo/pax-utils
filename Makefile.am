@@ -12,6 +12,7 @@ libpaxutils_la_SOURCES = \
 	paxelf.c \
 	paxinc.c \
 	paxmacho.c \
+	security.c \
 	xfuncs.c
 LDADD = libpaxutils.la $(top_builddir)/autotools/gnulib/libgnu.a
 
@@ -84,6 +85,8 @@ EXTRA_DIST += \
 	pspax.c \
 	scanelf.c \
 	scanmacho.c \
+	security.c \
+	security.h \
 	symtree.sh \
 	tests/Makefile \
 	tests/lddtree/Makefile \
