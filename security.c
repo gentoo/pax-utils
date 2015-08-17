@@ -69,6 +69,15 @@ void security_init(bool allow_forking)
 	if (!ALLOW_PIDNS)
 		allow_forking = true;
 
+	/* Drop all possible caps for us and our children.  */
+	prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+	prctl(PR_SET_SECUREBITS,
+		SECBIT_KEEP_CAPS_LOCKED |
+		SECBIT_NO_SETUID_FIXUP |
+		SECBIT_NO_SETUID_FIXUP_LOCKED |
+		SECBIT_NOROOT |
+		SECBIT_NOROOT_LOCKED, 0, 0, 0);
+
 	/* None of the pax tools need access to these features. */
 	flags = CLONE_NEWIPC | CLONE_NEWUTS;
 	/* Would be nice to leverage mount/net ns, but they're just way too slow. */

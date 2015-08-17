@@ -42,6 +42,10 @@
 #if !defined(__FreeBSD__) && !defined(__OpenBSD__)
 # include <alloca.h>
 #endif
+#if defined(__linux__)
+# include <sys/prctl.h>
+# include <linux/securebits.h>
+#endif
 #if defined(__GLIBC__) || defined(__UCLIBC__)
 # include <byteswap.h>
 # include <endian.h>
