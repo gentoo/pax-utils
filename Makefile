@@ -40,9 +40,13 @@ INS_DATA  := install -m644
 #CFLAGS   += -DEBUG -g
 #LDFLAGS  += -pie
 
+PKG_CONFIG ?= pkg-config
+
 ifeq ($(USE_CAP),yes)
-CPPFLAGS-pspax.c += -DWANT_SYSCAP
-LIBS-pspax       += -lcap
+LIBCAPS_CFLAGS := $(shell $(PKG_CONFIG) --cflags libcap)
+LIBCAPS_LIBS   := $(shell $(PKG_CONFIG) --libs libcap)
+CPPFLAGS-pspax.c += $(LIBCAPS_CFLAGS) -DWANT_SYSCAP
+LIBS-pspax       += $(LIBCAPS_LIBS)
 endif
 
 ifdef PV
