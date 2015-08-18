@@ -11,14 +11,16 @@ AM_PROG_CC_C_O
 AM_PROG_AR
 AC_USE_SYSTEM_EXTENSIONS
 LT_INIT
+PKG_PROG_PKG_CONFIG
 
 gl_EARLY
 gl_INIT
 
 AC_ARG_WITH([caps], [AS_HELP_STRING([--with-caps], [build with capabilities])])
 AS_IF([test "x$with_caps" = "xyes"], [
-	CPPFLAGS="$CPPFLAGS -DWANT_SYSCAP"
-	LIBS="$LIBS -lcap"
+	PKG_CHECK_MODULES(LIBCAP, libcap)
+	CPPFLAGS="$CPPFLAGS $LIBCAP_CFLAGS -DWANT_SYSCAP"
+	LIBS="$LIBS $LIBCAP_LIBS"
 ])
 
 AC_ARG_WITH([python], [AS_HELP_STRING([--with-python], [use lddtree.py])])
