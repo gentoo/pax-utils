@@ -49,7 +49,7 @@ make -C man
 einfo "Building autotools ..."
 sed -i "/^AC_INIT/s:git:${ver}:" configure.ac
 sed -i "1iPV := ${ver}" Makefile
-LC_ALL=C ${MAKE} -s autotools >/dev/null
+SKIP_AUTOTOOLS_UPDATE=true LC_ALL=C ${MAKE} -s autotools >/dev/null
 rm -rf autom4te.cache
 
 popd >/dev/null

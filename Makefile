@@ -152,23 +152,25 @@ check test:
 # All logic related to autotools is below here
 #
 GEN_MARK_START = \# @@@ GEN START @@@ \#
-GEN_MARK_END   = \# @@@ GEN START @@@ \#
-EXTRA_DIST = \
-	$(shell find -type f)
-MAKE_MULTI_LINES = $(patsubst %,\\\\\n\t%,$(sort $(1)))
-# 2nd level of indirection here is so the $(find) doesn't pick up
-# files in EXTRA_DIST that get cleaned up ...
-autotools-update: clean
-	$(MAKE) _autotools-update
-_autotools-update:
+GEN_MARK_END   = \# @@@ GEN END @@@ \#
+EXTRA_DIST     = $(shell git ls-files)
+autotools-update:
+	$(MAKE) -C man -j
 	sed -i '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am
-	printf '%s\ndist_man_MANS += %b\nEXTRA_DIST += %b\n%s\n' \
-		"$(GEN_MARK_START)" \
-		"$(call MAKE_MULTI_LINES,$(wildcard man/*.1))" \
-		"$(call MAKE_MULTI_LINES,$(EXTRA_DIST))" \
-		"$(GEN_MARK_END)" \
-		>> Makefile.am
-autotools: autotools-update
+	( \
+		echo "$(GEN_MARK_START)"; \
+		printf 'dist_man_MANS +='; \
+		printf ' \\\n\t%s' $(wildcard man/*.1); \
+		echo; \
+		printf 'EXTRA_DIST +='; \
+		printf ' \\\n\t%s' $(EXTRA_DIST); \
+		echo; \
+		echo "$(GEN_MARK_END)"; \
+	) >> Makefile.am
+autotools:
+ifeq ($(SKIP_AUTOTOOLS_UPDATE),)
+	$(MAKE) autotools-update
+endif
 	./autogen.sh --from=make
 
 .PHONY: autotools autotools-update _autotools-update

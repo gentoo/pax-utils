@@ -42,8 +42,49 @@ dist_man_MANS =
 EXTRA_DIST = autotools/m4/gnulib-cache.m4
 
 # @@@ GEN START @@@ #
-dist_man_MANS += 
+dist_man_MANS += \
+	man/dumpelf.1 \
+	man/pspax.1 \
+	man/scanmacho.1 \
+	man/scanelf.1
 EXTRA_DIST += \
+	.depend \
+	.gitignore \
+	BUGS \
+	COPYING \
+	Makefile \
+	Makefile.am \
+	README \
+	TODO \
+	autogen.sh \
+	configure.ac \
+	dumpelf.c \
+	elf.h \
+	lddtree.py \
+	lddtree.sh \
+	macho.h \
+	make-tarball.sh \
+	man/Makefile \
+	man/custom.xsl \
+	man/dumpelf.docbook \
+	man/fragment/date \
+	man/fragment/reftail \
+	man/fragment/version \
+	man/pax-utils.docbook \
+	man/pspax.docbook \
+	man/scanelf.docbook \
+	man/scanmacho.docbook \
+	paxelf.c \
+	paxelf.h \
+	paxinc.c \
+	paxinc.h \
+	paxmacho.c \
+	paxmacho.h \
+	porting.h \
+	pspax.c \
+	scanelf.c \
+	scanmacho.c \
+	symtree.sh \
 	tests/Makefile \
 	tests/lddtree/Makefile \
 	tests/lddtree/dotest.cmp \
@@ -56,5 +97,7 @@ EXTRA_DIST += \
 	tests/scanelf/scanelf.simple.good \
 	tests/source/Makefile \
 	tests/source/dotest \
-	tests/source/space
-# @@@ GEN START @@@ #
+	tests/source/space \
+	xfuncs.c \
+	xfuncs.h
+# @@@ GEN END @@@ #
