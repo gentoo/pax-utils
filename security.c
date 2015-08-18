@@ -16,6 +16,151 @@
 # define ALLOW_PIDNS 1
 #endif
 
+#ifdef WANT_SECCOMP
+# include <seccomp.h>
+
+/* Simple helper to add all of the syscalls in an array. */
+static int pax_seccomp_rules_add(scmp_filter_ctx ctx, int syscalls[], size_t num)
+{
+	static uint8_t prio;
+	size_t i;
+	for (i = 0; i < num; ++i) {
+		if (syscalls[i] < 0)
+			continue;
+
+		if (seccomp_syscall_priority(ctx, syscalls[i], prio++) < 0) {
+			warnp("seccomp_syscall_priority failed");
+			return -1;
+		}
+		if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscalls[i], 0) < 0) {
+			warnp("seccomp_rule_add failed");
+			return -1;
+		}
+	}
+	return 0;
+}
+#define pax_seccomp_rules_add(ctx, syscalls) pax_seccomp_rules_add(ctx, syscalls, ARRAY_SIZE(syscalls))
+
+static void pax_seccomp_init(bool allow_forking)
+{
+	/* Order determines priority (first == lowest prio).  */
+	int base_syscalls[] = {
+		/* We write the most w/scanelf.  */
+		SCMP_SYS(write),
+
+		/* Then the stat family of functions.  */
+		SCMP_SYS(newfstatat),
+#ifdef __NR_fstat
+		SCMP_SYS(fstat),
+#endif
+		SCMP_SYS(fstat64),
+#ifdef __NR_fstatat
+		SCMP_SYS(fstatat),
+#endif
+		SCMP_SYS(fstatat64),
+		SCMP_SYS(lstat),
+		SCMP_SYS(lstat64),
+		SCMP_SYS(stat),
+		SCMP_SYS(stat64),
+
+		/* Then the fd close func.  */
+		SCMP_SYS(close),
+
+		/* Then fd open family of functions.  */
+		SCMP_SYS(open),
+#ifdef __NR_openat
+		SCMP_SYS(openat),
+#endif
+
+		/* Then the memory mapping functions.  */
+		SCMP_SYS(mmap),
+		SCMP_SYS(mmap2),
+		SCMP_SYS(munmap),
+
+		/* Then the directory reading functions.  */
+		SCMP_SYS(getdents),
+#ifdef __NR_getdents64
+		SCMP_SYS(getdents64),
+#endif
+
+		/* Then the file reading functions.  */
+#ifdef __NR_pread
+		SCMP_SYS(pread),
+#endif
+#ifdef __NR_pread64
+		SCMP_SYS(pread64),
+#endif
+		SCMP_SYS(read),
+
+		/* Then the fd manipulation functions.  */
+#ifdef __NR_fcntl
+		SCMP_SYS(fcntl),
+#endif
+		SCMP_SYS(fcntl64),
+
+		/* After this point, just sort the list alphabetically.  */
+		SCMP_SYS(access),
+		SCMP_SYS(brk),
+		SCMP_SYS(capget),
+		SCMP_SYS(chdir),
+		SCMP_SYS(exit),
+		SCMP_SYS(exit_group),
+		SCMP_SYS(faccessat),
+		SCMP_SYS(fchdir),
+		SCMP_SYS(getpid),
+		SCMP_SYS(gettid),
+		SCMP_SYS(ioctl),
+#ifdef __NR_lseek
+		SCMP_SYS(lseek),
+#endif
+		SCMP_SYS(_llseek),
+		SCMP_SYS(mprotect),
+
+		/* Syscalls listed because of sandbox.  */
+		SCMP_SYS(readlink),
+	};
+	int fork_syscalls[] = {
+		SCMP_SYS(clone),
+		SCMP_SYS(execve),
+		SCMP_SYS(fork),
+		SCMP_SYS(rt_sigaction),
+		SCMP_SYS(rt_sigprocmask),
+		SCMP_SYS(unshare),
+		SCMP_SYS(vfork),
+		SCMP_SYS(wait4),
+		SCMP_SYS(waitid),
+		SCMP_SYS(waitpid),
+	};
+	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_TRAP);
+	if (!ctx) {
+		warnp("seccomp_init failed");
+		return;
+	}
+
+	if (pax_seccomp_rules_add(ctx, base_syscalls) < 0)
+		goto done;
+
+	if (allow_forking)
+		if (pax_seccomp_rules_add(ctx, fork_syscalls) < 0)
+			goto done;
+
+	/* We already called prctl. */
+	seccomp_attr_set(ctx, SCMP_FLTATR_CTL_NNP, 0);
+
+#ifndef __SANITIZE_ADDRESS__
+	/* ASAN does some weird stuff. */
+	if (seccomp_load(ctx) < 0)
+		warnp("seccomp_load failed");
+#endif
+
+ done:
+	seccomp_release(ctx);
+}
+
+#else
+# define pax_seccomp_init(allow_forking)
+#endif
+
 static int ns_unshare(int flags)
 {
 	int flag, ret = 0;
@@ -93,6 +238,8 @@ void security_init(bool allow_forking)
 			if (vfork() == 0)
 				_exit(0);
 	}
+
+	pax_seccomp_init(allow_forking);
 }
 
 #endif

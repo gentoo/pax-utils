@@ -49,6 +49,13 @@ CPPFLAGS-pspax.c += $(LIBCAPS_CFLAGS) -DWANT_SYSCAP
 LIBS-pspax       += $(LIBCAPS_LIBS)
 endif
 
+ifeq ($(USE_SECCOMP),yes)
+LIBSECCOMP_CFLAGS := $(shell $(PKG_CONFIG) --cflags libseccomp)
+LIBSECCOMP_LIBS   := $(shell $(PKG_CONFIG) --libs libseccomp)
+override CPPFLAGS += $(LIBSECCOMP_CFLAGS) -DWANT_SECCOMP
+LIBS              += $(LIBSECCOMP_LIBS)
+endif
+
 ifdef PV
 override CPPFLAGS  += -DVERSION=\"$(PV)\"
 else

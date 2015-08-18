@@ -26,6 +26,13 @@ AS_IF([test "x$with_caps" = "xyes"], [
 AC_ARG_WITH([python], [AS_HELP_STRING([--with-python], [use lddtree.py])])
 AM_CONDITIONAL([USE_PYTHON], [test "x$with_python" = "xyes"])
 
+AC_ARG_WITH([seccomp], [AS_HELP_STRING([--with-seccomp], [build with seccomp])])
+AS_IF([test "x$with_seccomp" = "xyes"], [
+	PKG_CHECK_MODULES(LIBSECCOMP, libseccomp)
+	CPPFLAGS="$CPPFLAGS $LIBSECCOMP_CFLAGS -DWANT_SECCOMP"
+	LIBS="$LIBS $LIBSECCOMP_LIBS"
+])
+
 AX_CFLAGS_WARN_ALL
 AC_DEFUN([PT_CHECK_CFLAG],[AX_CHECK_COMPILER_FLAGS([$1],[CFLAGS="$CFLAGS $1"])])
 m4_foreach_w([flag], [
