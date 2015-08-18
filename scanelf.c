@@ -2264,7 +2264,10 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 'F': {
 			if (out_format) warn("You prob don't want to specify -F twice");
-			out_format = optarg;
+			if (PAX_UTILS_CLEANUP)
+				out_format = xstrdup(optarg);
+			else
+				out_format = optarg;
 			break;
 		}
 		case 'z': {
@@ -2478,26 +2481,26 @@ static int parseargs(int argc, char *argv[])
 		ret = scanelf_dir(search_path);
 	}
 
-#ifdef __PAX_UTILS_CLEANUP
-	/* clean up */
-	xarrayfree(ldpaths);
-	xarrayfree(find_sym_arr);
-	xarrayfree(find_lib_arr);
-	xarrayfree(find_section_arr);
-	free(find_sym);
-	free(find_lib);
-	free(find_section);
-	{
-		size_t n;
-		regex_t *preg;
-		array_for_each(find_sym_regex_arr, n, preg)
-			regfree(preg);
-		xarrayfree(find_sym_regex_arr);
-	}
+	if (PAX_UTILS_CLEANUP) {
+		/* clean up */
+		xarrayfree(ldpaths);
+		xarrayfree(find_sym_arr);
+		xarrayfree(find_lib_arr);
+		xarrayfree(find_section_arr);
+		free(find_sym);
+		free(find_lib);
+		free(find_section);
+		{
+			size_t n;
+			regex_t *preg;
+			array_for_each(find_sym_regex_arr, n, preg)
+				regfree(preg);
+			xarrayfree(find_sym_regex_arr);
+		}
 
-	if (ldcache != 0)
-		munmap(ldcache, ldcache_size);
-#endif
+		if (ldcache != 0)
+			munmap(ldcache, ldcache_size);
+	}
 
 	return ret;
 }
@@ -2544,15 +2547,16 @@ static void parseenv(void)
 	qa_wx_load = get_split_env("QA_WX_LOAD");
 }
 
-#ifdef __PAX_UTILS_CLEANUP
 static void cleanup(void)
 {
+	if (!PAX_UTILS_CLEANUP)
+		return;
+
 	free(out_format);
 	free(qa_textrels);
 	free(qa_execstack);
 	free(qa_wx_load);
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -2562,12 +2566,7 @@ int main(int argc, char *argv[])
 	parseenv();
 	ret = parseargs(argc, argv);
 	fclose(stdout);
-#ifdef __PAX_UTILS_CLEANUP
 	cleanup();
-	warn("The calls to add/delete heap should be off:\n"
-	     "\t- 1 due to the out_buffer not being freed in scanelf_fileat()\n"
-	     "\t- 1 per QA_TEXTRELS/QA_EXECSTACK/QA_WX_LOAD");
-#endif
 	return ret;
 }
 
