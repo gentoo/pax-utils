@@ -1411,7 +1411,7 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 	*found_sym = 1;
 }
 
-static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
+static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	char *ret;
 	void *symtab_void, *strtab_void;
@@ -1458,17 +1458,23 @@ static const char *scanelf_file_sym(elfobj *elf, char *found_sym)
 		FIND_SYM(64)
 	}
 
-	if (be_wewy_wewy_quiet) return NULL;
+	if (be_wewy_wewy_quiet) {
+		free(ret);
+		return NULL;
+	}
 
 	if (*find_sym != '*' && *found_sym)
 		return ret;
+	else
+		free(ret);
 	if (be_quiet)
 		return NULL;
 	else
-		return " - ";
+		return xstrdup(" - ");
 
  break_out:
 	warnf("%s: corrupt ELF symbols", elf->filename);
+	free(ret);
 	return NULL;
 }
 
@@ -1583,6 +1589,7 @@ static int scanelf_elfobj(elfobj *elf)
 
 	/* dump all the good stuff */
 	for (i = 0; out_format[i]; ++i) {
+		char *allocated;
 		const char *out;
 		const char *tmp;
 		static char ubuf[sizeof(unsigned long)*2];
@@ -1591,7 +1598,7 @@ static int scanelf_elfobj(elfobj *elf)
 			continue;
 		}
 
-		out = NULL;
+		out = allocated = NULL;
 		be_wewy_wewy_quiet = (out_format[i] == '#');
 		be_semi_verbose = (out_format[i] == '+');
 		switch (out_format[++i]) {
@@ -1639,7 +1646,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'i': out = scanelf_file_interp(elf, &found_interp); break;
 		case 'b': out = scanelf_file_bind(elf, &found_bind); break;
 		case 'S': out = scanelf_file_soname(elf, &found_soname); break;
-		case 's': out = scanelf_file_sym(elf, &found_sym); break;
+		case 's': out = allocated = scanelf_file_sym(elf, &found_sym); break;
 		case 'k': out = scanelf_file_sections(elf, &found_section); break;
 		case 'a': out = get_elfemtype(elf); break;
 		case 'I': out = get_elfosabi(elf); break;
@@ -1647,8 +1654,10 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", (unsigned long)elf->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
-		if (out)
+		if (out) {
 			xstrcat(&out_buffer, out, &out_len);
+			free(allocated);
+		}
 	}
 
 #define FOUND_SOMETHING() \
