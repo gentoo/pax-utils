@@ -126,7 +126,7 @@ find_elf() {
 show_elf() {
 	local elf=$1 indent=$2 parent_elfs=$3
 	local rlib lib libs
-	local interp resolved
+	local resolved
 	find_elf "${elf}"
 	resolved=${_find_elf}
 	elf=${elf##*/}
@@ -143,6 +143,8 @@ show_elf() {
 		printf "${resolved:-not found}"
 	fi
 	if [[ ${indent} -eq 0 ]] ; then
+		local elf_specs interp full_interp
+
 		elf_specs=$(elf_specs "${resolved}")
 		interp=$(scanelf -qF '#F%i' "${resolved}")
 		[[ -n ${interp} ]] && interp="${ROOT}${interp#/}"
@@ -159,6 +161,7 @@ show_elf() {
 				sed -nr -e "/^\/.*lib/{s|^/?|${ROOT}|;s|/$||;s|/?:/?|\n${ROOT}|g;p}"
 			)
 		fi
+		full_interp=${interp}
 		interp=${interp##*/}
 		# If we are in non-list mode, then we want to show the "duplicate" interp
 		# lines -- first the header (interp=>xxx), and then the DT_NEEDED line to
@@ -183,8 +186,19 @@ show_elf() {
 		# No need for leading comma w/my_allhits as we guarantee it always
 		# starts with one due to the way we append the value above.
 		[[ ${my_allhits}, == *,${lib},* ]] && continue
-		find_elf "${lib}" "${resolved}"
-		rlib=${_find_elf}
+		# If the interp is being linked against directly, re-use the existing
+		# full path rather than perform a search for it.  When systems symlink
+		# the interp to a diff location, we might locate a different path, and
+		# displaying both doesn't make sense as it doesn't match the runtime --
+		# the ldso won't load another copy of ldso into memory from the search
+		# path, it'll re-use the existing copy that was loaded from the full
+		# hardcoded path.
+		if [[ ${lib} == "${interp}" ]] ; then
+			rlib=${full_interp}
+		else
+			find_elf "${lib}" "${resolved}"
+			rlib=${_find_elf}
+		fi
 		show_elf "${rlib:-${lib}}" $((indent + 4)) "${parent_elfs}"
 	done
 }
