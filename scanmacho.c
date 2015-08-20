@@ -472,8 +472,8 @@ static int scanmacho_dir(const char *path)
 			continue;
 		len = (pathlen + 1 + strlen(dentry->d_name) + 1);
 		if (len >= sizeof(buf)) {
-			warnf("Skipping '%s': len > sizeof(buf); %lu > %lu\n", path,
-			      (unsigned long)len, (unsigned long)sizeof(buf));
+			warnf("Skipping '%s': len > sizeof(buf); %zu > %zu",
+			      path, len, sizeof(buf));
 			continue;
 		}
 		snprintf(buf, sizeof(buf), "%s%s%s", path, (path[pathlen-1] == '/') ? "" : "/", dentry->d_name);

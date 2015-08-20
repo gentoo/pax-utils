@@ -697,7 +697,7 @@ char *pax_short_pf_flags(unsigned long flags)
 	    ((flags & PF_RANDEXEC) && (flags & PF_NORANDEXEC)) || \
 	    ((flags & PF_EMUTRAMP) && (flags & PF_NOEMUTRAMP)) || \
 	    ((flags & PF_RANDMMAP) && (flags & PF_NORANDMMAP)))
-		warn("inconsistent state detected.  flags=%lX\n", flags);
+		warn("inconsistent state detected.  flags=%lX", flags);
 
 	return buffer;
 }

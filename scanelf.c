@@ -1842,7 +1842,7 @@ static int scanelf_dirat(int dir_fd, const char *path)
 
 		len = strlen(dentry->d_name);
 		if (len + pathlen + 1 >= sizeof(buf)) {
-			warnf("Skipping '%s%s': len > sizeof(buf); %zu > %zu\n",
+			warnf("Skipping '%s%s': len > sizeof(buf); %zu > %zu",
 			      path, dentry->d_name, len + pathlen + 1, sizeof(buf));
 			continue;
 		}
