@@ -233,7 +233,11 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
           else:
             line = os.path.dirname(ldso_conf) + '/' + line
           dbg(debug, '%s  glob: %s' % (dbg_pfx, line))
-          for path in glob.glob(line):
+          # ldconfig in glibc uses glob() which returns entries sorted according
+          # to LC_COLLATE.  Further, ldconfig does not reset that but respects
+          # the active env settings (which might be a mistake).  Python does not
+          # sort its results by default though, so do it ourselves.
+          for path in sorted(glob.glob(line)):
             paths += ParseLdSoConf(path, root=root, debug=debug, _first=False)
         else:
           paths += [normpath(root + line)]
