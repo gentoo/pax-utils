@@ -50,13 +50,8 @@ static void pax_seccomp_init(bool allow_forking)
 
 		/* Then the stat family of functions.  */
 		SCMP_SYS(newfstatat),
-#ifdef __NR_fstat
 		SCMP_SYS(fstat),
-#endif
 		SCMP_SYS(fstat64),
-#ifdef __NR_fstatat
-		SCMP_SYS(fstatat),
-#endif
 		SCMP_SYS(fstatat64),
 		SCMP_SYS(lstat),
 		SCMP_SYS(lstat64),
@@ -68,9 +63,7 @@ static void pax_seccomp_init(bool allow_forking)
 
 		/* Then fd open family of functions.  */
 		SCMP_SYS(open),
-#ifdef __NR_openat
 		SCMP_SYS(openat),
-#endif
 
 		/* Then the memory mapping functions.  */
 		SCMP_SYS(mmap),
@@ -79,23 +72,14 @@ static void pax_seccomp_init(bool allow_forking)
 
 		/* Then the directory reading functions.  */
 		SCMP_SYS(getdents),
-#ifdef __NR_getdents64
 		SCMP_SYS(getdents64),
-#endif
 
 		/* Then the file reading functions.  */
-#ifdef __NR_pread
-		SCMP_SYS(pread),
-#endif
-#ifdef __NR_pread64
 		SCMP_SYS(pread64),
-#endif
 		SCMP_SYS(read),
 
 		/* Then the fd manipulation functions.  */
-#ifdef __NR_fcntl
 		SCMP_SYS(fcntl),
-#endif
 		SCMP_SYS(fcntl64),
 
 		/* After this point, just sort the list alphabetically.  */
@@ -110,9 +94,7 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(getpid),
 		SCMP_SYS(gettid),
 		SCMP_SYS(ioctl),
-#ifdef __NR_lseek
 		SCMP_SYS(lseek),
-#endif
 		SCMP_SYS(_llseek),
 		SCMP_SYS(mprotect),
 
