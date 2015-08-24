@@ -23,6 +23,11 @@ AS_IF([test "x$with_caps" = "xyes"], [
 	LIBS="$LIBS $LIBCAP_LIBS"
 ])
 
+AC_ARG_WITH([debug], [AS_HELP_STRING([--with-debug], [enable debug code])])
+AS_IF([test "x$with_debug" = "xyes"], [
+	CPPFLAGS="$CPPFLAGS -DEBUG"
+])
+
 AC_ARG_WITH([python], [AS_HELP_STRING([--with-python], [use lddtree.py])])
 AM_CONDITIONAL([USE_PYTHON], [test "x$with_python" = "xyes"])
 

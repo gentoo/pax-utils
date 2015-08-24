@@ -22,6 +22,12 @@
 # define VCSID "<unknown>"
 #endif
 
+#ifdef EBUG
+# define USE_DEBUG 1
+#else
+# define USE_DEBUG 0
+#endif
+
 /* ELF love */
 #include "elf.h"
 #include "paxelf.h"

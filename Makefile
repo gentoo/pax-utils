@@ -36,10 +36,6 @@ MKDIR     := mkdir -p
 INS_EXE   := install -m755
 INS_DATA  := install -m644
 
-# Some fun settings
-#CFLAGS   += -DEBUG -g
-#LDFLAGS  += -pie
-
 PKG_CONFIG ?= pkg-config
 
 ifeq ($(USE_CAP),yes)
@@ -47,6 +43,10 @@ LIBCAPS_CFLAGS := $(shell $(PKG_CONFIG) --cflags libcap)
 LIBCAPS_LIBS   := $(shell $(PKG_CONFIG) --libs libcap)
 CPPFLAGS-pspax.c += $(LIBCAPS_CFLAGS) -DWANT_SYSCAP
 LIBS-pspax       += $(LIBCAPS_LIBS)
+endif
+
+ifeq ($(USE_DEBUG),yes)
+override CPPFLAGS += -DEBUG
 endif
 
 ifeq ($(USE_SECCOMP),yes)
