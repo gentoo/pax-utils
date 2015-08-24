@@ -30,6 +30,7 @@
 #include <pwd.h>
 #include <regex.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -216,5 +217,7 @@
 #ifndef O_CLOEXEC
 # define O_CLOEXEC 0
 #endif
+
+#define __unused__ __attribute__((__unused__))
 
 #endif /* _PORTING_H */

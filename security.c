@@ -41,6 +41,28 @@ static int pax_seccomp_rules_add(scmp_filter_ctx ctx, int syscalls[], size_t num
 }
 #define pax_seccomp_rules_add(ctx, syscalls) pax_seccomp_rules_add(ctx, syscalls, ARRAY_SIZE(syscalls))
 
+static void
+pax_seccomp_sigal(__unused__ int signo, siginfo_t *info, __unused__ void *context)
+{
+	warn("seccomp violated: syscall %i", info->si_syscall);
+	fflush(stderr);
+#ifdef si_syscall
+	warn("  syscall = %s",
+		seccomp_syscall_resolve_num_arch(seccomp_arch_native(), info->si_syscall));
+#endif
+	kill(getpid(), SIGSYS);
+	_exit(1);
+}
+
+static void pax_seccomp_signal_init(void)
+{
+	struct sigaction act;
+	sigemptyset(&act.sa_mask);
+	act.sa_sigaction = pax_seccomp_sigal,
+	act.sa_flags = SA_SIGINFO | SA_RESETHAND;
+	sigaction(SIGSYS, &act, NULL);
+}
+
 static void pax_seccomp_init(bool allow_forking)
 {
 	/* Order determines priority (first == lowest prio).  */
@@ -113,7 +135,7 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(waitid),
 		SCMP_SYS(waitpid),
 	};
-	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_TRAP);
+	scmp_filter_ctx ctx = seccomp_init(USE_DEBUG ? SCMP_ACT_TRAP : SCMP_ACT_KILL);
 	if (!ctx) {
 		warnp("seccomp_init failed");
 		return;
@@ -128,6 +150,9 @@ static void pax_seccomp_init(bool allow_forking)
 
 	/* We already called prctl. */
 	seccomp_attr_set(ctx, SCMP_FLTATR_CTL_NNP, 0);
+
+	if (USE_DEBUG)
+		pax_seccomp_signal_init();
 
 #ifndef __SANITIZE_ADDRESS__
 	/* ASAN does some weird stuff. */
