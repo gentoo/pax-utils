@@ -92,6 +92,8 @@ EXTRA_DIST += \
 	pylint \
 	scanelf.c \
 	scanmacho.c \
+	seccomp-bpf.c \
+	seccomp-bpf.h \
 	security.c \
 	security.h \
 	symtree.sh \

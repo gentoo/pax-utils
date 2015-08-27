@@ -43,6 +43,7 @@ core
 /pspax
 /scanelf
 /scanmacho
+/seccomp-bpf
 /symtree
 
 /man/*.1

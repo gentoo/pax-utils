@@ -52,11 +52,14 @@ ifeq ($(USE_DEBUG),yes)
 override CPPFLAGS += -DEBUG
 endif
 
-ifeq ($(USE_SECCOMP),yes)
+ifeq ($(BUILD_USE_SECCOMP),yes)
 LIBSECCOMP_CFLAGS := $(shell $(PKG_CONFIG) --cflags libseccomp)
 LIBSECCOMP_LIBS   := $(shell $(PKG_CONFIG) --libs libseccomp)
 override CPPFLAGS += $(LIBSECCOMP_CFLAGS) -DWANT_SECCOMP
-LIBS              += $(LIBSECCOMP_LIBS)
+LIBS-seccomp-bpf  += $(LIBSECCOMP_LIBS)
+endif
+ifeq ($(USE_SECCOMP),yes)
+override CPPFLAGS += -DWANT_SECCOMP
 endif
 
 ifdef PV
@@ -72,8 +75,10 @@ ELF_OBJS     = paxelf.o paxldso.o
 MACH_TARGETS = scanmacho
 MACH_OBJS    = paxmacho.o
 COMMON_OBJS  = paxinc.o security.o xfuncs.o
+BUILD_OBJS   = $(filter-out security.o,$(COMMON_OBJS))
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
 TARGETS_OBJS = $(TARGETS:%=%.o)
+BUILD_TARGETS= seccomp-bpf
 SCRIPTS_SH   = lddtree symtree
 SCRIPTS_PY   = lddtree
 _OBJS        = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS)
@@ -139,23 +144,24 @@ ifeq ($(V),)
 endif
 	$(Q)$(compile.c) $(WFLAGS)
 
-$(ELF_TARGETS): %: $(ELF_OBJS) $(COMMON_OBJS) %.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS) $(LIBS-$@)
+LINK = $(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS) $(LIBS-$@)
 
-$(MACH_TARGETS): %: $(MACH_OBJS) $(COMMON_OBJS) %.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS) $(LIBS-$@)
+$(BUILD_TARGETS): %: $(BUILD_OBJS) %.o; $(LINK)
+$(ELF_TARGETS): %: $(ELF_OBJS) $(COMMON_OBJS) %.o; $(LINK)
+$(MACH_TARGETS): %: $(MACH_OBJS) $(COMMON_OBJS) %.o; $(LINK)
 
 $(OBJS_TARGETS): %: $(_OBJS) %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -DMAIN $(LDFLAGS) $(filter-out $@.o,$^) -o $@ $(LIBS) $(LIBS-$@)
 
-%.so: %.c
-	$(CC) -shared -fPIC -o $@ $<
+seccomp-bpf.h: seccomp-bpf.c
+	$(MAKE) BUILD_USE_SECCOMP=yes seccomp-bpf
+	./seccomp-bpf > $@
 
 depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
 
 clean:
-	-rm -f $(OBJS) $(TARGETS) $(OBJS_TARGETS)
+	-rm -f $(OBJS) $(TARGETS) $(OBJS_TARGETS) $(BUILD_TARGETS)
 
 distclean: clean
 	-rm -f *~ core *.o

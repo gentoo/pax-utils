@@ -1,5 +1,18 @@
-scanelf.o: scanelf.c paxinc.h porting.h elf.h paxelf.h
-pspax.o: pspax.c paxinc.h porting.h elf.h paxelf.h
-dumpelf.o: dumpelf.c paxinc.h porting.h elf.h paxelf.h
-paxelf.o: paxelf.c paxinc.h porting.h elf.h paxelf.h
-paxinc.o: paxinc.c paxinc.h porting.h elf.h paxelf.h
+paxelf.o: paxelf.c paxinc.h porting.h elf.h xfuncs.h security.h paxelf.h \
+ macho.h paxmacho.h
+paxmacho.o: paxmacho.c paxinc.h porting.h elf.h xfuncs.h security.h \
+ paxelf.h macho.h paxmacho.h
+paxinc.o: paxinc.c paxinc.h porting.h elf.h xfuncs.h security.h paxelf.h \
+ macho.h paxmacho.h
+security.o: security.c paxinc.h porting.h elf.h xfuncs.h security.h \
+ paxelf.h macho.h paxmacho.h seccomp-bpf.h
+xfuncs.o: xfuncs.c paxinc.h porting.h elf.h xfuncs.h security.h paxelf.h \
+ macho.h paxmacho.h
+scanelf.o: scanelf.c paxinc.h porting.h elf.h xfuncs.h security.h \
+ paxelf.h macho.h paxmacho.h
+dumpelf.o: dumpelf.c paxinc.h porting.h elf.h xfuncs.h security.h \
+ paxelf.h macho.h paxmacho.h
+pspax.o: pspax.c paxinc.h porting.h elf.h xfuncs.h security.h paxelf.h \
+ macho.h paxmacho.h
+scanmacho.o: scanmacho.c paxinc.h porting.h elf.h xfuncs.h security.h \
+ paxelf.h macho.h paxmacho.h

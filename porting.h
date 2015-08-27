@@ -46,6 +46,9 @@
 #endif
 #if defined(__linux__)
 # include <sys/prctl.h>
+# if !defined(HAVE_CONFIG_H) || defined(HAVE_LINUX_SECCOMP_H)
+#  include <linux/seccomp.h>
+# endif
 # if !defined(HAVE_CONFIG_H) || defined(HAVE_LINUX_SECUREBITS_H)
 #  include <linux/securebits.h>
 # endif
