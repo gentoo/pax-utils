@@ -163,8 +163,11 @@ static void pax_seccomp_init(bool allow_forking)
 
 #ifndef __SANITIZE_ADDRESS__
 	/* ASAN does some weird stuff. */
-	if (seccomp_load(ctx) < 0)
-		warnp("seccomp_load failed");
+	if (seccomp_load(ctx) < 0) {
+		/* We have to assume that EINVAL == CONFIG_SECCOMP is disabled. */
+		if (errno != EINVAL)
+			warnp("seccomp_load failed");
+	}
 #endif
 
  done:
