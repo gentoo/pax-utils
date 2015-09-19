@@ -44,11 +44,14 @@ static int pax_seccomp_rules_add(scmp_filter_ctx ctx, int syscalls[], size_t num
 static void
 pax_seccomp_sigal(__unused__ int signo, siginfo_t *info, __unused__ void *context)
 {
+#ifdef si_syscall
 	warn("seccomp violated: syscall %i", info->si_syscall);
 	fflush(stderr);
-#ifdef si_syscall
 	warn("  syscall = %s",
 		seccomp_syscall_resolve_num_arch(seccomp_arch_native(), info->si_syscall));
+	fflush(stderr);
+#else
+	warn("seccomp violated: syscall unknown (no si_syscall)");
 #endif
 	kill(getpid(), SIGSYS);
 	_exit(1);
