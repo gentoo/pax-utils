@@ -123,6 +123,9 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(_llseek),
 		SCMP_SYS(mprotect),
 
+		/* Syscalls listed because of compiler settings.  */
+		SCMP_SYS(futex),
+
 		/* Syscalls listed because of sandbox.  */
 		SCMP_SYS(readlink),
 
