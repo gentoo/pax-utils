@@ -47,7 +47,7 @@
 # include <sys/prctl.h>
 # include <linux/securebits.h>
 #endif
-#if defined(__GLIBC__) || defined(__UCLIBC__)
+#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__ANDROID__)
 # include <byteswap.h>
 # include <endian.h>
 #elif defined(__FreeBSD__)
