@@ -131,6 +131,7 @@ static void pax_seccomp_init(bool allow_forking)
 
 		/* Syscalls listed because of sandbox.  */
 		SCMP_SYS(readlink),
+		SCMP_SYS(getcwd),
 
 		/* Syscalls listed because of fakeroot.  */
 		SCMP_SYS(msgget),
