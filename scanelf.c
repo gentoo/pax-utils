@@ -461,15 +461,15 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
 		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
-		if (shstrndx * sizeof(*shdr) >= elf->len - sizeof(*shdr) || \
-		    !VALID_SHDR(elf, strtbl)) \
+		uint16_t shnum = EGET(ehdr->e_shnum); \
+		if (shstrndx >= shnum || !VALID_SHDR(elf, strtbl)) \
 			goto corrupt_shdr; \
 		/* let's flag -w/+x object files since the final ELF will most likely \
 		 * need write access to the stack (who doesn't !?).  so the combined \
 		 * output will bring in +w automatically and that's bad. \
 		 */ \
 		check_flags = /*SHF_WRITE|*/SHF_EXECINSTR; \
-		for (i = 0; i < EGET(ehdr->e_shnum); ++i) { \
+		for (i = 0; i < shnum; ++i) { \
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 			if (offset >= elf->len - sizeof(NOTE_GNU_STACK)) \
