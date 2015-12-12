@@ -223,6 +223,13 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, long phdr_cnt)
 static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const char *name)
 {
 	unsigned long i;
+
+	/* Make sure the string is valid. */
+	if ((void *)name >= elf->data_end)
+		name = "<corrupt>";
+	else if (memchr(name, 0, elf->len - (name - elf->data)) == NULL)
+		name = "<corrupt>";
+
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	const Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
