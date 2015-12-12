@@ -12,14 +12,14 @@ const char argv0[] = "dumpelf";
 
 /* prototypes */
 static void dumpelf(const char *filename, long file_cnt);
-static void dump_ehdr(elfobj *elf, void *ehdr);
-static void dump_phdr(elfobj *elf, void *phdr, long phdr_cnt);
-static void dump_shdr(elfobj *elf, void *shdr, long shdr_cnt, char *name);
-static void dump_dyn(elfobj *elf, void *dyn, long dyn_cnt);
+static void dump_ehdr(elfobj *elf, const void *ehdr);
+static void dump_phdr(elfobj *elf, const void *phdr, long phdr_cnt);
+static void dump_shdr(elfobj *elf, const void *shdr, long shdr_cnt, const char *name);
+static void dump_dyn(elfobj *elf, const void *dyn, long dyn_cnt);
 #if 0
-static void dump_sym(elfobj *elf, void *sym);
-static void dump_rel(elfobj *elf, void *rel);
-static void dump_rela(elfobj *elf, void *rela);
+static void dump_sym(elfobj *elf, const void *sym);
+static void dump_rel(elfobj *elf, const void *rel);
+static void dump_rela(elfobj *elf, const void *rela);
 #endif
 static void usage(int status);
 static void parseargs(int argc, char *argv[]);
@@ -28,7 +28,7 @@ static void parseargs(int argc, char *argv[]);
 static char be_verbose = 0;
 
 /* misc dynamic tag caches */
-static void *phdr_dynamic_void;
+static const void *phdr_dynamic_void;
 
 /* dump all internal elf info */
 static void dumpelf(const char *filename, long file_cnt)
@@ -81,8 +81,8 @@ static void dumpelf(const char *filename, long file_cnt)
 	if (elf->phdr) {
 #define DUMP_PHDRS(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		uint16_t phnum = EGET(ehdr->e_phnum); \
 		for (i = 0; i < phnum; ++i, ++phdr) \
 			dump_phdr(elf, phdr, i); \
@@ -99,10 +99,10 @@ static void dumpelf(const char *filename, long file_cnt)
 	if (elf->shdr) {
 #define DUMP_SHDRS(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+		const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		const Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
-		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
+		const Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
 		Elf ## B ## _Off offset; \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
 		if (shstrndx >= shnum || !VALID_SHDR(elf, strtbl)) { \
@@ -134,8 +134,8 @@ static void dumpelf(const char *filename, long file_cnt)
 	if (phdr_dynamic_void) {
 #define DUMP_DYNS(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
-		Elf ## B ## _Phdr *phdr = phdr_dynamic_void; \
-		Elf ## B ## _Dyn *dyn = elf->vdata + EGET(phdr->p_offset); \
+		const Elf ## B ## _Phdr *phdr = phdr_dynamic_void; \
+		const Elf ## B ## _Dyn *dyn = elf->vdata + EGET(phdr->p_offset); \
 		i = 0; \
 		do { \
 			if ((void *)dyn >= elf->data_end - sizeof(*dyn)) { \
@@ -155,11 +155,11 @@ static void dumpelf(const char *filename, long file_cnt)
 	/* get out of here */
 	unreadelf(elf);
 }
-static void dump_ehdr(elfobj *elf, void *ehdr_void)
+static void dump_ehdr(elfobj *elf, const void *ehdr_void)
 {
 #define DUMP_EHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (ehdr_void); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (ehdr_void); \
 	printf(".ehdr = {\n"); \
 	printf("\t.e_ident = { /* (EI_NIDENT bytes) */\n" \
 	       "\t\t/* [%i] EI_MAG:        */ 0x%X,'%c','%c','%c',\n" \
@@ -198,11 +198,11 @@ static void dump_ehdr(elfobj *elf, void *ehdr_void)
 	DUMP_EHDR(32)
 	DUMP_EHDR(64)
 }
-static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
+static void dump_phdr(elfobj *elf, const void *phdr_void, long phdr_cnt)
 {
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
+	const Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
 	switch (EGET(phdr->p_type)) { \
 	case PT_DYNAMIC: phdr_dynamic_void = phdr_void; break; \
 	} \
@@ -220,12 +220,12 @@ static void dump_phdr(elfobj *elf, void *phdr_void, long phdr_cnt)
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
 }
-static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
+static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const char *name)
 {
 	unsigned long i;
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
+	const Elf ## B ## _Shdr *shdr = SHDR ## B (shdr_void); \
 	uint32_t type = EGET(shdr->sh_type); \
 	uint ## B ## _t size = EGET(shdr->sh_size); \
 	printf("/* Section Header #%li '%s' 0x%lX */\n{\n", \
@@ -308,11 +308,11 @@ static void dump_shdr(elfobj *elf, void *shdr_void, long shdr_cnt, char *name)
 	DUMP_SHDR(32)
 	DUMP_SHDR(64)
 }
-static void dump_dyn(elfobj *elf, void *dyn_void, long dyn_cnt)
+static void dump_dyn(elfobj *elf, const void *dyn_void, long dyn_cnt)
 {
 #define DUMP_DYN(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Dyn *dyn = dyn_void; \
+	const Elf ## B ## _Dyn *dyn = dyn_void; \
 	unsigned long tag = EGET(dyn->d_tag); \
 	printf("/* Dynamic tag #%li '%s' 0x%lX */\n{\n", \
 	       dyn_cnt, get_elfdtype(tag), (unsigned long)dyn_void - (unsigned long)elf->data); \
