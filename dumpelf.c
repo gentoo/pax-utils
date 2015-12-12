@@ -28,7 +28,7 @@ static void parseargs(int argc, char *argv[]);
 static char be_verbose = 0;
 
 /* misc dynamic tag caches */
-static void *phdr_dynamic_void = NULL;
+static void *phdr_dynamic_void;
 
 /* dump all internal elf info */
 static void dumpelf(const char *filename, long file_cnt)
@@ -39,6 +39,8 @@ static void dumpelf(const char *filename, long file_cnt)
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL)
 		return;
+
+	phdr_dynamic_void = NULL;
 
 	printf("#include <elf.h>\n");
 
