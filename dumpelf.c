@@ -138,6 +138,10 @@ static void dumpelf(const char *filename, long file_cnt)
 		Elf ## B ## _Dyn *dyn = elf->vdata + EGET(phdr->p_offset); \
 		i = 0; \
 		do { \
+			if ((void *)dyn >= elf->data_end - sizeof(*dyn)) { \
+				printf(" /* invalid dynamic tags ! */ "); \
+				break; \
+			} \
 			dump_dyn(elf, dyn++, i++); \
 		} while (EGET(dyn->d_tag) != DT_NULL); \
 		}
