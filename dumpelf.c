@@ -102,9 +102,19 @@ static void dumpelf(const char *filename, long file_cnt)
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
-		Elf ## B ## _Off offset = EGET(shdr[shstrndx].sh_offset); \
+		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
+		Elf ## B ## _Off offset; \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
+		if (shstrndx >= shnum || !VALID_SHDR(elf, strtbl)) { \
+			printf(" /* corrupt section header strings table ! */ "); \
+			goto break_out_shdr; \
+		} \
+		offset = EGET(strtbl->sh_offset); \
 		for (i = 0; i < shnum; ++i, ++shdr) \
+			if (!VALID_SHDR(elf, shdr)) { \
+				printf(" /* corrupt section headers ! */ "); \
+				break; \
+			} \
 			dump_shdr(elf, shdr, i, elf->vdata + offset + EGET(shdr->sh_name)); \
 		}
 		DUMP_SHDRS(32)
@@ -112,6 +122,7 @@ static void dumpelf(const char *filename, long file_cnt)
 	} else {
 		printf(" /* no section headers ! */ ");
 	}
+ break_out_shdr:
 	printf("},\n");
 
 	/* finish the namespace struct and start the abitrary ones */
