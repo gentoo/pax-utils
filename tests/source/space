@@ -11,7 +11,7 @@ if [ $# != 1 ] ; then
 	EOF
 fi
 
-sed -r '/[[:space:]]+$/s:[[:space:]]+$::' "$i" | \
+sed -E '/[[:space:]]+$/s:[[:space:]]+$::' "$i" | \
 	awk '{
 	if (NF == 0) {
 		while (NF == 0)

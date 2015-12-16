@@ -42,7 +42,7 @@ elf_specs() {
 	# LINUX and GNU are the same thing, as are NONE and SYSV, so normalize
 	# GNU & LINUX to NONE. #442024 #464380
 	scanelf -BF '#F%a %M %D %I' "$1" | \
-		sed -r 's: (LINUX|GNU)$: NONE:'
+		sed -E 's: (LINUX|GNU)$: NONE:'
 }
 
 lib_paths_fallback="${ROOT}lib* ${ROOT}usr/lib* ${ROOT}usr/local/lib*"

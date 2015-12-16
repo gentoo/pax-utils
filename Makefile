@@ -163,7 +163,8 @@ GEN_MARK_END   = \# @@@ GEN END @@@ \#
 EXTRA_DIST     = $(shell git ls-files)
 autotools-update:
 	$(MAKE) -C man -j
-	sed -i '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am
+	sed -i.tmp '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am
+	@rm -f Makefile.am.tmp
 	( \
 		echo "$(GEN_MARK_START)"; \
 		printf 'dist_man_MANS +='; \
