@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-v() { echo "$@"; "$@"; }
+. "${0%/*}"/travis/lib.sh
 
 m4dir="autotools/m4"
 
@@ -33,12 +33,13 @@ mods="
 	utimensat
 	vasprintf-posix
 "
-v gnulib-tool \
+v --fold="gnulib-tool" gnulib-tool \
 	--source-base=autotools/gnulib --m4-base=autotools/m4 \
 	--import \
 	${mods}
 
 # not everyone has sys-devel/autoconf-archive installed
+v tar xf travis/autotools.tar.xz
 for macro in $(grep -o '\<AX[A-Z_]*\>' configure.ac | sort -u) ; do
 	if m4=$(grep -rl "\[${macro}\]" /usr/share/aclocal/) ; then
 		v cp $m4 ${m4dir}/

@@ -1,0 +1,31 @@
+# Travis build integration.
+# https://docs.travis-ci.com/
+
+language: c
+compiler:
+  - clang
+  - gcc
+
+sudo: false
+
+os:
+  - linux
+# Travis currently runs on OS X 10.9 which does not include *at funcs.
+# Disable until they update or we include autotools support.
+  - osx
+
+# Travis currently uses Ubuntu 12.04 (Precise) which is too old: it does
+# not include pyelftools.  Disable until they update.
+env:
+  - USE_PYTHON=no
+# Note: OS X deps are maintained in .travis.sh until Travis supports it here.
+addons:
+  apt:
+    packages:
+    - autoconf-archive
+    - gnulib
+    - xmlto
+    - python-pyelftools
+    - python3-pyelftools
+
+script: ./travis/main.sh
