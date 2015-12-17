@@ -35,8 +35,10 @@ Makefile.in
 stamp-h1
 
 /dumpelf
+/lddtree
 /pspax
 /scanelf
 /scanmacho
+/symtree
 
 /man/*.1
