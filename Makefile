@@ -160,7 +160,7 @@ check test:
 #
 GEN_MARK_START = \# @@@ GEN START @@@ \#
 GEN_MARK_END   = \# @@@ GEN END @@@ \#
-EXTRA_DIST     = $(shell git ls-files)
+EXTRA_DIST     = $(shell git ls-files | grep -v ^travis/)
 autotools-update:
 	$(MAKE) -C man -j
 	sed -i.tmp '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am

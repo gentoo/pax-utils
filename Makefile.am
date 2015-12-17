@@ -18,6 +18,7 @@ LDADD = libpaxutils.la $(top_builddir)/autotools/gnulib/libgnu.a
 
 bin_SCRIPTS = lddtree symtree
 bin_PROGRAMS = scanelf dumpelf pspax scanmacho
+CLEANFILES = $(bin_SCRIPTS)
 
 if USE_PYTHON
 lddtree: lddtree.py
@@ -46,11 +47,12 @@ EXTRA_DIST = autotools/m4/gnulib-cache.m4
 dist_man_MANS += \
 	man/dumpelf.1 \
 	man/pspax.1 \
-	man/scanmacho.1 \
-	man/scanelf.1
+	man/scanelf.1 \
+	man/scanmacho.1
 EXTRA_DIST += \
 	.depend \
 	.gitignore \
+	.travis.yml \
 	BUGS \
 	COPYING \
 	Makefile \
