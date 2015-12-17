@@ -32,7 +32,7 @@ find "${top_srcdir}" \
 		-e '\<deamon\>' \
 		-e '\<derefernce\>' \
 		-e '\<lenght\>' \
-		| sed -e "s:^\.\./\.\./::g" > src.typos
+		| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.typos
 testit src.typos
 
 
@@ -42,7 +42,7 @@ testit src.typos
 #
 findfiles | xargs -0 \
 	grep -n -E -e '\<(bcmp|bcopy|bzero|getwd|index|mktemp|rindex|utimes)\>[[:space:]]*\(' \
-	| sed -e "s:^\.\./\.\./::g" > src.obsolete.funcs
+	| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.obsolete.funcs
 testit src.obsolete.funcs
 
 
@@ -52,7 +52,7 @@ testit src.obsolete.funcs
 #
 findfiles | xargs -0 \
 	grep -n -E -e '\<PATH_MAX\>' | grep -v __PAX_UTILS_PATH_MAX \
-	| sed -e "s:^\.\./\.\./::g" > src.bad.constants
+	| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.bad.constants
 testit src.bad.constants
 
 
@@ -62,7 +62,7 @@ testit src.bad.constants
 #
 findfiles | xargs -0 \
 	grep -n -E -e '\<(malloc|memory|sys/(errno|fcntl|signal|stropts|termios|unistd))\.h\>' \
-	| sed -e "s:^\.\./\.\./::g" > src.obsolete.headers
+	| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.obsolete.headers
 testit src.obsolete.headers
 
 
@@ -75,7 +75,7 @@ xfuncs=${xfuncs:0:${#xfuncs}-1}
 findfiles | xargs -0 \
 	grep -n -E -e "\<(${xfuncs})[[:space:]]*\(" \
 	| grep -v xfuncs.c \
-	| sed -e "s:^\.\./\.\./::g" > src.use.xfuncs
+	| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.use.xfuncs
 testit src.use.xfuncs
 
 
@@ -91,7 +91,7 @@ findfiles | xargs -0 \
 		-e '[[:space:]]$' \
 		-e '\){' \
 		-e '(^|[^:])//' \
-	| sed -e "s:^\.\./\.\./::g" > src.style
+	| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.style
 testit src.style
 
 
@@ -103,13 +103,13 @@ while read -d'\0' x; do
 	case ${x} in
 	*/elf.h) continue ;; # Not our files
 	esac
-	./space "$x" > "$x~"
-	if ! diff -u "$x" "$x~" ; then
-		echo "New file: $x~"
+	./space "${x}" > "${builddir}/${x}~"
+	if ! diff -u "${x}" "${builddir}/${x}~" ; then
+		echo "New file: ${x}~"
 	else
-		rm -f "$x~"
+		rm -f "${builddir}/${x}~"
 	fi
-done > src.space < <(findfiles)
+done > "${builddir}"/src.space < <(findfiles)
 testit src.space
 
 
@@ -118,7 +118,7 @@ testit src.space
 # Make sure we don't keep re-importing stuff into elf.h that
 # breaks non-GNU systems. #507470
 #
-grep -E "features.h|_DECLS" "${top_srcdir}"/elf.h > src.elf.h
+grep -E "features.h|_DECLS" "${top_srcdir}"/elf.h > "${builddir}"/src.elf.h
 testit src.elf.h
 
 
@@ -130,7 +130,7 @@ if pyflakes </dev/null 2>/dev/null; then
 	find "${top_srcdir}" \
 		'!' -ipath '*/tests/*' \
 		-name '*.py' \
-		-exec pyflakes {} + > src.pyflakes
+		-exec pyflakes {} + > "${builddir}"/src.pyflakes
 	testit src.pyflakes
 fi
 

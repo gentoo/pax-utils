@@ -6,22 +6,30 @@
 # make sure list output matches
 #
 for sfx in py sh ; do
-	lddtree.${sfx} -l /bin/bash > lddtree.${sfx}.list &
+	lddtree.${sfx} -l /bin/bash > "${builddir}"/lddtree.${sfx}.list &
 done
 wait
-testit lddtree.*.list
-rm -f lddtree.*.list
+if diff -u "${builddir}"/lddtree.*.list ; then
+	pass "lddtree -l /bin/bash"
+else
+	fail "lddtree -l /bin/bash"
+fi
+rm -f "${builddir}"/lddtree.*.list
 
 
 #
 # Same as above but with the -a flag
 #
 for sfx in py sh ; do
-	lddtree.${sfx} -l -a /bin/bash > lddtree.${sfx}.list-all &
+	lddtree.${sfx} -l -a /bin/bash > "${builddir}"/lddtree.${sfx}.list-all &
 done
 wait
-testit lddtree.*.list-all
-rm -f lddtree.*.list-all
+if diff -u "${builddir}"/lddtree.*.list-all ; then
+	pass "lddtree -l -a /bin/bash"
+else
+	fail "lddtree -l -a /bin/bash"
+fi
+rm -f "${builddir}"/lddtree.*.list-all
 
 
 exit ${ret}

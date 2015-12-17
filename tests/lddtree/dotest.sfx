@@ -6,7 +6,7 @@
 # smoke tests of sorts
 #
 lddtree.${sfx} /bin/bash | \
-	grep -i 'none' > lddtree.${sfx}.smoke
+	grep -i 'none' > "${builddir}"/lddtree.${sfx}.smoke
 testit lddtree.${sfx}.smoke
 
 
