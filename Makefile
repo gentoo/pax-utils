@@ -168,7 +168,7 @@ autotools-update:
 	( \
 		echo "$(GEN_MARK_START)"; \
 		printf 'dist_man_MANS +='; \
-		printf ' \\\n\t%s' $(wildcard man/*.1); \
+		printf ' \\\n\t%s' `printf '%s\n' man/*.1 | LC_ALL=C sort`; \
 		echo; \
 		printf 'EXTRA_DIST +='; \
 		printf ' \\\n\t%s' $(EXTRA_DIST); \
