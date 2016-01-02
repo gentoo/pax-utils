@@ -13,7 +13,8 @@ _WFLAGS   := \
 	-Wdeclaration-after-statement \
 	-Wextra \
 	-Wsequence-point \
-	-Wstrict-overflow
+	-Wstrict-overflow \
+	-Wmisleading-indentation
 WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
