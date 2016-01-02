@@ -89,6 +89,9 @@ debug: clean
 	@-chpax  -permsx $(ELF_TARGETS)
 	@-paxctl -permsx $(ELF_TARGETS)
 
+analyze: clean
+	scan-build $(MAKE) all
+
 fuzz: clean
 	$(MAKE) AFL_HARDEN=1 CC=afl-gcc all
 	@rm -rf findings
