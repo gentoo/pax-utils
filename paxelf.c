@@ -108,6 +108,15 @@ const char *get_endian(elfobj *elf)
 	}
 }
 
+/* translate elf EF_ defines -- tricky as it's based on EM_ */
+static unsigned int get_eflags(elfobj *elf)
+{
+	if (elf->elf_class == ELFCLASS32)
+		return EGET(EHDR32(elf->ehdr)->e_flags);
+	else
+		return EGET(EHDR64(elf->ehdr)->e_flags);
+}
+
 static int arm_eabi_poker(elfobj *elf)
 {
 	unsigned int emachine, eflags;
@@ -115,16 +124,11 @@ static int arm_eabi_poker(elfobj *elf)
 	if (ELFOSABI_NONE != elf->data[EI_OSABI])
 		return -1;
 
-	if (elf->elf_class == ELFCLASS32) {
-		emachine = EHDR32(elf->ehdr)->e_machine;
-		eflags = EHDR32(elf->ehdr)->e_flags;
-	} else {
-		emachine = EHDR64(elf->ehdr)->e_machine;
-		eflags = EHDR64(elf->ehdr)->e_flags;
-	}
+	emachine = get_emtype(elf);
+	eflags = get_eflags(elf);
 
-	if (EGET(emachine) == EM_ARM)
-		return EF_ARM_EABI_VERSION(EGET(eflags)) >> 24;
+	if (emachine == EM_ARM)
+		return EF_ARM_EABI_VERSION(eflags) >> 24;
 	else
 		return -1;
 }
