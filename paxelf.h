@@ -70,10 +70,10 @@ extern const char *get_elfstbtype(int type);
 extern const char *get_elfstvtype(int type);
 extern const char *get_elfstttype(int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
-extern int get_etype(elfobj *elf);
-extern int get_emtype(elfobj *elf);
+extern unsigned int get_etype(elfobj *elf);
+extern unsigned int get_emtype(elfobj *elf);
 extern void print_etypes(FILE *);
-extern int etype_lookup(const char *);
+extern unsigned int etype_lookup(const char *);
 
 /* PaX flags (to be read in elfhdr.e_flags) */
 #define HF_PAX_PAGEEXEC      1   /* 0: Paging based non-exec pages */

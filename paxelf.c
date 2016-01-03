@@ -15,11 +15,13 @@
 #define QUERY(n) { #n, n }
 typedef const struct {
 	const char *str;
-	int value;
+	/* We use unsigned int as we assume it's at least 32 bits.  This covers
+	   all our uses so far as they have been limited to that size.  */
+	unsigned int value;
 } pairtype;
-static inline const char *find_pairtype(pairtype *pt, int type)
+static inline const char *find_pairtype(pairtype *pt, unsigned int type)
 {
-	int i;
+	size_t i;
 	for (i = 0; pt[i].str; ++i)
 		if (type == pt[i].value)
 			return pt[i].str;
@@ -84,14 +86,12 @@ static pairtype elf_etypes[] = {
 	{ 0, 0 }
 };
 
-int get_etype(elfobj *elf)
+unsigned int get_etype(elfobj *elf)
 {
-	int type;
 	if (elf->elf_class == ELFCLASS32)
-		type = EGET(EHDR32(elf->ehdr)->e_type);
+		return EGET(EHDR32(elf->ehdr)->e_type);
 	else
-		type = EGET(EHDR64(elf->ehdr)->e_type);
-	return type;
+		return EGET(EHDR64(elf->ehdr)->e_type);
 }
 
 const char *get_elfetype(elfobj *elf)
@@ -162,10 +162,10 @@ void print_etypes(FILE *stream)
 		fprintf(stream, "\n");
 }
 
-int etype_lookup(const char *str)
+unsigned int etype_lookup(const char *str)
 {
 	if (*str == 'E') {
-		int i;
+		size_t i;
 		for (i = 0; elf_etypes[i].str; ++i) {
 			if (strcmp(str, elf_etypes[i].str) == 0)
 				return elf_etypes[i].value;
@@ -275,14 +275,12 @@ static pairtype elf_emtypes[] = {
 	{ 0, 0 }
 };
 
-int get_emtype(elfobj *elf)
+unsigned int get_emtype(elfobj *elf)
 {
-	int type;
 	if (elf->elf_class == ELFCLASS32)
-		type = EGET(EHDR32(elf->ehdr)->e_machine);
+		return EGET(EHDR32(elf->ehdr)->e_machine);
 	else
-		type = EGET(EHDR64(elf->ehdr)->e_machine);
-	return type;
+		return EGET(EHDR64(elf->ehdr)->e_machine);
 }
 
 const char *get_elfemtype(elfobj *elf)
