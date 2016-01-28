@@ -338,9 +338,12 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
 
     if os.path.exists(target):
       with open(target, 'rb') as f:
-        libelf = ELFFile(f)
-        if CompatibleELFs(elf, libelf):
-          return (target, path)
+        try:
+          libelf = ELFFile(f)
+          if CompatibleELFs(elf, libelf):
+            return (target, path)
+        except exceptions.ELFError as e:
+          warn('%s: %s' % (target, e))
 
   return (None, None)
 
@@ -475,8 +478,11 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
           'needed': [],
       }
       if fullpath:
-        lret = ParseELF(realpath, root, prefix, ldpaths, display=fullpath,
-                        debug=debug, _first=False, _all_libs=_all_libs)
+        try:
+          lret = ParseELF(realpath, root, prefix, ldpaths, display=fullpath,
+                          debug=debug, _first=False, _all_libs=_all_libs)
+        except exceptions.ELFError as e:
+          warn('%s: %s' % (realpath, e))
         _all_libs[lib]['needed'] = lret['needed']
 
     del elf
