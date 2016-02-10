@@ -72,6 +72,9 @@ static void pax_seccomp_init(bool allow_forking)
 	int base_syscalls[] = {
 		/* We write the most w/scanelf.  */
 		SCMP_SYS(write),
+		SCMP_SYS(writev),
+		SCMP_SYS(pwrite64),
+		SCMP_SYS(pwritev),
 
 		/* Then the stat family of functions.  */
 		SCMP_SYS(newfstatat),
@@ -102,6 +105,8 @@ static void pax_seccomp_init(bool allow_forking)
 		/* Then the file reading functions.  */
 		SCMP_SYS(pread64),
 		SCMP_SYS(read),
+		SCMP_SYS(readv),
+		SCMP_SYS(preadv),
 
 		/* Then the fd manipulation functions.  */
 		SCMP_SYS(fcntl),
