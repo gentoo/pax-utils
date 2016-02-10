@@ -142,7 +142,7 @@ ifneq ($(USE_PYTHON),no)
 	for py in $(SCRIPTS_PY) ; do $(INS_EXE) $$py.py $(PREFIX)/bin/$$py || exit $$? ; done
 endif
 	$(INS_EXE) $(TARGETS) $(PREFIX)/bin/
-	$(INS_DATA) README BUGS TODO $(PKGDOCDIR)/
+	$(INS_DATA) README.md BUGS TODO $(PKGDOCDIR)/
 	$(INS_DATA) $(MPAGES) $(MANDIR)/man1/
 
 PN = pax-utils

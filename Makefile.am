@@ -57,7 +57,7 @@ EXTRA_DIST += \
 	COPYING \
 	Makefile \
 	Makefile.am \
-	README \
+	README.md \
 	TODO \
 	autogen.sh \
 	configure.ac \
