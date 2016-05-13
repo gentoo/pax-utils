@@ -162,6 +162,7 @@ basedir=${base%%/*}
 exec \
   "${basedir}/%(interp)s" \
   --library-path "%(libpaths)s" \
+  --inhibit-cache \
   --inhibit-rpath '' \
   "${base}.elf" \
   "$@"
