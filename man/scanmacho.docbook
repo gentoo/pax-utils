@@ -7,12 +7,12 @@
  <refmiscinfo class='source'>&project;</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv>
  <refname>scanmacho</refname>
  <refpurpose>user-space utility to scan Mach-O files</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv>
  <cmdsynopsis>
   <command>scanmacho</command>
   <arg choice='opt'>
@@ -26,7 +26,7 @@
  </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'>
+<refsect1>
  <title>DESCRIPTION</title>
  <para>
   <command>scanmacho</command> is a user-space utility to quickly scan given
@@ -42,7 +42,7 @@
  </para>
 </refsect1>
 
-<refsect1 id='options'>
+<refsect1>
  <title>OPTIONS</title>
  <variablelist>
   <varlistentry>
@@ -153,7 +153,7 @@
  </variablelist>
 </refsect1>
 
-<refsect1 id='format'>
+<refsect1>
  <title>FORMAT</title>
  <para>
   The format string is much like a printf string in that it is a literal string

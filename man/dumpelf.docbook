@@ -7,12 +7,12 @@
  <refmiscinfo class='source'>&project;</refmiscinfo>
 </refmeta>
 
-<refnamediv id='name'>
+<refnamediv>
  <refname>dumpelf</refname>
  <refpurpose>dump internal ELF structure</refpurpose>
 </refnamediv>
 
-<refsynopsisdiv id='synopsis'>
+<refsynopsisdiv>
  <cmdsynopsis>
   <command>dumpelf</command>
   <arg choice='opt'>
@@ -24,7 +24,7 @@
  </cmdsynopsis>
 </refsynopsisdiv>
 
-<refsect1 id='description'>
+<refsect1>
  <title>DESCRIPTION</title>
  <para>
   <command>dumpelf</command> is a user-space utility to dump all of the internal
@@ -33,7 +33,7 @@
  </para>
 </refsect1>
 
-<refsect1 id='options'>
+<refsect1>
  <title>OPTIONS</title>
  <variablelist>
   <varlistentry>
