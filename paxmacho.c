@@ -164,6 +164,7 @@ inline static uint32_t read_mach_header(fatobj *fobj, void *addr)
 	switch (mhdr->magic) {
 		case MH_CIGAM:
 			fobj->swapped = 1;
+			/* fall through */
 		case MH_MAGIC:
 			/* 32-bits */
 			fobj->ismach64 = 0;
@@ -172,6 +173,7 @@ inline static uint32_t read_mach_header(fatobj *fobj, void *addr)
 			return mhdr->magic;
 		case MH_CIGAM_64:
 			fobj->swapped = 1;
+			/* fall through */
 		case MH_MAGIC_64:
 			/* 64-bits */
 			fobj->ismach64 = 1;
