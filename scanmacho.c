@@ -415,7 +415,8 @@ static int scanmacho_file(const char *filename, const struct stat *st_cache)
 	if (S_ISLNK(st->st_mode)) {
 		if (!scan_symlink)
 			return 1;
-		stat(filename, &symlink_st);
+		if (stat(filename, &symlink_st))
+			return 1;
 		st = &symlink_st;
 	}
 
