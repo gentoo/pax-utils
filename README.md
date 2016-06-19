@@ -5,7 +5,7 @@
 | HOMEPAGE | https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities   |
 | GIT      | git clone git://anongit.gentoo.org/proj/pax-utils.git |
 | VIEWVCS  | https://gitweb.gentoo.org/proj/pax-utils.git/         |
-| STATUS   | [![Build Status](https://travis-ci.org/gentoo/pax-utils.svg?branch=master)](https://travis-ci.org/gentoo/pax-utils) |
+| STATUS   | [![Build Status](https://travis-ci.org/gentoo/pax-utils.svg?branch=master)](https://travis-ci.org/gentoo/pax-utils) [![Coverity Status](https://scan.coverity.com/projects/9213/badge.svg)](https://scan.coverity.com/projects/gentoo-pax-utils) |
 
 pax-utils is a small set of utilities for peforming Q/A (mostly security)
 checks on systems (most notably, `scanelf`).  It is focused on the ELF

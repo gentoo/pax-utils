@@ -2,6 +2,27 @@
 
 . "${0%/*}"/lib.sh
 
+# We have to do this by hand rather than use the coverity addon because of
+# matrix explosion: https://github.com/travis-ci/travis-ci/issues/1975
+coverity_scan() {
+	local reason
+	[[ ${TRAVIS_JOB_NUMBER} != *.1 ]] && reason="not first build job"
+	[[ -n ${TRAVIS_TAG} ]] && reason="git tag"
+	[[ ${TRAVIS_PULL_REQUEST} == "true" ]] && reason="pull request"
+	if [[ -n ${reason} ]] ; then
+		echo "Skipping coverity scan due to: ${reason}"
+		return
+	fi
+
+	export COVERITY_SCAN_PROJECT_NAME="${TRAVIS_REPO_SLUG}"
+	export COVERITY_SCAN_NOTIFICATION_EMAIL="vapier@gentoo.org"
+	export COVERITY_SCAN_BUILD_COMMAND="make -j${ncpus}"
+	export COVERITY_SCAN_BUILD_COMMAND_PREPEND="git clean -q -x -d -f; git checkout -f"
+	export COVERITY_SCAN_BRANCH_PATTERN="master"
+
+	curl -s "https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh" | bash || :
+}
+
 main() {
 	if [[ ${TRAVIS_OS_NAME} == "osx" ]] ; then
 		# Note: Linux deps are maintained in .travis.yml.
@@ -44,5 +65,9 @@ main() {
 		v ./configure
 		m V=1
 	fi
+
+	# Do scans last as they like to dirty the tree and some tests
+	# expect a clean tree (like code style checks).
+	v --fold="coverity_scan" coverity_scan
 }
 main "$@"
