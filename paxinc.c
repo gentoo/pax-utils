@@ -109,9 +109,10 @@ close_and_ret:
 			if (read(ar->fd, ret.buf.formatted.name, len) != len)
 				goto close_and_ret;
 		} else {
-			s = alloca(sizeof(char) * len);
+			s = alloca(sizeof(char) * len + 1);
 			if (read(ar->fd, s, len) != len)
 				goto close_and_ret;
+			s[len] = '\0';
 		}
 	} else if (s[0] == '/' && s[1] >= '0' && s[1] <= '9') {
 		/* GNU extended filename */
