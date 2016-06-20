@@ -2350,6 +2350,8 @@ static int parseargs(int argc, char *argv[])
 		case 'I': show_osabi = 1; break;
 		case 'Y': show_eabi = 1; break;
 		case 128:
+			if (root_fd != AT_FDCWD)
+				close(root_fd);
 			root_fd = open(optarg, O_RDONLY|O_CLOEXEC);
 			if (root_fd == -1)
 				err("Could not open root: %s", optarg);
