@@ -189,16 +189,12 @@ inline static uint32_t read_mach_header(fatobj *fobj, void *addr)
  * arch. */
 fatobj *readmacho(const char *filename)
 {
-	struct stat st;
 	int fd;
-
-	if (stat(filename, &st) == -1)
-		return NULL;
 
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return NULL;
 
-	return readmacho_fd(filename, fd, st.st_size);
+	return readmacho_fd(filename, fd, 0);
 }
 
 fatobj *readmacho_fd(const char *filename, int fd, size_t len)
