@@ -83,6 +83,10 @@
 #ifdef __SANITIZE_ADDRESS__
 # define PAX_UTILS_CLEANUP 1
 #endif
+/* Coverity catches some things we leak on purpose. */
+#ifdef __COVERITY__
+# define PAX_UTILS_CLEANUP 1
+#endif
 #ifndef PAX_UTILS_CLEANUP
 # define PAX_UTILS_CLEANUP 0
 #endif

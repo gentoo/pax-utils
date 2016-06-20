@@ -2569,6 +2569,9 @@ static void cleanup(void)
 	free(qa_textrels);
 	free(qa_execstack);
 	free(qa_wx_load);
+
+	if (root_fd != AT_FDCWD)
+		close(root_fd);
 }
 
 int main(int argc, char *argv[])
