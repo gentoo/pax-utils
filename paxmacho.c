@@ -247,7 +247,7 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 
 	/* make sure we have enough bytes to scan */
 	if (ret->len <= sizeof(struct fat_header))
-		return NULL;
+		goto fail;
 
 	fhdr = ret->data;
 	/* Check what kind of file this is.  Unfortunately we don't have
@@ -276,14 +276,14 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 		 * beware of corrupt files and Java bytecode which shares
 		 * the same magic with us :( */
 		if (sizeof(struct fat_arch) * narchs > bufleft)
-			return NULL;
+			goto fail;
 
 		for (i = 1; i <= narchs; i++) {
 			farch = (struct fat_arch *)dptr;
 			offset = MGET(swapped, farch->offset);
 			if (offset + sizeof(struct mach_header) >= bufleft ||
 					read_mach_header(fobj, ret->data + offset) == 0)
-				return NULL;
+				goto fail;
 			if (i < narchs) {
 				fobj = fobj->next = xzalloc(sizeof(*fobj));
 				/* filename and size are necessary for printing */
@@ -300,11 +300,15 @@ fatobj *readmacho_buffer(const char *filename, char *buffer, size_t buffer_len)
 		/* simple Mach-O file, treat as single arch FAT file */
 		if (ret->len < sizeof(struct mach_header) ||
 				read_mach_header(ret, ret->data) == 0)
-			return NULL;
+			goto fail;
 		ret->next = NULL;
 	}
 
 	return ret;
+
+ fail:
+	free(ret);
+	return NULL;
 }
 
 /* undo the readmacho() stuff */
