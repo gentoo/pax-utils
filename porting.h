@@ -221,6 +221,9 @@
 #ifndef O_CLOEXEC
 # define O_CLOEXEC 0
 #endif
+#ifndef O_PATH
+# define O_PATH 0
+#endif
 
 #define __unused__ __attribute__((__unused__))
 
