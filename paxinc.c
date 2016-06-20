@@ -123,6 +123,7 @@ close_and_ret:
 	}
 
 	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);
+	ret.name[sizeof(ret.name) - 1] = '\0';
 	if ((s=strchr(ret.name+strlen(ar->filename), '/')) != NULL)
 		*s = '\0';
 	ret.date = atoi(ret.buf.formatted.date);
