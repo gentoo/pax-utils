@@ -88,6 +88,8 @@ static char *get_proc_name_cmdline(int pfd)
 		fclose(fp);
 		return NULL;
 	}
+	fclose(fp);
+
 	return (str);
 }
 
