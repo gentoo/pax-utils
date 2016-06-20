@@ -629,18 +629,18 @@ elfobj *_readelf(const char *filename, int read_only)
 	struct stat st;
 	int fd;
 
-	if (stat(filename, &st) == -1)
-		return NULL;
-
 	if ((fd = open(filename, (read_only ? O_RDONLY : O_RDWR))) == -1)
 		return NULL;
 
-	/* make sure we have enough bytes to scan e_ident */
-	if (st.st_size <= EI_NIDENT) {
-close_fd_and_return:
+	if (fstat(fd, &st) == -1) {
+ close_fd_and_return:
 		close(fd);
 		return NULL;
 	}
+
+	/* make sure we have enough bytes to scan e_ident */
+	if (st.st_size <= EI_NIDENT)
+		goto close_fd_and_return;
 
 	ret = readelf_fd(filename, fd, st.st_size);
 	if (ret == NULL)
