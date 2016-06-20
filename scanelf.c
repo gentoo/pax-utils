@@ -2272,7 +2272,8 @@ static int parseargs(int argc, char *argv[])
 			xarraypush_str(find_lib_arr, optarg);
 			break;
 		case 'F': {
-			if (out_format) warn("You prob don't want to specify -F twice");
+			if (out_format)
+				free(out_format);
 			if (PAX_UTILS_CLEANUP)
 				out_format = xstrdup(optarg);
 			else
