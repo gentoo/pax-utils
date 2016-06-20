@@ -391,7 +391,7 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 			*found_pax = 1;
 			return (be_wewy_wewy_quiet ? NULL : paxflags);
 		}
-		strncpy(ret, paxflags, sizeof(ret));
+		strcpy(ret, paxflags);
 	}
 
 	if (be_wewy_wewy_quiet || (be_quiet && !shown))
