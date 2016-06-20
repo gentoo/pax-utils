@@ -40,20 +40,47 @@ static pid_t show_pid = 0;
 static uid_t show_uid = (uid_t)-1;
 static gid_t show_gid = (gid_t)-1;
 
-static FILE *proc_fopen(pid_t pid, const char *file)
+static int proc_open(int pfd, const char *file)
 {
-	char path[__PAX_UTILS_PATH_MAX];
-	snprintf(path, sizeof(path), PROC_DIR "/%u/%s", pid, file);
-	path[sizeof(path) - 1] = '\0';
-	return fopen(path, "r");
+	return openat(pfd, file, O_RDONLY|O_CLOEXEC);
 }
 
-static char *get_proc_name_cmdline(pid_t pid)
+static FILE *proc_fopen(int pfd, const char *file)
+{
+	int fd;
+	FILE *fp;
+
+	fd = proc_open(pfd, file);
+	if (fd == -1)
+		return NULL;
+
+	fp = fdopen(fd, "re");
+	if (fp == NULL)
+		close(fd);
+
+	return fp;
+}
+
+static elfobj *proc_readelf(int pfd)
+{
+	int fd;
+	elfobj *elf;
+
+	fd = proc_open(pfd, "exe");
+	if (fd == -1)
+		return NULL;
+
+	elf = readelf_fd("proc/exe", fd, 0);
+	close(fd);
+	return elf;
+}
+
+static char *get_proc_name_cmdline(int pfd)
 {
 	FILE *fp;
 	static char str[1024];
 
-	fp = proc_fopen(pid, "cmdline");
+	fp = proc_fopen(pfd, "cmdline");
 	if (fp == NULL)
 		return NULL;
 
@@ -64,15 +91,15 @@ static char *get_proc_name_cmdline(pid_t pid)
 	return (str);
 }
 
-static char *get_proc_name(pid_t pid)
+static char *get_proc_name(int pfd)
 {
 	FILE *fp;
 	static char str[BUFSIZ];
 
 	if (wide_output)
-		return get_proc_name_cmdline(pid);
+		return get_proc_name_cmdline(pfd);
 
-	fp = proc_fopen(pid, "stat");
+	fp = proc_fopen(pfd, "stat");
 	if (fp == NULL)
 		return NULL;
 
@@ -90,12 +117,12 @@ static char *get_proc_name(pid_t pid)
 	return (str+1);
 }
 
-static int get_proc_maps(pid_t pid)
+static int get_proc_maps(int pfd)
 {
 	FILE *fp;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "maps")) == NULL)
+	if ((fp = proc_fopen(pfd, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -126,12 +153,12 @@ static int get_proc_maps(pid_t pid)
 	return 0;
 }
 
-static int print_executable_mappings(pid_t pid)
+static int print_executable_mappings(int pfd)
 {
 	FILE *fp;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "maps")) == NULL)
+	if ((fp = proc_fopen(pfd, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -169,28 +196,24 @@ static int print_executable_mappings(pid_t pid)
 # define NOTE_TO_SELF
 #endif
 
-static struct passwd *get_proc_passwd(pid_t pid)
+static struct passwd *get_proc_passwd(int pfd)
 {
 	struct stat st;
-	struct passwd *pwd;
-	char path[__PAX_UTILS_PATH_MAX];
+	struct passwd *pwd = NULL;
 
-	snprintf(path, sizeof(path), PROC_DIR "/%u/stat", pid);
+	if (fstatat(pfd, "stat", &st, AT_SYMLINK_NOFOLLOW) != -1)
+		pwd = getpwuid(st.st_uid);
 
-	if (stat(path, &st) != -1)
-		if ((pwd = getpwuid(st.st_uid)) != NULL)
-			return pwd;
-
-	return NULL;
+	return pwd;
 }
 
-static char *get_proc_status(pid_t pid, const char *name)
+static char *get_proc_status(int pfd, const char *name)
 {
 	FILE *fp;
 	size_t len;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "status")) == NULL)
+	if ((fp = proc_fopen(pfd, "status")) == NULL)
 		return NULL;
 
 	len = strlen(name);
@@ -208,13 +231,13 @@ static char *get_proc_status(pid_t pid, const char *name)
 	return NULL;
 }
 
-static char *get_pid_attr(pid_t pid)
+static char *get_pid_attr(int pfd)
 {
 	FILE *fp;
 	char *p;
 	static char buf[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "attr/current")) == NULL)
+	if ((fp = proc_fopen(pfd, "attr/current")) == NULL)
 		return NULL;
 
 	if (fgets(buf, sizeof(buf), fp) != NULL)
@@ -225,13 +248,13 @@ static char *get_pid_attr(pid_t pid)
 	return buf;
 }
 
-static char *get_pid_addr(pid_t pid)
+static char *get_pid_addr(int pfd)
 {
 	FILE *fp;
 	char *p;
 	static char buf[BUFSIZ];
 
-	if ((fp = proc_fopen(pid, "ipaddr")) == NULL)
+	if ((fp = proc_fopen(pfd, "ipaddr")) == NULL)
 		return NULL;
 
 	if (fgets(buf, sizeof(buf), fp) != NULL)
@@ -242,15 +265,15 @@ static char *get_pid_addr(pid_t pid)
 	return buf;
 }
 
-static const char *get_proc_type(pid_t pid)
+static const char *get_proc_type(int pfd)
 {
-	char fname[32];
 	elfobj *elf;
 	const char *ret;
 
-	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
-	if ((elf = readelf(fname)) == NULL)
+	elf = proc_readelf(pfd);
+	if (elf == NULL)
 		return NULL;
+
 	ret = get_elfetype(elf);
 	unreadelf(elf);
 	return ret;
@@ -290,15 +313,15 @@ static char *scanelf_file_phdr(elfobj *elf)
 	return ret;
 }
 /* we scan the elf file two times when the -e flag is given. But we don't need -e very often so big deal */
-static const char *get_proc_phdr(pid_t pid)
+static const char *get_proc_phdr(int pfd)
 {
-	char fname[32];
 	elfobj *elf;
 	const char *ret;
 
-	snprintf(fname, sizeof(fname), PROC_DIR "/%u/exe", pid);
-	if ((elf = readelf(fname)) == NULL)
+	elf = proc_readelf(pfd);
+	if (elf == NULL)
 		return NULL;
+
 	ret = scanelf_file_phdr(elf);
 	unreadelf(elf);
 	return ret;
@@ -312,9 +335,9 @@ static void pspax(const char *find_name)
 	pid_t ppid = show_pid;
 	int have_attr, have_addr, wx;
 	struct passwd *pwd;
-	struct stat st;
 	const char *pax, *type, *name, *attr, *addr;
 	char *caps;
+	int pfd;
 	WRAP_SYSCAP(ssize_t length; cap_t cap_d;)
 
 	WRAP_SYSCAP(cap_d = cap_init());
@@ -339,76 +362,81 @@ static void pspax(const char *find_name)
 			have_addr ? "IPADDR" : "", show_phdr ? "STACK LOAD" : "");
 
 	while ((de = readdir(dir))) {
-		errno = 0;
-		stat(de->d_name, &st);
-		if ((errno != ENOENT) && (errno != EACCES)) {
-			pid = (pid_t) atoi((char *) basename((char *) de->d_name));
-			if (find_name && pid) {
-				char *str = get_proc_name(pid);
-				if (!str)
-					continue;
-				if (strcmp(str, find_name) != 0)
-					pid = 0;
-			}
-			if (((ppid > 0) && (pid != ppid)) || !pid)
-				continue;
-
-			wx = get_proc_maps(pid);
-
-			if (noexec != writeexec) {
-				if ((wx == 1) && (writeexec != wx))
-					goto next_pid;
-
-				if ((wx == 0) && writeexec)
-					goto next_pid;
-			}
-
-			pwd  = get_proc_passwd(pid);
-			pax  = get_proc_status(pid, "PAX");
-			type = get_proc_type(pid);
-			name = get_proc_name(pid);
-			attr = (have_attr ? get_pid_attr(pid) : NULL);
-			addr = (have_addr ? get_pid_addr(pid) : NULL);
-
-			if (pwd) {
-				if (show_uid != (uid_t)-1)
-					if (pwd->pw_uid != show_uid)
-						continue;
-
-				if (show_gid != (gid_t)-1)
-					if (pwd->pw_gid != show_gid)
-						continue;
-			}
-
-			/* this is a non-POSIX function */
-			caps = NULL;
-			WRAP_SYSCAP(capgetp(pid, cap_d));
-			WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
-
-			if (pwd && strlen(pwd->pw_name) >= 8)
-				pwd->pw_name[8] = 0;
-
-			if (show_all || type) {
-				printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s %s\n",
-				       pwd  ? pwd->pw_name : "--------",
-				       pid,
-				       pax  ? pax  : "---",
-				       (wx == 1) ? "w|x" : (wx == -1) ? "---" : "w^x",
-				       type ? type : "-------",
-				       name ? name : "-----",
-				       caps ? caps : " = ",
-				       attr ? attr : "",
-				       addr ? addr : "",
-				       show_phdr ? get_proc_phdr(pid) : "");
-				if (verbose && wx)
-					print_executable_mappings(pid);
-			}
-
-			WRAP_SYSCAP(if (caps) cap_free(caps));
-
-		next_pid:
+		/* Check the name first if it's an int as it's faster. */
+		pid = atoi(de->d_name);
+		if (pid == 0)
 			continue;
+
+		/* Get an open handle so the kernel won't reap on us later. */
+		pfd = open(de->d_name, O_RDONLY|O_CLOEXEC|O_PATH|O_DIRECTORY);
+		if (pfd == -1)
+			continue;
+
+		if (find_name && pid) {
+			char *str = get_proc_name(pfd);
+			if (!str)
+				goto next_pid;
+			if (strcmp(str, find_name) != 0)
+				pid = 0;
 		}
+		if (ppid > 0 && pid != ppid)
+			goto next_pid;
+
+		wx = get_proc_maps(pfd);
+
+		if (noexec != writeexec) {
+			if (wx == 1 && writeexec != wx)
+				goto next_pid;
+
+			if (wx == 0 && writeexec)
+				goto next_pid;
+		}
+
+		pwd  = get_proc_passwd(pfd);
+		pax  = get_proc_status(pfd, "PAX");
+		type = get_proc_type(pfd);
+		name = get_proc_name(pfd);
+		attr = (have_attr ? get_pid_attr(pfd) : NULL);
+		addr = (have_addr ? get_pid_addr(pfd) : NULL);
+
+		if (pwd) {
+			if (show_uid != (uid_t)-1)
+				if (pwd->pw_uid != show_uid)
+					goto next_pid;
+
+			if (show_gid != (gid_t)-1)
+				if (pwd->pw_gid != show_gid)
+					goto next_pid;
+		}
+
+		/* this is a non-POSIX function */
+		caps = NULL;
+		WRAP_SYSCAP(capgetp(pfd, cap_d));
+		WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
+
+		if (pwd && strlen(pwd->pw_name) >= 8)
+			pwd->pw_name[8] = 0;
+
+		if (show_all || type) {
+			printf("%-8s %-6d %-6s %-4s %-10s %-16s %-4s %s %s %s\n",
+			       pwd  ? pwd->pw_name : "--------",
+			       pid,
+			       pax  ? pax  : "---",
+			       (wx == 1) ? "w|x" : (wx == -1) ? "---" : "w^x",
+			       type ? type : "-------",
+			       name ? name : "-----",
+			       caps ? caps : " = ",
+			       attr ? attr : "",
+			       addr ? addr : "",
+			       show_phdr ? get_proc_phdr(pfd) : "");
+			if (verbose && wx)
+				print_executable_mappings(pfd);
+		}
+
+		WRAP_SYSCAP(if (caps) cap_free(caps));
+
+ next_pid:
+		close(pfd);
 	}
 	closedir(dir);
 }
