@@ -4,6 +4,8 @@
 
 # We have to do this by hand rather than use the coverity addon because of
 # matrix explosion: https://github.com/travis-ci/travis-ci/issues/1975
+# We also do it by hand because when we're throttled, the addon will exit
+# the build immediately and skip the main script!
 coverity_scan() {
 	local reason
 	[[ ${TRAVIS_JOB_NUMBER} != *.1 ]] && reason="not first build job"
