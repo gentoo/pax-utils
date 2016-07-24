@@ -123,4 +123,9 @@ extern const char argv0[];
 #define errf(fmt, args...) _err(warnf, fmt, ## args)
 #define errp(fmt, args...) _err(warnp, fmt , ## args)
 
+/* File system helper functions. */
+extern int root_fd;
+FILE *fopenat_r(int dir_fd, const char *path);
+const char *root_rel_path(const char *path);
+
 #endif /* _PAX_INC_H */

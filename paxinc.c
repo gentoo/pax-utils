@@ -167,3 +167,34 @@ void color_init(bool disable)
 	if (disable)
 		NORM = RED = YELLOW = "";
 }
+
+/* File system helpers. */
+int root_fd = AT_FDCWD;
+
+FILE *fopenat_r(int dir_fd, const char *path)
+{
+	int fd = openat(dir_fd, path, O_RDONLY|O_CLOEXEC);
+	if (fd == -1)
+		return NULL;
+	return fdopen(fd, "re");
+}
+
+const char *root_rel_path(const char *path)
+{
+	/*
+	 * openat() will ignore the dirfd if path starts with
+	 * a /, so consume all of that noise
+	 *
+	 * XXX: we don't handle relative paths like ../ that
+	 * break out of the --root option, but for now, just
+	 * don't do that :P.
+	 */
+	if (root_fd != AT_FDCWD) {
+		while (*path == '/')
+			++path;
+		if (*path == '\0')
+			path = ".";
+	}
+
+	return path;
+}
