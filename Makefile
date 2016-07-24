@@ -66,7 +66,7 @@ override CPPFLAGS  += -DVCSID='"$(VCSID)"'
 
 ####################################################################
 ELF_TARGETS  = scanelf dumpelf $(shell echo | $(CC) -dM -E - | grep -q __svr4__ || echo pspax)
-ELF_OBJS     = paxelf.o
+ELF_OBJS     = paxelf.o paxldso.o
 MACH_TARGETS = scanmacho
 MACH_OBJS    = paxmacho.o
 COMMON_OBJS  = paxinc.o security.o xfuncs.o

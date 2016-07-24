@@ -31,6 +31,7 @@
 /* ELF love */
 #include "elf.h"
 #include "paxelf.h"
+#include "paxldso.h"
 
 /* Mach-O love */
 #include "macho.h"

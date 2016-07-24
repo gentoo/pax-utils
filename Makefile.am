@@ -11,6 +11,7 @@ libpaxutils_la_LDFLAGS = -no-undefined
 libpaxutils_la_SOURCES = \
 	paxelf.c \
 	paxinc.c \
+	paxldso.c \
 	paxmacho.c \
 	security.c \
 	xfuncs.c
@@ -81,6 +82,8 @@ EXTRA_DIST += \
 	paxelf.h \
 	paxinc.c \
 	paxinc.h \
+	paxldso.c \
+	paxldso.h \
 	paxmacho.c \
 	paxmacho.h \
 	porting.h \
