@@ -17,6 +17,9 @@
 static void *ldcache = NULL;
 static size_t ldcache_size = 0;
 
+static char *ldso_cache_buf = NULL;
+static size_t ldso_cache_buf_size = 0;
+
 /* Defines can be seen in glibc's sysdeps/generic/ldconfig.h */
 #define LDSO_CACHE_MAGIC "ld.so-"
 #define LDSO_CACHE_MAGIC_LEN (sizeof LDSO_CACHE_MAGIC -1)
@@ -45,8 +48,8 @@ static size_t ldcache_size = 0;
 char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 {
 	int fd;
+	char *ret = NULL;
 	char *strs;
-	static char buf[__PAX_UTILS_PATH_MAX] = "";
 	const char *cachefile = root_rel_path("/etc/ld.so.cache");
 	struct stat st;
 
@@ -92,6 +95,9 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 			ldcache = NULL;
 			return NULL;
 		}
+
+		ldso_cache_buf_size = 4096;
+		ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size);
 	} else
 		header = ldcache;
 
@@ -99,6 +105,9 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 	strs = (char *) &libent[header->nlibs];
 
 	for (fd = 0; fd < header->nlibs; ++fd) {
+		const char *lib;
+		size_t lib_len;
+
 		/* This should be more fine grained, but for now we assume that
 		 * diff arches will not be cached together, and we ignore the
 		 * the different multilib mips cases.
@@ -112,17 +121,26 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 			continue;
 
 		/* Return first hit because that is how the ldso rolls */
-		strncpy(buf, strs + libent[fd].liboffset, sizeof(buf));
+		lib = strs + libent[fd].liboffset;
+		lib_len = strlen(lib) + 1;
+		if (lib_len > ldso_cache_buf_size) {
+			ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size + 4096);
+			ldso_cache_buf_size += 4096;
+		}
+		memcpy(ldso_cache_buf, lib, lib_len);
+		ret = ldso_cache_buf;
 		break;
 	}
 
-	return buf;
+	return ret;
 }
 
 #endif
 
 static void ldso_cache_cleanup(void)
 {
+	free(ldso_cache_buf);
+
 	if (ldcache != NULL)
 		munmap(ldcache, ldcache_size);
 }
