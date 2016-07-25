@@ -119,34 +119,6 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 	return buf;
 }
 
-#elif defined(__NetBSD__)
-
-char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
-{
-	static char buf[__PAX_UTILS_PATH_MAX] = "";
-	static struct stat st;
-	size_t n;
-	char *ldpath;
-
-	array_for_each(ldpath, n, ldpath) {
-		if ((unsigned) snprintf(buf, sizeof(buf), "%s/%s", ldpath, fname) >= sizeof(buf))
-			continue; /* if the pathname is too long, or something went wrong, ignore */
-
-		if (stat(buf, &st) != 0)
-			continue; /* if the lib doesn't exist in *ldpath, look further */
-
-		/* NetBSD doesn't actually do sanity checks, it just loads the file
-		 * and if that doesn't work, continues looking in other directories.
-		 * This cannot easily be safely emulated, unfortunately. For now,
-		 * just assume that if it exists, it's a valid library. */
-
-		return buf;
-	}
-
-	/* not found in any path */
-	return NULL;
-}
-
 #endif
 
 static void ldso_cache_cleanup(void)

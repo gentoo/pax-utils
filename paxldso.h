@@ -14,8 +14,7 @@
  */
 
 #if !defined(__GLIBC__) && \
-    !defined(__UCLIBC__) && \
-    !defined(__NetBSD__)
+    !defined(__UCLIBC__)
 # ifdef __ELF__
 #  warning Cache support not implemented for your target
 # endif
