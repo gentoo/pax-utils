@@ -47,23 +47,21 @@ static size_t ldso_cache_buf_size = 0;
 
 char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 {
-	int fd;
+	unsigned int nlib;
 	char *ret = NULL;
 	char *strs;
-	const char *cachefile = root_rel_path("/etc/ld.so.cache");
-	struct stat st;
 
 	typedef struct {
 		char magic[LDSO_CACHE_MAGIC_LEN];
 		char version[LDSO_CACHE_VER_LEN];
-		int nlibs;
+		unsigned int nlibs;
 	} header_t;
 	header_t *header;
 
 	typedef struct {
 		int flags;
-		int sooffset;
-		int liboffset;
+		unsigned int sooffset;
+		unsigned int liboffset;
 	} libentry_t;
 	libentry_t *libent;
 
@@ -71,6 +69,10 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 		return NULL;
 
 	if (ldcache == NULL) {
+		int fd;
+		const char *cachefile = root_rel_path("/etc/ld.so.cache");
+		struct stat st;
+
 		if (fstatat(root_fd, cachefile, &st, 0))
 			return NULL;
 
@@ -104,7 +106,7 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 	libent = ldcache + sizeof(header_t);
 	strs = (char *) &libent[header->nlibs];
 
-	for (fd = 0; fd < header->nlibs; ++fd) {
+	for (nlib = 0; nlib < header->nlibs; ++nlib) {
 		const char *lib;
 		size_t lib_len;
 
@@ -112,16 +114,16 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 		 * diff arches will not be cached together, and we ignore the
 		 * the different multilib mips cases.
 		 */
-		if (elf->elf_class == ELFCLASS64 && !(libent[fd].flags & FLAG_REQUIRED_MASK))
+		if (elf->elf_class == ELFCLASS64 && !(libent[nlib].flags & FLAG_REQUIRED_MASK))
 			continue;
-		if (elf->elf_class == ELFCLASS32 && (libent[fd].flags & FLAG_REQUIRED_MASK))
+		if (elf->elf_class == ELFCLASS32 && (libent[nlib].flags & FLAG_REQUIRED_MASK))
 			continue;
 
-		if (strcmp(fname, strs + libent[fd].sooffset) != 0)
+		if (strcmp(fname, strs + libent[nlib].sooffset) != 0)
 			continue;
 
 		/* Return first hit because that is how the ldso rolls */
-		lib = strs + libent[fd].liboffset;
+		lib = strs + libent[nlib].liboffset;
 		lib_len = strlen(lib) + 1;
 		if (lib_len > ldso_cache_buf_size) {
 			ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size + 4096);
