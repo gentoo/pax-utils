@@ -20,30 +20,121 @@ static size_t ldcache_size = 0;
 static char *ldso_cache_buf = NULL;
 static size_t ldso_cache_buf_size = 0;
 
-/* Defines can be seen in glibc's sysdeps/generic/ldconfig.h */
-#define LDSO_CACHE_MAGIC "ld.so-"
-#define LDSO_CACHE_MAGIC_LEN (sizeof LDSO_CACHE_MAGIC -1)
-#define LDSO_CACHE_VER "1.7.0"
-#define LDSO_CACHE_VER_LEN (sizeof LDSO_CACHE_VER -1)
-#define FLAG_ANY            -1
-#define FLAG_TYPE_MASK      0x00ff
-#define FLAG_LIBC4          0x0000
-#define FLAG_ELF            0x0001
-#define FLAG_ELF_LIBC5      0x0002
-#define FLAG_ELF_LIBC6      0x0003
-#define FLAG_REQUIRED_MASK  0xff00
-#define FLAG_SPARC_LIB64    0x0100
-#define FLAG_IA64_LIB64     0x0200
-#define FLAG_X8664_LIB64    0x0300
-#define FLAG_S390_LIB64     0x0400
-#define FLAG_POWERPC_LIB64  0x0500
-#define FLAG_MIPS64_LIBN32  0x0600
-#define FLAG_MIPS64_LIBN64  0x0700
-#define FLAG_X8664_LIBX32   0x0800
-#define FLAG_ARM_LIBHF      0x0900
-#define FLAG_AARCH64_LIB64  0x0a00
-
 #if defined(__GLIBC__) || defined(__UCLIBC__)
+
+/* Defines can be seen in glibc's sysdeps/generic/ldconfig.h */
+#define LDSO_CACHE_MAGIC             "ld.so-"
+#define LDSO_CACHE_MAGIC_LEN         (sizeof LDSO_CACHE_MAGIC -1)
+#define LDSO_CACHE_VER               "1.7.0"
+#define LDSO_CACHE_VER_LEN           (sizeof LDSO_CACHE_VER -1)
+#define FLAG_ANY                     -1
+#define FLAG_TYPE_MASK               0x00ff
+#define FLAG_LIBC4                   0x0000
+#define FLAG_ELF                     0x0001
+#define FLAG_ELF_LIBC5               0x0002
+#define FLAG_ELF_LIBC6               0x0003
+#define FLAG_REQUIRED_MASK           0xff00
+#define FLAG_SPARC_LIB64             0x0100
+#define FLAG_IA64_LIB64              0x0200
+#define FLAG_X8664_LIB64             0x0300
+#define FLAG_S390_LIB64              0x0400
+#define FLAG_POWERPC_LIB64           0x0500
+#define FLAG_MIPS64_LIBN32           0x0600
+#define FLAG_MIPS64_LIBN64           0x0700
+#define FLAG_X8664_LIBX32            0x0800
+#define FLAG_ARM_LIBHF               0x0900
+#define FLAG_AARCH64_LIB64           0x0a00
+#define FLAG_ARM_LIBSF               0x0b00
+#define FLAG_MIPS_LIB32_NAN2008      0x0c00
+#define FLAG_MIPS64_LIBN32_NAN2008   0x0d00
+#define FLAG_MIPS64_LIBN64_NAN2008   0x0e00
+
+typedef struct {
+	int flags;
+	unsigned int sooffset;
+	unsigned int liboffset;
+} libentry_t;
+
+static bool is_compatible(elfobj *elf, libentry_t *libent)
+{
+	int flags = libent->flags & FLAG_REQUIRED_MASK;
+
+	/* We assume that ((flags & FLAG_TYPE_MASK) == FLAG_ELF_LIBC6)
+	 * since anything older is very very old and no one cares.
+	 *
+	 * Otherwise we really only need to check here for cases where
+	 * an arch has more than one ABI per bitsize (e.g. x86, x32, and
+	 * x86_64).  The default case should be fine otherwise.
+	 */
+
+	if (elf->elf_class == ELFCLASS32) {
+		Elf32_Ehdr *ehdr = EHDR32(elf->ehdr);
+
+		switch (EGET(ehdr->e_machine)) {
+		case EM_AARCH64:
+			break;
+		case EM_ARM:
+			if ((flags == FLAG_ARM_LIBHF && (ehdr->e_flags & EF_ARM_ABI_FLOAT_HARD)) ||
+			    (flags == FLAG_ARM_LIBSF && (ehdr->e_flags & EF_ARM_ABI_FLOAT_SOFT)) ||
+			    (flags == 0 && !(ehdr->e_flags & (EF_ARM_ABI_FLOAT_HARD | EF_ARM_ABI_FLOAT_SOFT))))
+				return true;
+			break;
+		case EM_IA_64:
+			break;
+		case EM_MIPS: {
+			int ef_flags = (ehdr->e_flags & (EF_MIPS_ABI2 | EF_MIPS_NAN2008));
+			if ((flags == 0 && ef_flags == 0) ||
+			    (flags == FLAG_MIPS64_LIBN32 && ef_flags == EF_MIPS_ABI2) ||
+			    (flags == FLAG_MIPS_LIB32_NAN2008 && ef_flags == EF_MIPS_NAN2008) ||
+			    (flags == FLAG_MIPS64_LIBN32_NAN2008 && ef_flags == (EF_MIPS_ABI2 | EF_MIPS_NAN2008)))
+				return true;
+			break;
+		}
+		case EM_X86_64:
+			if (flags == FLAG_X8664_LIBX32)
+				return true;
+			break;
+		default:
+			/* A sane enough default. */
+			if (flags == 0)
+				return true;
+			break;
+		}
+	} else {
+		Elf64_Ehdr *ehdr = EHDR64(elf->ehdr);
+
+		switch (EGET(ehdr->e_machine)) {
+		case EM_AARCH64:
+			if (flags == FLAG_AARCH64_LIB64)
+				return true;
+			break;
+		case EM_ARM:
+			break;
+		case EM_IA_64:
+			if (flags == FLAG_IA64_LIB64)
+				return true;
+			break;
+		case EM_MIPS: {
+			int ef_flags = (ehdr->e_flags & EF_MIPS_NAN2008);
+			if ((flags == FLAG_MIPS64_LIBN64 && ef_flags == 0) ||
+			    (flags == FLAG_MIPS64_LIBN64_NAN2008 && ef_flags == EF_MIPS_NAN2008))
+				return true;
+			break;
+		}
+		case EM_X86_64:
+			if (flags == FLAG_X8664_LIB64)
+				return true;
+			break;
+		default:
+			/* A sane enough default. */
+			if (flags != 0)
+				return true;
+			break;
+		}
+	}
+
+	return false;
+}
 
 char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 {
@@ -58,11 +149,6 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 	} header_t;
 	header_t *header;
 
-	typedef struct {
-		int flags;
-		unsigned int sooffset;
-		unsigned int liboffset;
-	} libentry_t;
 	libentry_t *libent;
 
 	if (fname == NULL)
@@ -110,13 +196,7 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 		const char *lib;
 		size_t lib_len;
 
-		/* This should be more fine grained, but for now we assume that
-		 * diff arches will not be cached together, and we ignore the
-		 * the different multilib mips cases.
-		 */
-		if (elf->elf_class == ELFCLASS64 && !(libent[nlib].flags & FLAG_REQUIRED_MASK))
-			continue;
-		if (elf->elf_class == ELFCLASS32 && (libent[nlib].flags & FLAG_REQUIRED_MASK))
+		if (!is_compatible(elf, &libent[nlib]))
 			continue;
 
 		if (strcmp(fname, strs + libent[nlib].sooffset) != 0)
