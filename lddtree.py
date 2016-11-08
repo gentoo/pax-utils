@@ -72,6 +72,8 @@ def dbg(debug, *args, **kwargs):
 
 def bstr(buf):
   """Decode the byte string into a string"""
+  if isinstance(buf, str):
+      return buf
   return buf.decode('utf-8')
 
 
