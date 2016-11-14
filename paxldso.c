@@ -362,8 +362,10 @@ static void ldso_config_cleanup(void)
 # define ldso_config_cleanup()
 #endif /* PAX_LDSO_CONFIG */
 
+#ifndef paxldso_cleanup
 void paxldso_cleanup(void)
 {
 	ldso_cache_cleanup();
 	ldso_config_cleanup();
 }
+#endif
