@@ -49,8 +49,9 @@ static inline char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 # define PAX_LDSO_CONFIG 1
 #endif
 
-#if PAX_LDSO_CONFIG
+/* Consumers refer to ldpaths directly, so can't hide its def. */
 extern array_t *ldpaths;
+#if PAX_LDSO_CONFIG
 extern int ldso_config_load(const char *fname);
 #else
 static inline int ldso_config_load(const char *fname)

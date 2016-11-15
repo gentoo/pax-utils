@@ -235,10 +235,10 @@ static void ldso_cache_cleanup(void)
  * ld.so.conf logic
  */
 
-#if PAX_LDSO_CONFIG
-
 static array_t _ldpaths = array_init_decl;
 array_t *ldpaths = &_ldpaths;
+
+#if PAX_LDSO_CONFIG
 
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 
