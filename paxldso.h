@@ -26,7 +26,7 @@
 #if PAX_LDSO_CACHE
 extern char *ldso_cache_lookup_lib(elfobj *elf, const char *fname);
 #else
-static inline char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
+static inline char *ldso_cache_lookup_lib(__unused__ elfobj *elf, __unused__ const char *fname)
 {
 	return NULL;
 }
@@ -54,7 +54,7 @@ extern array_t *ldpaths;
 #if PAX_LDSO_CONFIG
 extern int ldso_config_load(const char *fname);
 #else
-static inline int ldso_config_load(const char *fname)
+static inline int ldso_config_load(__unused__ const char *fname)
 {
 	return 0;
 }
