@@ -15,7 +15,7 @@ typedef struct {
 	void *phdr;
 	void *shdr;
 	void *_data;
-	union { void *ehdr, *vdata; char *data; };
+	union { void *ehdr, *vdata; char *data; uintptr_t udata; };
 	void *data_end;
 	char elf_class;
 	off_t len;

@@ -11,11 +11,11 @@ const char argv0[] = "dumpelf";
 #include "paxinc.h"
 
 /* prototypes */
-static void dumpelf(const char *filename, long file_cnt);
+static void dumpelf(const char *filename, size_t file_cnt);
 static void dump_ehdr(elfobj *elf, const void *ehdr);
-static void dump_phdr(elfobj *elf, const void *phdr, long phdr_cnt);
-static void dump_shdr(elfobj *elf, const void *shdr, long shdr_cnt, const char *name);
-static void dump_dyn(elfobj *elf, const void *dyn, long dyn_cnt);
+static void dump_phdr(elfobj *elf, const void *phdr, size_t phdr_cnt);
+static void dump_shdr(elfobj *elf, const void *shdr, size_t shdr_cnt, const char *name);
+static void dump_dyn(elfobj *elf, const void *dyn, size_t dyn_cnt);
 #if 0
 static void dump_sym(elfobj *elf, const void *sym);
 static void dump_rel(elfobj *elf, const void *rel);
@@ -31,10 +31,10 @@ static char be_verbose = 0;
 static const void *phdr_dynamic_void;
 
 /* dump all internal elf info */
-static void dumpelf(const char *filename, long file_cnt)
+static void dumpelf(const char *filename, size_t file_cnt)
 {
 	elfobj *elf;
-	unsigned long i, b;
+	size_t i, b;
 
 	/* verify this is real ELF */
 	if ((elf = readelf(filename)) == NULL)
@@ -48,9 +48,9 @@ static void dumpelf(const char *filename, long file_cnt)
 		"\n"
 		"/*\n"
 		" * ELF dump of '%s'\n"
-		" *     %li (0x%lX) bytes\n"
+		" *     %ji (0x%jX) bytes\n"
 		" */\n\n",
-		filename, (unsigned long)elf->len, (unsigned long)elf->len);
+		filename, elf->len, elf->len);
 
 	/* setup the struct to namespace this elf */
 #define MAKE_STRUCT(B) \
@@ -58,16 +58,16 @@ static void dumpelf(const char *filename, long file_cnt)
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	b = B; \
 	printf( \
-		"Elf%1$i_Dyn dumpedelf_dyn_%2$li[];\n" \
+		"Elf%1$i_Dyn dumpedelf_dyn_%2$zu[];\n" \
 		"struct {\n" \
 		"\tElf%1$i_Ehdr ehdr;\n" \
-		"\tElf%1$i_Phdr phdrs[%3$li];\n" \
-		"\tElf%1$i_Shdr shdrs[%4$li];\n" \
+		"\tElf%1$i_Phdr phdrs[%3$u];\n" \
+		"\tElf%1$i_Shdr shdrs[%4$u];\n" \
 		"\tElf%1$i_Dyn *dyns;\n" \
-		"} dumpedelf_%2$li = {\n\n", \
+		"} dumpedelf_%2$zu = {\n\n", \
 		B, file_cnt, \
-		(long)EGET(ehdr->e_phnum), \
-		(long)EGET(ehdr->e_shnum) \
+		(uint16_t)EGET(ehdr->e_phnum), \
+		(uint16_t)EGET(ehdr->e_shnum) \
 	); \
 	}
 	MAKE_STRUCT(32)
@@ -123,11 +123,11 @@ static void dumpelf(const char *filename, long file_cnt)
 	printf("},\n");
 
 	/* finish the namespace struct and start the abitrary ones */
-	printf("\n.dyns = dumpedelf_dyn_%li,\n", file_cnt);
+	printf("\n.dyns = dumpedelf_dyn_%zu,\n", file_cnt);
 	printf("};\n");
 
 	/* start the arbitrary structs */
-	printf("Elf%lu_Dyn dumpedelf_dyn_%li[] = {\n", b, file_cnt);
+	printf("Elf%zu_Dyn dumpedelf_dyn_%zu[] = {\n", b, file_cnt);
 	if (phdr_dynamic_void) {
 #define DUMP_DYNS(B) \
 		if (elf->elf_class == ELFCLASS ## B) { \
@@ -161,42 +161,42 @@ static void dump_ehdr(elfobj *elf, const void *ehdr_void)
 	printf(".ehdr = {\n"); \
 	printf("\t.e_ident = { /* (EI_NIDENT bytes) */\n" \
 	       "\t\t/* [%i] EI_MAG:        */ 0x%X,'%c','%c','%c',\n" \
-	       "\t\t/* [%i] EI_CLASS:      */ %i , /* (%s) */\n" \
-	       "\t\t/* [%i] EI_DATA:       */ %i , /* (%s) */\n" \
-	       "\t\t/* [%i] EI_VERSION:    */ %i , /* (%s) */\n" \
-	       "\t\t/* [%i] EI_OSABI:      */ %i , /* (%s) */\n" \
-	       "\t\t/* [%i] EI_ABIVERSION: */ %i ,\n" \
+	       "\t\t/* [%i] EI_CLASS:      */ %u , /* (%s) */\n" \
+	       "\t\t/* [%i] EI_DATA:       */ %u , /* (%s) */\n" \
+	       "\t\t/* [%i] EI_VERSION:    */ %u , /* (%s) */\n" \
+	       "\t\t/* [%i] EI_OSABI:      */ %u , /* (%s) */\n" \
+	       "\t\t/* [%i] EI_ABIVERSION: */ %u ,\n" \
 	       "\t\t/* [%i-%i] EI_PAD:     */ 0x%X, 0x%X, 0x%X, 0x%X, 0x%X, 0x%X, 0x%X,\n" \
 	       "\t},\n", \
-	       EI_MAG0, (unsigned int)ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2], ehdr->e_ident[EI_MAG3], \
-	       EI_CLASS, (int)ehdr->e_ident[EI_CLASS], get_elfeitype(EI_CLASS, ehdr->e_ident[EI_CLASS]), \
-	       EI_DATA, (int)ehdr->e_ident[EI_DATA], get_elfeitype(EI_DATA, ehdr->e_ident[EI_DATA]), \
-	       EI_VERSION, (int)ehdr->e_ident[EI_VERSION], get_elfeitype(EI_VERSION, ehdr->e_ident[EI_VERSION]), \
-	       EI_OSABI, (int)ehdr->e_ident[EI_OSABI], get_elfeitype(EI_OSABI, ehdr->e_ident[EI_OSABI]), \
-	       EI_ABIVERSION, (int)ehdr->e_ident[EI_ABIVERSION], \
+	       EI_MAG0, ehdr->e_ident[EI_MAG0], ehdr->e_ident[EI_MAG1], ehdr->e_ident[EI_MAG2], ehdr->e_ident[EI_MAG3], \
+	       EI_CLASS, ehdr->e_ident[EI_CLASS], get_elfeitype(EI_CLASS, ehdr->e_ident[EI_CLASS]), \
+	       EI_DATA, ehdr->e_ident[EI_DATA], get_elfeitype(EI_DATA, ehdr->e_ident[EI_DATA]), \
+	       EI_VERSION, ehdr->e_ident[EI_VERSION], get_elfeitype(EI_VERSION, ehdr->e_ident[EI_VERSION]), \
+	       EI_OSABI, ehdr->e_ident[EI_OSABI], get_elfeitype(EI_OSABI, ehdr->e_ident[EI_OSABI]), \
+	       EI_ABIVERSION, ehdr->e_ident[EI_ABIVERSION], \
 	       EI_PAD, EI_NIDENT - 1, \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 0], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 1], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 2], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 3], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 4], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 5], \
-	         (unsigned int)ehdr->e_ident[EI_PAD + 6] \
+	         ehdr->e_ident[EI_PAD + 0], \
+	         ehdr->e_ident[EI_PAD + 1], \
+	         ehdr->e_ident[EI_PAD + 2], \
+	         ehdr->e_ident[EI_PAD + 3], \
+	         ehdr->e_ident[EI_PAD + 4], \
+	         ehdr->e_ident[EI_PAD + 5], \
+	         ehdr->e_ident[EI_PAD + 6] \
 	); \
-	printf("\t.e_type      = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_type), get_elfetype(elf)); \
-	printf("\t.e_machine   = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_machine), get_elfemtype(elf)); \
-	printf("\t.e_version   = %-10i , /* (%s) */\n", (int)EGET(ehdr->e_version), get_elfeitype(EI_VERSION, EGET(ehdr->e_version))); \
-	printf("\t.e_entry     = 0x%-8lX , /* (start address at runtime) */\n", (unsigned long)EGET(ehdr->e_entry)); \
-	printf("\t.e_phoff     = %-10li , /* (bytes into file) */\n", (unsigned long)EGET(ehdr->e_phoff)); \
-	printf("\t.e_shoff     = %-10li , /* (bytes into file) */\n", (unsigned long)EGET(ehdr->e_shoff)); \
-	printf("\t.e_flags     = 0x%-8X ,\n", (unsigned int)EGET(ehdr->e_flags)); \
-	printf("\t.e_ehsize    = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_ehsize)); \
-	printf("\t.e_phentsize = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_phentsize)); \
+	printf("\t.e_type      = %-10u , /* (%s) */\n", (uint16_t)EGET(ehdr->e_type), get_elfetype(elf)); \
+	printf("\t.e_machine   = %-10u , /* (%s) */\n", (uint16_t)EGET(ehdr->e_machine), get_elfemtype(elf)); \
+	printf("\t.e_version   = %-10u , /* (%s) */\n", (uint32_t)EGET(ehdr->e_version), get_elfeitype(EI_VERSION, EGET(ehdr->e_version))); \
+	printf("\t.e_entry     = 0x%-8"PRIX64" , /* (start address at runtime) */\n", EGET(ehdr->e_entry)); \
+	printf("\t.e_phoff     = %-10"PRIi64" , /* (bytes into file) */\n", EGET(ehdr->e_phoff)); \
+	printf("\t.e_shoff     = %-10"PRIi64" , /* (bytes into file) */\n", EGET(ehdr->e_shoff)); \
+	printf("\t.e_flags     = 0x%-8X ,\n", (uint32_t)EGET(ehdr->e_flags)); \
+	printf("\t.e_ehsize    = %-10u , /* (bytes) */\n", (uint16_t)EGET(ehdr->e_ehsize)); \
+	printf("\t.e_phentsize = %-10u , /* (bytes) */\n", (uint16_t)EGET(ehdr->e_phentsize)); \
 	/* TODO: Handle PN_XNUM */ \
-	printf("\t.e_phnum     = %-10i , /* (program headers) */\n", (int)EGET(ehdr->e_phnum)); \
-	printf("\t.e_shentsize = %-10i , /* (bytes) */\n", (int)EGET(ehdr->e_shentsize)); \
-	printf("\t.e_shnum     = %-10i , /* (section headers) */\n", (int)EGET(ehdr->e_shnum)); \
-	printf("\t.e_shstrndx  = %-10i\n", (int)EGET(ehdr->e_shstrndx)); \
+	printf("\t.e_phnum     = %-10u , /* (program headers) */\n", (uint16_t)EGET(ehdr->e_phnum)); \
+	printf("\t.e_shentsize = %-10u , /* (bytes) */\n", (uint16_t)EGET(ehdr->e_shentsize)); \
+	printf("\t.e_shnum     = %-10u , /* (section headers) */\n", (uint16_t)EGET(ehdr->e_shnum)); \
+	printf("\t.e_shstrndx  = %-10u\n", (uint16_t)EGET(ehdr->e_shstrndx)); \
 	printf("},\n"); \
 	}
 	DUMP_EHDR(32)
@@ -235,7 +235,7 @@ static const char *dump_p_flags(uint32_t type, uint32_t flags)
 
 	return buf + 3;
 }
-static void dump_phdr(elfobj *elf, const void *phdr_void, long phdr_cnt)
+static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 {
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -244,24 +244,25 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, long phdr_cnt)
 	switch (p_type) { \
 	case PT_DYNAMIC: phdr_dynamic_void = phdr_void; break; \
 	} \
-	printf("/* Program Header #%li 0x%lX */\n{\n", phdr_cnt, (uintptr_t)phdr_void - (uintptr_t)elf->data); \
-	printf("\t.p_type   = %-10li , /* [%s] */\n", (long)p_type, get_elfptype(p_type)); \
-	printf("\t.p_offset = %-10li , /* (bytes into file) */\n", (long)EGET(phdr->p_offset)); \
-	printf("\t.p_vaddr  = 0x%-8lX , /* (virtual addr at runtime) */\n", (unsigned long)EGET(phdr->p_vaddr)); \
-	printf("\t.p_paddr  = 0x%-8lX , /* (physical addr at runtime) */\n", (unsigned long)EGET(phdr->p_paddr)); \
-	printf("\t.p_filesz = %-10li , /* (bytes in file) */\n", (long)EGET(phdr->p_filesz)); \
-	printf("\t.p_memsz  = %-10li , /* (bytes in mem at runtime) */\n", (long)EGET(phdr->p_memsz)); \
-	printf("\t.p_flags  = 0x%-8lX , /* %s */\n", (unsigned long)EGET(phdr->p_flags), dump_p_flags(p_type, EGET(phdr->p_flags))); \
-	printf("\t.p_align  = %-10li , /* (min mem alignment in bytes) */\n", (long)EGET(phdr->p_align)); \
+	printf("/* Program Header #%zu 0x%tX */\n{\n", \
+	       phdr_cnt, (uintptr_t)phdr_void - elf->udata); \
+	printf("\t.p_type   = %-10u , /* [%s] */\n", p_type, get_elfptype(p_type)); \
+	printf("\t.p_offset = %-10"PRIi64" , /* (bytes into file) */\n", EGET(phdr->p_offset)); \
+	printf("\t.p_vaddr  = 0x%-8"PRIX64" , /* (virtual addr at runtime) */\n", EGET(phdr->p_vaddr)); \
+	printf("\t.p_paddr  = 0x%-8"PRIX64" , /* (physical addr at runtime) */\n", EGET(phdr->p_paddr)); \
+	printf("\t.p_filesz = %-10"PRIu64" , /* (bytes in file) */\n", EGET(phdr->p_filesz)); \
+	printf("\t.p_memsz  = %-10"PRIu64" , /* (bytes in mem at runtime) */\n", EGET(phdr->p_memsz)); \
+	printf("\t.p_flags  = 0x%-8X , /* %s */\n", (uint32_t)EGET(phdr->p_flags), dump_p_flags(p_type, EGET(phdr->p_flags))); \
+	printf("\t.p_align  = %-10"PRIu64" , /* (min mem alignment in bytes) */\n", EGET(phdr->p_align)); \
 	printf("},\n"); \
 	}
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
 }
 
-static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const char *name)
+static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *name)
 {
-	unsigned long i;
+	size_t i;
 
 	/* Make sure the string is valid. */
 	if ((void *)name >= elf->data_end)
@@ -276,18 +277,18 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const c
 	uint32_t type = EGET(shdr->sh_type); \
 	uint ## B ## _t size = EGET(shdr->sh_size); \
 	\
-	printf("/* Section Header #%li '%s' 0x%lX */\n{\n", \
-	       shdr_cnt, name, (uintptr_t)shdr_void - (uintptr_t)elf->data); \
-	printf("\t.sh_name      = %-10i ,\n", (int)EGET(shdr->sh_name)); \
-	printf("\t.sh_type      = %-10i , /* [%s] */\n", (int)EGET(shdr->sh_type), get_elfshttype(type)); \
-	printf("\t.sh_flags     = %-10li ,\n", (long)EGET(shdr->sh_flags)); \
-	printf("\t.sh_addr      = 0x%-8lX ,\n", (unsigned long)EGET(shdr->sh_addr)); \
-	printf("\t.sh_offset    = %-10li , /* (bytes) */\n", (long)offset); \
-	printf("\t.sh_size      = %-10lu , /* (bytes) */\n", (unsigned long)size); \
-	printf("\t.sh_link      = %-10i ,\n", (int)EGET(shdr->sh_link)); \
-	printf("\t.sh_info      = %-10i ,\n", (int)EGET(shdr->sh_info)); \
-	printf("\t.sh_addralign = %-10li ,\n", (long)EGET(shdr->sh_addralign)); \
-	printf("\t.sh_entsize   = %-10li\n", (long)EGET(shdr->sh_entsize)); \
+	printf("/* Section Header #%zu '%s' 0x%tX */\n{\n", \
+	       shdr_cnt, name, (uintptr_t)shdr_void - elf->udata); \
+	printf("\t.sh_name      = %-10u ,\n", (uint32_t)EGET(shdr->sh_name)); \
+	printf("\t.sh_type      = %-10u , /* [%s] */\n", (uint32_t)EGET(shdr->sh_type), get_elfshttype(type)); \
+	printf("\t.sh_flags     = %-10"PRIu64" ,\n", EGET(shdr->sh_flags)); \
+	printf("\t.sh_addr      = 0x%-8"PRIX64" ,\n", EGET(shdr->sh_addr)); \
+	printf("\t.sh_offset    = %-10"PRIi64" , /* (bytes) */\n", (uint64_t)offset); \
+	printf("\t.sh_size      = %-10"PRIu64" , /* (bytes) */\n", (uint64_t)size); \
+	printf("\t.sh_link      = %-10u ,\n", (uint32_t)EGET(shdr->sh_link)); \
+	printf("\t.sh_info      = %-10u ,\n", (uint32_t)EGET(shdr->sh_info)); \
+	printf("\t.sh_addralign = %-10"PRIu64" ,\n", (uint64_t)EGET(shdr->sh_addralign)); \
+	printf("\t.sh_entsize   = %-10"PRIu64"\n", (uint64_t)EGET(shdr->sh_entsize)); \
 	\
 	if (type == SHT_NOBITS) { \
 		/* Special case so we can do valid check next. */ \
@@ -331,13 +332,13 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const c
 			Elf##B##_Sym *sym = vdata; \
 			printf("\n\t/%c section dump:\n", '*'); \
 			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
-				printf("\t * Elf%i_Sym sym%li = {\n", B, (long)i); \
-				printf("\t * \t.st_name  = %i,\n", (unsigned int)EGET(sym->st_name)); \
-				printf("\t * \t.st_value = 0x%lX,\n", (unsigned long)EGET(sym->st_value)); \
-				printf("\t * \t.st_size  = %li, (bytes)\n", (unsigned long)EGET(sym->st_size)); \
-				printf("\t * \t.st_info  = %i,\n", (unsigned int)EGET(sym->st_info)); \
-				printf("\t * \t.st_other = %i,\n", (unsigned int)EGET(sym->st_other)); \
-				printf("\t * \t.st_shndx = %li\n", (unsigned long)EGET(sym->st_shndx)); \
+				printf("\t * Elf%i_Sym sym%zu = {\n", B, i); \
+				printf("\t * \t.st_name  = %u,\n", (uint32_t)EGET(sym->st_name)); \
+				printf("\t * \t.st_value = 0x%"PRIX64",\n", EGET(sym->st_value)); \
+				printf("\t * \t.st_size  = %"PRIu64", (bytes)\n", EGET(sym->st_size)); \
+				printf("\t * \t.st_info  = %u,\n", (unsigned char)EGET(sym->st_info)); \
+				printf("\t * \t.st_other = %u,\n", (unsigned char)EGET(sym->st_other)); \
+				printf("\t * \t.st_shndx = %u\n", (uint16_t)EGET(sym->st_shndx)); \
 				printf("\t * };\n"); \
 				++sym; \
 			} \
@@ -365,18 +366,18 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, long shdr_cnt, const c
 	DUMP_SHDR(64)
 }
 
-static void dump_dyn(elfobj *elf, const void *dyn_void, long dyn_cnt)
+static void dump_dyn(elfobj *elf, const void *dyn_void, size_t dyn_cnt)
 {
 #define DUMP_DYN(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	const Elf ## B ## _Dyn *dyn = dyn_void; \
-	unsigned long tag = EGET(dyn->d_tag); \
-	printf("/* Dynamic tag #%li '%s' 0x%lX */\n{\n", \
-	       dyn_cnt, get_elfdtype(tag), (uintptr_t)dyn_void - (uintptr_t)elf->data); \
-	printf("\t.d_tag     = 0x%-8lX ,\n", tag); \
+	int64_t tag = EGET(dyn->d_tag); \
+	printf("/* Dynamic tag #%zu '%s' 0x%tX */\n{\n", \
+	       dyn_cnt, get_elfdtype(tag), (uintptr_t)dyn_void - elf->udata); \
+	printf("\t.d_tag     = 0x%-8"PRIX64" ,\n", tag); \
 	printf("\t.d_un      = {\n"); \
-	printf("\t\t.d_val = 0x%-8lX ,\n", (unsigned long)EGET(dyn->d_un.d_val)); \
-	printf("\t\t.d_ptr = 0x%-8lX ,\n", (unsigned long)EGET(dyn->d_un.d_val)); \
+	printf("\t\t.d_val = 0x%-8"PRIX64" ,\n", EGET(dyn->d_un.d_val)); \
+	printf("\t\t.d_ptr = 0x%-8"PRIX64" ,\n", EGET(dyn->d_un.d_val)); \
 	printf("\t},\n"); \
 	printf("},\n"); \
 	}
@@ -403,7 +404,7 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	int i;
+	size_t i;
 	printf("* Dump internal ELF structure\n\n"
 	       "Usage: %s <file1> [file2 fileN ...]\n\n", argv0);
 	printf("Options:\n");
@@ -449,7 +450,7 @@ static void parseargs(int argc, char *argv[])
 		err("Nothing to dump !?");
 
 	{
-	long file_cnt = 0;
+	size_t file_cnt = 0;
 
 	while (optind < argc)
 		dumpelf(argv[optind++], file_cnt++);
