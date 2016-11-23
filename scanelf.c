@@ -66,6 +66,19 @@ static unsigned long setpax = 0UL;
 
 static const char *objdump;
 
+/* Boiler plate wrapper for expanding ELF macros for specific ELF sizes. */
+#define _SCANELF_IF_ELF_SIZE(B, x) \
+	do { \
+		if (elf->elf_class == ELFCLASS ## B) { \
+			x(B); \
+		} \
+	} while (0)
+#define SCANELF_ELF_SIZED(x) \
+	do { \
+		_SCANELF_IF_ELF_SIZE(32, x); \
+		_SCANELF_IF_ELF_SIZE(64, x); \
+	} while (0)
+
 /* Find the path to a file by name.  Note: we do not currently handle the
  * empty path element correctly (should behave by searching $PWD). */
 static const char *which(const char *fname, const char *envvar)
@@ -149,7 +162,6 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	 * as they are generated in sync.  Trying to mix them won't work.
 	 */
 #define GET_SYMTABS(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Shdr *esymtab = symtab; \
 	Elf ## B ## _Shdr *estrtab = strtab; \
 	Elf ## B ## _Shdr *edynsym = dynsym; \
@@ -182,10 +194,8 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		return; \
 	} else { \
 		*sym = *str = NULL; \
-	} \
 	}
-	GET_SYMTABS(32)
-	GET_SYMTABS(64)
+	SCANELF_ELF_SIZED(GET_SYMTABS);
 
 	if (*sym && *str)
 		return;
@@ -195,10 +205,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	 * reconstruct the section header info out of the dynamic
 	 * tags so we can see what symbols this guy uses at runtime.
 	 */
-	if (!elf->phdr)
-		return;
 #define GET_SYMTABS_DT(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	size_t i; \
 	static Elf ## B ## _Shdr sym_shdr, str_shdr; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
@@ -300,10 +307,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 			ESET(str_shdr.sh_offset, offset + (vstr - vaddr)); \
 			*str = &str_shdr; \
 		} \
-	} \
 	}
-	GET_SYMTABS_DT(32)
-	GET_SYMTABS_DT(64)
+	if (elf->phdr)
+		SCANELF_ELF_SIZED(GET_SYMTABS_DT);
 	return;
 
  corrupt_hash:
@@ -320,9 +326,7 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	shown = 0;
 	memset(&ret, 0, sizeof(ret));
 
-	if (elf->phdr) {
 #define SHOW_PAX(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
@@ -338,11 +342,9 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 		*found_pax = 1; \
 		++shown; \
 		break; \
-	} \
 	}
-	SHOW_PAX(32)
-	SHOW_PAX(64)
-	}
+	if (elf->phdr)
+		SCANELF_ELF_SIZED(SHOW_PAX);
 
 	/* Note: We do not support setting EI_PAX if not PT_PAX_FLAGS
 	 * was found.  This is known to break ELFs on glibc systems,
@@ -383,7 +385,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 
 #define NOTE_GNU_STACK ".note.GNU-stack"
 #define SHOW_PHDR(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Off offset; \
 	uint32_t flags, check_flags; \
@@ -465,10 +466,8 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 			shown = 1; \
 			memcpy(ret, "!WX", 3); \
 		} \
-	} \
 	}
-	SHOW_PHDR(32)
-	SHOW_PHDR(64)
+	SCANELF_ELF_SIZED(SHOW_PHDR);
 
 	if (be_wewy_wewy_quiet || (be_quiet && !shown))
 		return NULL;
@@ -493,9 +492,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 
 	if (file_matches_list(elf->filename, qa_textrels)) return NULL;
 
-	if (elf->phdr) {
 #define SHOW_TEXTREL(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Dyn *dyn; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -513,10 +510,9 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 			} \
 			++dyn; \
 		} \
-	} }
-	SHOW_TEXTREL(32)
-	SHOW_TEXTREL(64)
 	}
+	if (elf->phdr)
+		SCANELF_ELF_SIZED(SHOW_TEXTREL);
 
 	if (be_quiet || be_wewy_wewy_quiet)
 		return NULL;
@@ -543,9 +539,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 	text_void = elf_findsecbyname(elf, ".text");
 
-	if (symtab_void && strtab_void && text_void && elf->shdr) {
 #define SHOW_TEXTRELS(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
@@ -650,10 +644,9 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 				free(sysbuf); \
 			} \
 		} \
-	} }
-	SHOW_TEXTRELS(32)
-	SHOW_TEXTRELS(64)
 	}
+	if (symtab_void && strtab_void && text_void && elf->shdr)
+		SCANELF_ELF_SIZED(SHOW_TEXTRELS);
 	if (!*found_textrels)
 		warnf("ELF %s has TEXTREL markings but doesnt appear to have any real TEXTREL's !?", elf->filename);
 
@@ -696,9 +689,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 	rpath = runpath = NULL;
 
-	if (elf->phdr && strtbl_void) {
 #define SHOW_RPATH(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -806,10 +797,9 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 				} \
 				++dyn; \
 			} \
-		} }
-		SHOW_RPATH(32)
-		SHOW_RPATH(64)
-	}
+		}
+	if (elf->phdr && strtbl_void)
+		SCANELF_ELF_SIZED(SHOW_RPATH);
 
 	if (be_wewy_wewy_quiet) return;
 
@@ -861,9 +851,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
-	if (elf->phdr && strtbl_void) {
 #define SHOW_NEEDED(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -922,9 +910,9 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 				} \
 				++dyn; \
 			} \
-		} }
-		SHOW_NEEDED(32)
-		SHOW_NEEDED(64)
+		}
+	if (elf->phdr && strtbl_void) {
+		SCANELF_ELF_SIZED(SHOW_NEEDED);
 		if (op == 0 && !*found_needed && be_verbose)
 			warn("ELF lacks DT_NEEDED sections: %s", elf->filename);
 	}
@@ -940,7 +928,6 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 	if (elf->phdr) {
 		/* Walk all the program headers to find the PT_INTERP */
 #define SHOW_PT_INTERP(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 			size_t i; \
 			Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 			Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -949,23 +936,17 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 					offset = EGET(phdr[i].p_offset); \
 					break; \
 				} \
-			} \
-		}
-		SHOW_PT_INTERP(32)
-		SHOW_PT_INTERP(64)
+			}
+		SCANELF_ELF_SIZED(SHOW_PT_INTERP);
 	} else if (elf->shdr) {
 		/* Use the section headers to find it */
 		void *strtbl_void = elf_findsecbyname(elf, ".interp");
 
 #define SHOW_INTERP(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-			offset = EGET(strtbl->sh_offset); \
-		}
-		if (strtbl_void) {
-			SHOW_INTERP(32)
-			SHOW_INTERP(64)
-		}
+			offset = EGET(strtbl->sh_offset);
+		if (strtbl_void)
+			SCANELF_ELF_SIZED(SHOW_INTERP);
 	}
 
 	/* Validate the pointer even if we don't use it in output */
@@ -992,7 +973,6 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	if (!elf->phdr) return NULL;
 
 #define SHOW_BIND(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -1013,10 +993,8 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 				} \
 				++dyn; \
 			} \
-		} \
-	}
-	SHOW_BIND(32)
-	SHOW_BIND(64)
+		}
+	SCANELF_ELF_SIZED(SHOW_BIND);
 
 	if (be_wewy_wewy_quiet) return NULL;
 
@@ -1038,9 +1016,7 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
-	if (elf->phdr && strtbl_void) {
 #define SHOW_SONAME(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Dyn *dyn; \
 		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
@@ -1067,10 +1043,9 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 				} \
 				++dyn; \
 			} \
-		} }
-		SHOW_SONAME(32)
-		SHOW_SONAME(64)
-	}
+		}
+	if (elf->phdr && strtbl_void)
+		SCANELF_ELF_SIZED(SHOW_SONAME);
 
 	return NULL;
 }
@@ -1253,7 +1228,6 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 
 	if (symtab_void && strtab_void) {
 #define FIND_SYM(B) \
-		if (elf->elf_class == ELFCLASS ## B) { \
 		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 		Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
@@ -1282,10 +1256,8 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 				                      EGET(sym->st_size)); \
 			} \
 			++sym; \
-		} \
 		}
-		FIND_SYM(32)
-		FIND_SYM(64)
+		SCANELF_ELF_SIZED(FIND_SYM);
 	}
 
 	if (be_wewy_wewy_quiet) {
@@ -1314,7 +1286,6 @@ static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 		 return NULL;
 
 #define FIND_SECTION(B) \
-	if (elf->elf_class == ELFCLASS ## B) { \
 		size_t matched, n; \
 		int invert; \
 		const char *section_name; \
@@ -1329,10 +1300,8 @@ static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 		} \
 		\
 		if (matched == array_cnt(find_section_arr)) \
-			*found_section = 1; \
-	}
-	FIND_SECTION(32)
-	FIND_SECTION(64)
+			*found_section = 1;
+	SCANELF_ELF_SIZED(FIND_SECTION);
 
 	if (be_wewy_wewy_quiet)
 		return NULL;
