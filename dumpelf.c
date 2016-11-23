@@ -324,6 +324,24 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 	DUMP_PHDR(64)
 }
 
+static const char *timestamp(uint64_t stamp)
+{
+	/* This doesn't work when run on a 32-bit host with 32-bit time_t beyond
+	 * beyond 2038, but we'll worry about that later.
+	 */
+	static char buf[20];
+	time_t t;
+	struct tm *tm;
+
+	t = stamp;
+	tm = gmtime(&t);
+	snprintf (buf, sizeof(buf), "%04u-%02u-%02u %02u:%02u:%02u",
+		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+	return buf;
+}
+
 static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *section_name)
 {
 	size_t i;
@@ -412,6 +430,22 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 		case SHT_NOTE: \
 			dump_notes(elf, B, vdata, vdata + EGET(shdr->sh_size)); \
 			break; \
+		case SHT_GNU_LIBLIST: { \
+			Elf##B##_Lib *lib = vdata; \
+			printf("\n\t/%c section dump:\n", '*'); \
+			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
+				printf("\t * Elf%i_Lib lib%zu = {\n", B, i); \
+				printf("\t * \t.l_name       = %"PRIu64",\n", EGET(lib->l_name)); \
+				printf("\t * \t.l_time_stamp = 0x%"PRIX64", (%s)\n", \
+				       EGET(lib->l_time_stamp), timestamp(EGET(lib->l_time_stamp))); \
+				printf("\t * \t.l_checksum   = 0x%"PRIX64",\n", EGET(lib->l_checksum)); \
+				printf("\t * \t.l_version    = %"PRIu64",\n", EGET(lib->l_version)); \
+				printf("\t * \t.l_flags      = 0x%"PRIX64"\n", EGET(lib->l_flags)); \
+				printf("\t * };\n"); \
+				++lib; \
+			} \
+			printf("\t */\n"); \
+		} \
 		default: { \
 			if (be_verbose <= 1) \
 				break; \
