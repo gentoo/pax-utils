@@ -14,7 +14,7 @@ const char argv0[] = "dumpelf";
 static void dumpelf(const char *filename, size_t file_cnt);
 static void dump_ehdr(elfobj *elf, const void *ehdr);
 static void dump_phdr(elfobj *elf, const void *phdr, size_t phdr_cnt);
-static void dump_shdr(elfobj *elf, const void *shdr, size_t shdr_cnt, const char *name);
+static void dump_shdr(elfobj *elf, const void *shdr, size_t shdr_cnt, const char *section_name);
 static void dump_dyn(elfobj *elf, const void *dyn, size_t dyn_cnt);
 #if 0
 static void dump_sym(elfobj *elf, const void *sym);
@@ -203,6 +203,56 @@ static void dump_ehdr(elfobj *elf, const void *ehdr_void)
 	DUMP_EHDR(64)
 }
 
+static void dump_notes(elfobj *elf, size_t B, const void *memory, const void *memory_end)
+{
+	/* While normally we'd worry about Elf32_Nhdr vs Elf64_Nhdr, in the ELF
+	 * world, the two structs are exactly the same.  So avoid ugly CPP.
+	 */
+	size_t i;
+	const void *ndata = memory;
+	const char *name;
+	const unsigned char *desc;
+	uint32_t namesz, descsz;
+	const Elf32_Nhdr *note;
+	/* The first few bytes are the same between 32 & 64 bit ELFs. */
+	uint16_t e_type = EGET(((const Elf32_Ehdr *)elf->ehdr)->e_type);
+
+	if (memory_end > elf->data_end) {
+		printf("\n\t/%c note section is corrupt */\n", '*');
+		return;
+	}
+
+	printf("\n\t/%c note section dump:\n", '*');
+	for (i = 0; ndata < memory_end; ++i) {
+		note = ndata;
+		namesz = EGET(note->n_namesz);
+		descsz = EGET(note->n_descsz);
+		name = namesz ? ndata + sizeof(*note) : "";
+		desc = descsz ? ndata + sizeof(*note) + ALIGN_UP(namesz, 4) : "";
+		ndata += sizeof(*note) + ALIGN_UP(namesz, 4) + ALIGN_UP(descsz, 4);
+
+		if (ndata > memory_end) {
+			printf("\tNote is corrupt\n");
+			break;
+		}
+
+		printf("\t * Elf%zu_Nhdr note%zu = {\n", B, i);
+		printf("\t * \t.n_namesz = %u, (bytes) [%s]\n", namesz, name);
+		printf("\t * \t.n_descsz = %u, (bytes)", descsz);
+		if (descsz) {
+			printf(" [ ");
+			for (i = 0; i < descsz; ++i)
+				printf("%.2X ", desc[i]);
+			printf("]");
+		}
+		printf("\n");
+		printf("\t * \t.n_type   = %"PRIX64", [%s]\n",
+		       EGET(note->n_type), get_elfnttype(e_type, name, EGET(note->n_type)));
+		printf("\t * };\n");
+	}
+	printf("\t */\n");
+}
+
 static const char *dump_p_flags(uint32_t type, uint32_t flags)
 {
 	static char buf[1024];
@@ -240,6 +290,8 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 	const Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
+	Elf ## B ## _Off offset = EGET(phdr->p_offset); \
+	void *vdata = elf->vdata + offset; \
 	uint32_t p_type = EGET(phdr->p_type); \
 	switch (p_type) { \
 	case PT_DYNAMIC: phdr_dynamic_void = phdr_void; break; \
@@ -254,21 +306,33 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 	printf("\t.p_memsz  = %-10"PRIu64" , /* (bytes in mem at runtime) */\n", EGET(phdr->p_memsz)); \
 	printf("\t.p_flags  = 0x%-8X , /* %s */\n", (uint32_t)EGET(phdr->p_flags), dump_p_flags(p_type, EGET(phdr->p_flags))); \
 	printf("\t.p_align  = %-10"PRIu64" , /* (min mem alignment in bytes) */\n", EGET(phdr->p_align)); \
+	\
+	if ((off_t)EGET(phdr->p_offset) > elf->len) { \
+		printf("\t/* Warning: Program segment is corrupt. */\n"); \
+		goto done##B; \
+	} \
+	\
+	switch (p_type) { \
+	case PT_NOTE: \
+		dump_notes(elf, B, vdata, vdata + EGET(phdr->p_filesz)); \
+		break; \
+	} \
+ done##B: \
 	printf("},\n"); \
 	}
 	DUMP_PHDR(32)
 	DUMP_PHDR(64)
 }
 
-static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *name)
+static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *section_name)
 {
 	size_t i;
 
 	/* Make sure the string is valid. */
-	if ((void *)name >= elf->data_end)
-		name = "<corrupt>";
-	else if (memchr(name, 0, elf->len - (name - elf->data)) == NULL)
-		name = "<corrupt>";
+	if ((void *)section_name >= elf->data_end)
+		section_name = "<corrupt>";
+	else if (memchr(section_name, 0, elf->len - (section_name - elf->data)) == NULL)
+		section_name = "<corrupt>";
 
 #define DUMP_SHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -278,7 +342,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 	uint ## B ## _t size = EGET(shdr->sh_size); \
 	\
 	printf("/* Section Header #%zu '%s' 0x%tX */\n{\n", \
-	       shdr_cnt, name, (uintptr_t)shdr_void - elf->udata); \
+	       shdr_cnt, section_name, (uintptr_t)shdr_void - elf->udata); \
 	printf("\t.sh_name      = %-10u ,\n", (uint32_t)EGET(shdr->sh_name)); \
 	printf("\t.sh_type      = %-10u , /* [%s] */\n", (uint32_t)EGET(shdr->sh_type), get_elfshttype(type)); \
 	printf("\t.sh_flags     = %-10"PRIu64" ,\n", EGET(shdr->sh_flags)); \
@@ -301,11 +365,11 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 		unsigned char *data = vdata; \
 		switch (type) { \
 		case SHT_PROGBITS: { \
-			if (strcmp(name, ".interp") == 0) { \
+			if (strcmp(section_name, ".interp") == 0) { \
 				printf("\n\t/* ELF interpreter: %s */\n", data); \
 				break; \
 			} \
-			if (strcmp(name, ".comment") != 0) \
+			if (strcmp(section_name, ".comment") != 0) \
 				break; \
 			break; \
 		} \
@@ -345,6 +409,9 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 			printf("\t */\n"); \
 			break; \
 		} \
+		case SHT_NOTE: \
+			dump_notes(elf, B, vdata, vdata + EGET(shdr->sh_size)); \
+			break; \
 		default: { \
 			if (be_verbose <= 1) \
 				break; \

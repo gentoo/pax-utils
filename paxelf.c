@@ -480,6 +480,74 @@ const char *get_elfshntype(int type)
 	return find_pairtype(elf_shntypes, type);
 }
 
+/* translate elf NT_ defines */
+static pairtype elf_nttypes_GNU[] = {
+	QUERY(NT_GNU_ABI_TAG),
+	QUERY(NT_GNU_HWCAP),
+	QUERY(NT_GNU_BUILD_ID),
+	QUERY(NT_GNU_GOLD_VERSION),
+	{ 0, 0 }
+};
+static pairtype elf_nttypes_core[] = {
+	QUERY(NT_PRSTATUS),
+	QUERY(NT_FPREGSET),
+	QUERY(NT_PRPSINFO),
+	QUERY(NT_PRXREG),
+	QUERY(NT_TASKSTRUCT),
+	QUERY(NT_PLATFORM),
+	QUERY(NT_AUXV),
+	QUERY(NT_GWINDOWS),
+	QUERY(NT_ASRS),
+	QUERY(NT_PSTATUS),
+	QUERY(NT_PSINFO),
+	QUERY(NT_PRCRED),
+	QUERY(NT_UTSNAME),
+	QUERY(NT_LWPSTATUS),
+	QUERY(NT_LWPSINFO),
+	QUERY(NT_PRFPXREG),
+	QUERY(NT_SIGINFO),
+	QUERY(NT_FILE),
+	QUERY(NT_PRXFPREG),
+	QUERY(NT_PPC_VMX),
+	QUERY(NT_PPC_SPE),
+	QUERY(NT_PPC_VSX),
+	QUERY(NT_386_TLS),
+	QUERY(NT_386_IOPERM),
+	QUERY(NT_X86_XSTATE),
+	QUERY(NT_S390_HIGH_GPRS),
+	QUERY(NT_S390_TIMER),
+	QUERY(NT_S390_TODCMP),
+	QUERY(NT_S390_TODPREG),
+	QUERY(NT_S390_CTRS),
+	QUERY(NT_S390_PREFIX),
+	QUERY(NT_S390_LAST_BREAK),
+	QUERY(NT_S390_SYSTEM_CALL),
+	QUERY(NT_S390_TDB),
+	QUERY(NT_ARM_VFP),
+	QUERY(NT_ARM_TLS),
+	QUERY(NT_ARM_HW_BREAK),
+	QUERY(NT_ARM_HW_WATCH),
+	{ 0, 0 }
+};
+static pairtype elf_nttypes_fallback[] = {
+	QUERY(NT_VERSION),
+	{ 0, 0 }
+};
+const char *get_elfnttype(uint16_t e_type, const char *name, int type)
+{
+	if (name) {
+		if (!strcmp(name, "GNU"))
+			return find_pairtype(elf_nttypes_GNU, type);
+
+		/* Unknown extension, so just fallback to common ones. */
+	}
+
+	if (e_type == ET_CORE)
+		return find_pairtype(elf_nttypes_core, type);
+	else
+		return find_pairtype(elf_nttypes_fallback, type);
+}
+
 /* Read an ELF into memory */
 #define IS_ELF_BUFFER(buff) \
 	(buff[EI_MAG0] == ELFMAG0 && \

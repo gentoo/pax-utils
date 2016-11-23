@@ -69,6 +69,7 @@ extern const char *get_elfshttype(int type);
 extern const char *get_elfstbtype(int type);
 extern const char *get_elfstvtype(int type);
 extern const char *get_elfstttype(int type);
+extern const char *get_elfnttype(uint16_t e_type, const char *name, int type);
 extern void *elf_findsecbyname(elfobj *elf, const char *name);
 extern unsigned int get_etype(elfobj *elf);
 extern unsigned int get_emtype(elfobj *elf);

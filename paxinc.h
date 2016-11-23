@@ -102,6 +102,12 @@ const char *strfileperms(const char *fname);
 		} else { errf("ESET failed :( (size(Y) == %i)", (int)sizeof(Y)); } \
 	} while (0)
 
+/* alignment helpers */
+#define ALIGN_DOWN(base, size) ((base) & -((__typeof__(base)) (size)))
+#define ALIGN_UP(base, size)   ALIGN_DOWN((base) + (size) - 1, (size))
+#define PTR_ALIGN_DOWN(base, size) ((__typeof__(base))ALIGN_DOWN((uintptr_t)(base), (size)))
+#define PTR_ALIGN_UP(base, size)   ((__typeof__(base))ALIGN_UP  ((uintptr_t)(base), (size)))
+
 /* helper functions for showing errors */
 extern const char *NORM, *RED, *YELLOW;
 void color_init(bool disable);
