@@ -690,114 +690,114 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	rpath = runpath = NULL;
 
 #define SHOW_RPATH(B) \
-		Elf ## B ## _Dyn *dyn; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-		Elf ## B ## _Off offset; \
-		Elf ## B ## _Xword word; \
-		/* Scan all the program headers */ \
-		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			/* Just scan dynamic headers */ \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-			offset = EGET(phdr[i].p_offset); \
-			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			/* Just scan dynamic RPATH/RUNPATH headers */ \
-			dyn = DYN ## B (elf->vdata + offset); \
-			while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
-				if (word == DT_RPATH) { \
-					r = &rpath; \
-				} else if (word == DT_RUNPATH) { \
-					r = &runpath; \
-				} else { \
-					++dyn; \
-					continue; \
-				} \
-				/* Verify the memory is somewhat sane */ \
-				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-				if (offset < (Elf ## B ## _Off)elf->len) { \
-					if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
-					*r = elf->data + offset; \
-					/* cache the length in case we need to nuke this section later on */ \
-					if (fix_elf) \
-						offset = strlen(*r); \
-					/* If quiet, don't output paths in ld.so.conf */ \
-					if (be_quiet) { \
-						size_t len; \
-						char *start, *end; \
-						/* note that we only 'chop' off leading known paths. */ \
-						/* since *r is read-only memory, we can only move the ptr forward. */ \
-						start = *r; \
-						/* scan each path in : delimited list */ \
-						while (start) { \
-							rpath_security_checks(elf, start, get_elfdtype(word)); \
-							end = strchr(start, ':'); \
-							len = (end ? abs(end - start) : strlen(start)); \
-							if (use_ldcache) { \
-								size_t n; \
-								const char *ldpath; \
-								array_for_each(ldpaths, n, ldpath) \
-									if (!strncmp(ldpath, start, len) && !ldpath[len]) { \
-										*r = end; \
-										/* corner case ... if RPATH reads "/usr/lib:", we want \
-										 * to show ':' rather than '' */ \
-										if (end && end[1] != '\0') \
-											(*r)++; \
-										break; \
-									} \
-							} \
-							if (!*r || !end) \
-								break; \
-							else \
-								start = start + len + 1; \
-						} \
-					} \
-					if (*r) { \
-						if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
-							/* just nuke it */ \
-							nuke_it##B: \
-							memset(*r, 0x00, offset); \
-							*r = NULL; \
-							ESET(dyn->d_tag, DT_DEBUG); \
-							ESET(dyn->d_un.d_ptr, 0); \
-						} else if (fix_elf) { \
-							/* try to clean "bad" paths */ \
-							size_t len, tmpdir_len; \
-							char *start, *end; \
-							const char *tmpdir; \
-							start = *r; \
-							tmpdir = (getenv("TMPDIR") ? : "."); \
-							tmpdir_len = strlen(tmpdir); \
-							while (1) { \
-								end = strchr(start, ':'); \
-								if (start == end) { \
-									eat_this_path##B: \
-									len = strlen(end); \
-									memmove(start, end+1, len); \
-									start[len-1] = '\0'; \
-									end = start - 1; \
-								} else if (tmpdir && !strncmp(start, tmpdir, tmpdir_len)) { \
-									if (!end) { \
-										if (start == *r) \
-											goto nuke_it##B; \
-										*--start = '\0'; \
-									} else \
-										goto eat_this_path##B; \
-								} \
-								if (!end) \
-									break; \
-								start = end + 1; \
-							} \
-							if (**r == '\0') \
-								goto nuke_it##B; \
-						} \
-						if (*r) \
-							*found_rpath = 1; \
-					} \
-				} \
+	Elf ## B ## _Dyn *dyn; \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+	Elf ## B ## _Off offset; \
+	Elf ## B ## _Xword word; \
+	/* Scan all the program headers */ \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		/* Just scan dynamic headers */ \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+		/* Just scan dynamic RPATH/RUNPATH headers */ \
+		dyn = DYN ## B (elf->vdata + offset); \
+		while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
+			if (word == DT_RPATH) { \
+				r = &rpath; \
+			} else if (word == DT_RUNPATH) { \
+				r = &runpath; \
+			} else { \
 				++dyn; \
+				continue; \
 			} \
-		}
+			/* Verify the memory is somewhat sane */ \
+			offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+			if (offset < (Elf ## B ## _Off)elf->len) { \
+				if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
+				*r = elf->data + offset; \
+				/* cache the length in case we need to nuke this section later on */ \
+				if (fix_elf) \
+					offset = strlen(*r); \
+				/* If quiet, don't output paths in ld.so.conf */ \
+				if (be_quiet) { \
+					size_t len; \
+					char *start, *end; \
+					/* note that we only 'chop' off leading known paths. */ \
+					/* since *r is read-only memory, we can only move the ptr forward. */ \
+					start = *r; \
+					/* scan each path in : delimited list */ \
+					while (start) { \
+						rpath_security_checks(elf, start, get_elfdtype(word)); \
+						end = strchr(start, ':'); \
+						len = (end ? abs(end - start) : strlen(start)); \
+						if (use_ldcache) { \
+							size_t n; \
+							const char *ldpath; \
+							array_for_each(ldpaths, n, ldpath) \
+								if (!strncmp(ldpath, start, len) && !ldpath[len]) { \
+									*r = end; \
+									/* corner case ... if RPATH reads "/usr/lib:", we want \
+									 * to show ':' rather than '' */ \
+									if (end && end[1] != '\0') \
+										(*r)++; \
+									break; \
+								} \
+						} \
+						if (!*r || !end) \
+							break; \
+						else \
+							start = start + len + 1; \
+					} \
+				} \
+				if (*r) { \
+					if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
+						/* just nuke it */ \
+						nuke_it##B: \
+						memset(*r, 0x00, offset); \
+						*r = NULL; \
+						ESET(dyn->d_tag, DT_DEBUG); \
+						ESET(dyn->d_un.d_ptr, 0); \
+					} else if (fix_elf) { \
+						/* try to clean "bad" paths */ \
+						size_t len, tmpdir_len; \
+						char *start, *end; \
+						const char *tmpdir; \
+						start = *r; \
+						tmpdir = (getenv("TMPDIR") ? : "."); \
+						tmpdir_len = strlen(tmpdir); \
+						while (1) { \
+							end = strchr(start, ':'); \
+							if (start == end) { \
+								eat_this_path##B: \
+								len = strlen(end); \
+								memmove(start, end+1, len); \
+								start[len-1] = '\0'; \
+								end = start - 1; \
+							} else if (tmpdir && !strncmp(start, tmpdir, tmpdir_len)) { \
+								if (!end) { \
+									if (start == *r) \
+										goto nuke_it##B; \
+									*--start = '\0'; \
+								} else \
+									goto eat_this_path##B; \
+							} \
+							if (!end) \
+								break; \
+							start = end + 1; \
+						} \
+						if (**r == '\0') \
+							goto nuke_it##B; \
+					} \
+					if (*r) \
+						*found_rpath = 1; \
+				} \
+			} \
+			++dyn; \
+		} \
+	}
 	if (elf->phdr && strtbl_void)
 		SCANELF_ELF_SIZED(SHOW_RPATH);
 
@@ -852,65 +852,65 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_NEEDED(B) \
-		Elf ## B ## _Dyn *dyn; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-		Elf ## B ## _Off offset; \
-		size_t matched = 0; \
-		/* Walk all the program headers to find the PT_DYNAMIC */ \
-		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) \
-				continue; \
-			offset = EGET(phdr[i].p_offset); \
-			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
-				continue; \
-			/* Walk all the dynamic tags to find NEEDED entries */ \
-			dyn = DYN ## B (elf->vdata + offset); \
-			while (EGET(dyn->d_tag) != DT_NULL) { \
-				if (EGET(dyn->d_tag) == DT_NEEDED) { \
-					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= (Elf ## B ## _Off)elf->len) { \
-						++dyn; \
-						continue; \
+	Elf ## B ## _Dyn *dyn; \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+	Elf ## B ## _Off offset; \
+	size_t matched = 0; \
+	/* Walk all the program headers to find the PT_DYNAMIC */ \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) \
+			continue; \
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
+			continue; \
+		/* Walk all the dynamic tags to find NEEDED entries */ \
+		dyn = DYN ## B (elf->vdata + offset); \
+		while (EGET(dyn->d_tag) != DT_NULL) { \
+			if (EGET(dyn->d_tag) == DT_NEEDED) { \
+				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+				if (offset >= (Elf ## B ## _Off)elf->len) { \
+					++dyn; \
+					continue; \
+				} \
+				needed = elf->data + offset; \
+				if (op == 0) { \
+					/* -n -> print all entries */ \
+					if (!be_wewy_wewy_quiet) { \
+						if (*found_needed) xchrcat(ret, ',', ret_len); \
+						if (use_ldpath) { \
+							if ((p = lookup_config_lib(needed)) != NULL) \
+								needed = p; \
+						} else if (use_ldcache) { \
+							if ((p = ldso_cache_lookup_lib(elf, needed)) != NULL) \
+								needed = p; \
+						} \
+						xstrcat(ret, needed, ret_len); \
 					} \
-					needed = elf->data + offset; \
-					if (op == 0) { \
-						/* -n -> print all entries */ \
-						if (!be_wewy_wewy_quiet) { \
-							if (*found_needed) xchrcat(ret, ',', ret_len); \
-							if (use_ldpath) { \
-								if ((p = lookup_config_lib(needed)) != NULL) \
-									needed = p; \
-							} else if (use_ldcache) { \
-								if ((p = ldso_cache_lookup_lib(elf, needed)) != NULL) \
-									needed = p; \
-							} \
-							xstrcat(ret, needed, ret_len); \
-						} \
-						*found_needed = 1; \
-					} else { \
-						/* -N -> print matching entries */ \
-						size_t n; \
-						const char *find_lib_name; \
-						\
-						array_for_each(find_lib_arr, n, find_lib_name) { \
-							int invert = 1; \
-							if (find_lib_name[0] == '!') \
-								invert = 0, ++find_lib_name; \
-							if ((!strcmp(find_lib_name, needed)) == invert) \
-								++matched; \
-						} \
-						\
-						if (matched == array_cnt(find_lib_arr)) { \
-							*found_lib = 1; \
-							return (be_wewy_wewy_quiet ? NULL : find_lib); \
-						} \
+					*found_needed = 1; \
+				} else { \
+					/* -N -> print matching entries */ \
+					size_t n; \
+					const char *find_lib_name; \
+					\
+					array_for_each(find_lib_arr, n, find_lib_name) { \
+						int invert = 1; \
+						if (find_lib_name[0] == '!') \
+							invert = 0, ++find_lib_name; \
+						if ((!strcmp(find_lib_name, needed)) == invert) \
+							++matched; \
+					} \
+					\
+					if (matched == array_cnt(find_lib_arr)) { \
+						*found_lib = 1; \
+						return (be_wewy_wewy_quiet ? NULL : find_lib); \
 					} \
 				} \
-				++dyn; \
 			} \
-		}
+			++dyn; \
+		} \
+	}
 	if (elf->phdr && strtbl_void) {
 		SCANELF_ELF_SIZED(SHOW_NEEDED);
 		if (op == 0 && !*found_needed && be_verbose)
@@ -928,23 +928,23 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 	if (elf->phdr) {
 		/* Walk all the program headers to find the PT_INTERP */
 #define SHOW_PT_INTERP(B) \
-			size_t i; \
-			Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-			Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-			for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
-				if (EGET(phdr[i].p_type) == PT_INTERP) { \
-					offset = EGET(phdr[i].p_offset); \
-					break; \
-				} \
-			}
+		size_t i; \
+		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+			if (EGET(phdr[i].p_type) == PT_INTERP) { \
+				offset = EGET(phdr[i].p_offset); \
+				break; \
+			} \
+		}
 		SCANELF_ELF_SIZED(SHOW_PT_INTERP);
 	} else if (elf->shdr) {
 		/* Use the section headers to find it */
 		void *strtbl_void = elf_findsecbyname(elf, ".interp");
 
 #define SHOW_INTERP(B) \
-			Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-			offset = EGET(strtbl->sh_offset);
+		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+		offset = EGET(strtbl->sh_offset);
 		if (strtbl_void)
 			SCANELF_ELF_SIZED(SHOW_INTERP);
 	}
@@ -973,27 +973,27 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	if (!elf->phdr) return NULL;
 
 #define SHOW_BIND(B) \
-		Elf ## B ## _Dyn *dyn; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		Elf ## B ## _Off offset; \
-		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-			dynamic = true; \
-			offset = EGET(phdr[i].p_offset); \
-			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			dyn = DYN ## B (elf->vdata + offset); \
-			while (EGET(dyn->d_tag) != DT_NULL) { \
-				if (EGET(dyn->d_tag) == DT_BIND_NOW || \
-				   (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) \
-				{ \
-					if (be_quiet) return NULL; \
-					*found_bind = 1; \
-					return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
-				} \
-				++dyn; \
+	Elf ## B ## _Dyn *dyn; \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Off offset; \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
+		dynamic = true; \
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+		dyn = DYN ## B (elf->vdata + offset); \
+		while (EGET(dyn->d_tag) != DT_NULL) { \
+			if (EGET(dyn->d_tag) == DT_BIND_NOW || \
+			   (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) \
+			{ \
+				if (be_quiet) return NULL; \
+				*found_bind = 1; \
+				return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
 			} \
-		}
+			++dyn; \
+		} \
+	}
 	SCANELF_ELF_SIZED(SHOW_BIND);
 
 	if (be_wewy_wewy_quiet) return NULL;
@@ -1017,33 +1017,33 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	strtbl_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_SONAME(B) \
-		Elf ## B ## _Dyn *dyn; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-		Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-		Elf ## B ## _Off offset; \
-		/* only look for soname in shared objects */ \
-		if (EGET(ehdr->e_type) != ET_DYN) \
-			return NULL; \
-		for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-			if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-			offset = EGET(phdr[i].p_offset); \
-			if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-			dyn = DYN ## B (elf->vdata + offset); \
-			while (EGET(dyn->d_tag) != DT_NULL) { \
-				if (EGET(dyn->d_tag) == DT_SONAME) { \
-					offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-					if (offset >= (Elf ## B ## _Off)elf->len) { \
-						++dyn; \
-						continue; \
-					} \
-					soname = elf->data + offset; \
-					*found_soname = 1; \
-					return (be_wewy_wewy_quiet ? NULL : soname); \
+	Elf ## B ## _Dyn *dyn; \
+	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
+	Elf ## B ## _Off offset; \
+	/* only look for soname in shared objects */ \
+	if (EGET(ehdr->e_type) != ET_DYN) \
+		return NULL; \
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
+		offset = EGET(phdr[i].p_offset); \
+		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
+		dyn = DYN ## B (elf->vdata + offset); \
+		while (EGET(dyn->d_tag) != DT_NULL) { \
+			if (EGET(dyn->d_tag) == DT_SONAME) { \
+				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+				if (offset >= (Elf ## B ## _Off)elf->len) { \
+					++dyn; \
+					continue; \
 				} \
-				++dyn; \
+				soname = elf->data + offset; \
+				*found_soname = 1; \
+				return (be_wewy_wewy_quiet ? NULL : soname); \
 			} \
-		}
+			++dyn; \
+		} \
+	}
 	if (elf->phdr && strtbl_void)
 		SCANELF_ELF_SIZED(SHOW_SONAME);
 
@@ -1226,39 +1226,38 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
-	if (symtab_void && strtab_void) {
 #define FIND_SYM(B) \
-		Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
-		Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
-		Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
-		Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
-		char *symname; \
-		size_t ret_len = 0; \
-		if (cnt) \
-			cnt = EGET(symtab->sh_size) / cnt; \
-		for (i = 0; i < cnt; ++i) { \
-			if ((void *)sym >= elf->data_end - sizeof(*sym)) \
-				goto break_out;	\
-			if (sym->st_name) { \
-				/* make sure the symbol name is in acceptable memory range */ \
-				symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
-				if (EGET(sym->st_name) >= (uint64_t)elf->len || \
-				    EGET(strtab->sh_offset) + EGET(sym->st_name) >= (uint64_t)elf->len || \
-				    !memchr(symname, 0, elf->len - EGET(strtab->sh_offset) + EGET(sym->st_name))) \
-					goto break_out; \
-				scanelf_match_symname(elf, found_sym, \
-				                      &ret, &ret_len, symname, \
-				                      ELF##B##_ST_TYPE(EGET(sym->st_info)), \
-				                      ELF##B##_ST_BIND(EGET(sym->st_info)), \
-				                      ELF##B##_ST_VISIBILITY(EGET(sym->st_other)), \
-				                      EGET(sym->st_shndx), \
-				/* st_size can be 64bit, but no one is really that big, so screw em */ \
-				                      EGET(sym->st_size)); \
-			} \
-			++sym; \
-		}
-		SCANELF_ELF_SIZED(FIND_SYM);
+	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
+	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
+	Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
+	char *symname; \
+	size_t ret_len = 0; \
+	if (cnt) \
+		cnt = EGET(symtab->sh_size) / cnt; \
+	for (i = 0; i < cnt; ++i) { \
+		if ((void *)sym >= elf->data_end - sizeof(*sym)) \
+			goto break_out;	\
+		if (sym->st_name) { \
+			/* make sure the symbol name is in acceptable memory range */ \
+			symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
+			if (EGET(sym->st_name) >= (uint64_t)elf->len || \
+			    EGET(strtab->sh_offset) + EGET(sym->st_name) >= (uint64_t)elf->len || \
+			    !memchr(symname, 0, elf->len - EGET(strtab->sh_offset) + EGET(sym->st_name))) \
+				goto break_out; \
+			scanelf_match_symname(elf, found_sym, \
+			                      &ret, &ret_len, symname, \
+			                      ELF##B##_ST_TYPE(EGET(sym->st_info)), \
+			                      ELF##B##_ST_BIND(EGET(sym->st_info)), \
+			                      ELF##B##_ST_VISIBILITY(EGET(sym->st_other)), \
+			                      EGET(sym->st_shndx), \
+			/* st_size can be 64bit, but no one is really that big, so screw em */ \
+			                      EGET(sym->st_size)); \
+		} \
+		++sym; \
 	}
+	if (symtab_void && strtab_void)
+		SCANELF_ELF_SIZED(FIND_SYM);
 
 	if (be_wewy_wewy_quiet) {
 		free(ret);
@@ -1286,21 +1285,21 @@ static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 		 return NULL;
 
 #define FIND_SECTION(B) \
-		size_t matched, n; \
-		int invert; \
-		const char *section_name; \
-		Elf ## B ## _Shdr *section; \
-		\
-		matched = 0; \
-		array_for_each(find_section_arr, n, section_name) { \
-			invert = (*section_name == '!' ? 1 : 0); \
-			section = SHDR ## B (elf_findsecbyname(elf, section_name + invert)); \
-			if ((section == NULL && invert) || (section != NULL && !invert)) \
-				++matched; \
-		} \
-		\
-		if (matched == array_cnt(find_section_arr)) \
-			*found_section = 1;
+	size_t matched, n; \
+	int invert; \
+	const char *section_name; \
+	Elf ## B ## _Shdr *section; \
+	\
+	matched = 0; \
+	array_for_each(find_section_arr, n, section_name) { \
+		invert = (*section_name == '!' ? 1 : 0); \
+		section = SHDR ## B (elf_findsecbyname(elf, section_name + invert)); \
+		if ((section == NULL && invert) || (section != NULL && !invert)) \
+			++matched; \
+	} \
+	\
+	if (matched == array_cnt(find_section_arr)) \
+		*found_section = 1;
 	SCANELF_ELF_SIZED(FIND_SECTION);
 
 	if (be_wewy_wewy_quiet)
