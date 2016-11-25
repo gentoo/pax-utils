@@ -140,6 +140,55 @@ static const char *which(const char *fname, const char *envvar)
 	return NULL;
 }
 
+/*
+ * Return the index into the program header table for the |p_type| segment.
+ * Useful only when there is one instance of a particular type.
+ */
+static ssize_t scanelf_file_find_phdr(elfobj *elf, uint32_t p_type)
+{
+	ssize_t ret = -1;
+
+#define FIND_PT_TYPE(B) \
+	size_t i; \
+	Elf##B##_Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	Elf##B##_Phdr *phdr = PHDR ## B (elf->phdr); \
+	\
+	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
+		if (EGET(phdr[i].p_type) != p_type) \
+			continue; \
+		\
+		if (ret == -1) \
+			ret = i; \
+		else \
+			warnf("ELF has more than one %s segment !?", get_elfptype(p_type)); \
+	}
+	if (elf->phdr)
+		SCANELF_ELF_SIZED(FIND_PT_TYPE);
+
+	return ret;
+}
+
+static void *scanelf_file_get_pt_dynamic(elfobj *elf)
+{
+	ssize_t i = scanelf_file_find_phdr(elf, PT_DYNAMIC);
+	if (i == -1)
+		return NULL;
+
+#define CHECK_PT_DYNAMIC(B) \
+	Elf##B##_Phdr *phdr = &PHDR##B(elf->phdr)[i]; \
+	Elf##B##_Off offset; \
+	\
+	if (EGET(phdr->p_filesz) == 0) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	if (offset >= elf->len - sizeof(Elf##B##_Dyn)) \
+		break; \
+	return phdr;
+	SCANELF_ELF_SIZED(CHECK_PT_DYNAMIC);
+
+	return NULL;
+}
+
 /* sub-funcs for scanelf_fileat() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 {
@@ -209,7 +258,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	size_t i; \
 	static Elf ## B ## _Shdr sym_shdr, str_shdr; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Addr vsym, vstr, vhash, vgnu_hash; \
 	Elf ## B ## _Dyn *dyn; \
 	Elf ## B ## _Off offset; \
@@ -218,28 +267,24 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	vsym = vstr = vhash = vgnu_hash = 0; \
 	memset(&sym_shdr, 0, sizeof(sym_shdr)); \
 	memset(&str_shdr, 0, sizeof(str_shdr)); \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC) \
-			continue; \
-		\
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
-			continue; \
-		\
-		dyn = DYN ## B (elf->vdata + offset); \
-		while (EGET(dyn->d_tag) != DT_NULL) { \
-			switch (EGET(dyn->d_tag)) { \
-			case DT_SYMTAB:   vsym = EGET(dyn->d_un.d_val); break; \
-			case DT_SYMENT:   sym_shdr.sh_entsize = dyn->d_un.d_val; break; \
-			case DT_STRTAB:   vstr = EGET(dyn->d_un.d_val); break; \
-			case DT_STRSZ:    str_shdr.sh_size = dyn->d_un.d_val; break; \
-			case DT_HASH:     vhash = EGET(dyn->d_un.d_val); break; \
-			/*case DT_GNU_HASH: vgnu_hash = EGET(dyn->d_un.d_val); break;*/ \
-			} \
-			++dyn; \
+	\
+	/* Find the dynamic headers */ \
+	phdr = scanelf_file_get_pt_dynamic(elf); \
+	if (phdr == NULL) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	\
+	dyn = DYN ## B (elf->vdata + offset); \
+	while (EGET(dyn->d_tag) != DT_NULL) { \
+		switch (EGET(dyn->d_tag)) { \
+		case DT_SYMTAB:   vsym = EGET(dyn->d_un.d_val); break; \
+		case DT_SYMENT:   sym_shdr.sh_entsize = dyn->d_un.d_val; break; \
+		case DT_STRTAB:   vstr = EGET(dyn->d_un.d_val); break; \
+		case DT_STRSZ:    str_shdr.sh_size = dyn->d_un.d_val; break; \
+		case DT_HASH:     vhash = EGET(dyn->d_un.d_val); break; \
+		/*case DT_GNU_HASH: vgnu_hash = EGET(dyn->d_un.d_val); break;*/ \
 		} \
-		if (vsym && vstr) \
-			break; \
+		++dyn; \
 	} \
 	if (!vsym || !vstr || !(vhash || vgnu_hash)) \
 		return; \
@@ -486,7 +531,6 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 {
 	static const char *ret = "TEXTREL";
-	unsigned long i;
 
 	if (!show_textrel && !show_textrels) return NULL;
 
@@ -494,22 +538,23 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 
 #define SHOW_TEXTREL(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Off offset; \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-		dyn = DYN ## B (elf->vdata + offset); \
-		while (EGET(dyn->d_tag) != DT_NULL) { \
-			if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
-				*found_textrel = 1; \
-				/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
-				return (be_wewy_wewy_quiet ? NULL : ret); \
-			} \
-			++dyn; \
+	\
+	/* Find the dynamic headers */ \
+	phdr = scanelf_file_get_pt_dynamic(elf); \
+	if (phdr == NULL) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	\
+	dyn = DYN ## B (elf->vdata + offset); \
+	while (EGET(dyn->d_tag) != DT_NULL) { \
+		if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
+			*found_textrel = 1; \
+			/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
+			return (be_wewy_wewy_quiet ? NULL : ret); \
 		} \
+		++dyn; \
 	}
 	if (elf->phdr)
 		SCANELF_ELF_SIZED(SHOW_TEXTREL);
@@ -680,7 +725,6 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
-	unsigned long i;
 	char *rpath, *runpath, **r;
 	void *strtbl_void;
 
@@ -691,112 +735,111 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 
 #define SHOW_RPATH(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 	Elf ## B ## _Off offset; \
 	Elf ## B ## _Xword word; \
-	/* Scan all the program headers */ \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		/* Just scan dynamic headers */ \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-		/* Just scan dynamic RPATH/RUNPATH headers */ \
-		dyn = DYN ## B (elf->vdata + offset); \
-		while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
-			if (word == DT_RPATH) { \
-				r = &rpath; \
-			} else if (word == DT_RUNPATH) { \
-				r = &runpath; \
-			} else { \
-				++dyn; \
-				continue; \
-			} \
-			/* Verify the memory is somewhat sane */ \
-			offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-			if (offset < (Elf ## B ## _Off)elf->len) { \
-				if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
-				*r = elf->data + offset; \
-				/* cache the length in case we need to nuke this section later on */ \
-				if (fix_elf) \
-					offset = strlen(*r); \
-				/* If quiet, don't output paths in ld.so.conf */ \
-				if (be_quiet) { \
-					size_t len; \
-					char *start, *end; \
-					/* note that we only 'chop' off leading known paths. */ \
-					/* since *r is read-only memory, we can only move the ptr forward. */ \
-					start = *r; \
-					/* scan each path in : delimited list */ \
-					while (start) { \
-						rpath_security_checks(elf, start, get_elfdtype(word)); \
-						end = strchr(start, ':'); \
-						len = (end ? abs(end - start) : strlen(start)); \
-						if (use_ldcache) { \
-							size_t n; \
-							const char *ldpath; \
-							array_for_each(ldpaths, n, ldpath) \
-								if (!strncmp(ldpath, start, len) && !ldpath[len]) { \
-									*r = end; \
-									/* corner case ... if RPATH reads "/usr/lib:", we want \
-									 * to show ':' rather than '' */ \
-									if (end && end[1] != '\0') \
-										(*r)++; \
-									break; \
-								} \
-						} \
-						if (!*r || !end) \
-							break; \
-						else \
-							start = start + len + 1; \
-					} \
-				} \
-				if (*r) { \
-					if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
-						/* just nuke it */ \
-						nuke_it##B: \
-						memset(*r, 0x00, offset); \
-						*r = NULL; \
-						ESET(dyn->d_tag, DT_DEBUG); \
-						ESET(dyn->d_un.d_ptr, 0); \
-					} else if (fix_elf) { \
-						/* try to clean "bad" paths */ \
-						size_t len, tmpdir_len; \
-						char *start, *end; \
-						const char *tmpdir; \
-						start = *r; \
-						tmpdir = (getenv("TMPDIR") ? : "."); \
-						tmpdir_len = strlen(tmpdir); \
-						while (1) { \
-							end = strchr(start, ':'); \
-							if (start == end) { \
-								eat_this_path##B: \
-								len = strlen(end); \
-								memmove(start, end+1, len); \
-								start[len-1] = '\0'; \
-								end = start - 1; \
-							} else if (tmpdir && !strncmp(start, tmpdir, tmpdir_len)) { \
-								if (!end) { \
-									if (start == *r) \
-										goto nuke_it##B; \
-									*--start = '\0'; \
-								} else \
-									goto eat_this_path##B; \
-							} \
-							if (!end) \
-								break; \
-							start = end + 1; \
-						} \
-						if (**r == '\0') \
-							goto nuke_it##B; \
-					} \
-					if (*r) \
-						*found_rpath = 1; \
-				} \
-			} \
+	\
+	/* Find the dynamic headers */ \
+	phdr = scanelf_file_get_pt_dynamic(elf); \
+	if (phdr == NULL) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	\
+	/* Just scan dynamic RPATH/RUNPATH headers */ \
+	dyn = DYN ## B (elf->vdata + offset); \
+	while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
+		if (word == DT_RPATH) { \
+			r = &rpath; \
+		} else if (word == DT_RUNPATH) { \
+			r = &runpath; \
+		} else { \
 			++dyn; \
+			continue; \
 		} \
+		/* Verify the memory is somewhat sane */ \
+		offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+		if (offset < (Elf ## B ## _Off)elf->len) { \
+			if (*r) warn("ELF has multiple %s's !?", get_elfdtype(word)); \
+			*r = elf->data + offset; \
+			/* cache the length in case we need to nuke this section later on */ \
+			if (fix_elf) \
+				offset = strlen(*r); \
+			/* If quiet, don't output paths in ld.so.conf */ \
+			if (be_quiet) { \
+				size_t len; \
+				char *start, *end; \
+				/* note that we only 'chop' off leading known paths. */ \
+				/* since *r is read-only memory, we can only move the ptr forward. */ \
+				start = *r; \
+				/* scan each path in : delimited list */ \
+				while (start) { \
+					rpath_security_checks(elf, start, get_elfdtype(word)); \
+					end = strchr(start, ':'); \
+					len = (end ? abs(end - start) : strlen(start)); \
+					if (use_ldcache) { \
+						size_t n; \
+						const char *ldpath; \
+						array_for_each(ldpaths, n, ldpath) \
+							if (!strncmp(ldpath, start, len) && !ldpath[len]) { \
+								*r = end; \
+								/* corner case ... if RPATH reads "/usr/lib:", we want \
+								 * to show ':' rather than '' */ \
+								if (end && end[1] != '\0') \
+									(*r)++; \
+								break; \
+							} \
+					} \
+					if (!*r || !end) \
+						break; \
+					else \
+						start = start + len + 1; \
+				} \
+			} \
+			if (*r) { \
+				if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
+					/* just nuke it */ \
+					nuke_it##B: \
+					memset(*r, 0x00, offset); \
+					*r = NULL; \
+					ESET(dyn->d_tag, DT_DEBUG); \
+					ESET(dyn->d_un.d_ptr, 0); \
+				} else if (fix_elf) { \
+					/* try to clean "bad" paths */ \
+					size_t len, tmpdir_len; \
+					char *start, *end; \
+					const char *tmpdir; \
+					start = *r; \
+					tmpdir = (getenv("TMPDIR") ? : "."); \
+					tmpdir_len = strlen(tmpdir); \
+					while (1) { \
+						end = strchr(start, ':'); \
+						if (start == end) { \
+							eat_this_path##B: \
+							len = strlen(end); \
+							memmove(start, end+1, len); \
+							start[len-1] = '\0'; \
+							end = start - 1; \
+						} else if (tmpdir && !strncmp(start, tmpdir, tmpdir_len)) { \
+							if (!end) { \
+								if (start == *r) \
+									goto nuke_it##B; \
+								*--start = '\0'; \
+							} else \
+								goto eat_this_path##B; \
+						} \
+						if (!end) \
+							break; \
+						start = end + 1; \
+					} \
+					if (**r == '\0') \
+						goto nuke_it##B; \
+				} \
+				if (*r) \
+					*found_rpath = 1; \
+			} \
+		} \
+		++dyn; \
 	}
 	if (elf->phdr && strtbl_void)
 		SCANELF_ELF_SIZED(SHOW_RPATH);
@@ -837,7 +880,6 @@ static char *lookup_config_lib(const char *fname)
 
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
-	unsigned long i;
 	char *needed;
 	void *strtbl_void;
 	char *p;
@@ -853,63 +895,61 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 
 #define SHOW_NEEDED(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 	Elf ## B ## _Off offset; \
 	size_t matched = 0; \
-	/* Walk all the program headers to find the PT_DYNAMIC */ \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) \
-			continue; \
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) \
-			continue; \
-		/* Walk all the dynamic tags to find NEEDED entries */ \
-		dyn = DYN ## B (elf->vdata + offset); \
-		while (EGET(dyn->d_tag) != DT_NULL) { \
-			if (EGET(dyn->d_tag) == DT_NEEDED) { \
-				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-				if (offset >= (Elf ## B ## _Off)elf->len) { \
-					++dyn; \
-					continue; \
+	\
+	/* Find the dynamic headers */ \
+	phdr = scanelf_file_get_pt_dynamic(elf); \
+	if (phdr == NULL) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	\
+	/* Walk all the dynamic tags to find NEEDED entries */ \
+	dyn = DYN ## B (elf->vdata + offset); \
+	while (EGET(dyn->d_tag) != DT_NULL) { \
+		if (EGET(dyn->d_tag) == DT_NEEDED) { \
+			offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+			if (offset >= (Elf ## B ## _Off)elf->len) { \
+				++dyn; \
+				continue; \
+			} \
+			needed = elf->data + offset; \
+			if (op == 0) { \
+				/* -n -> print all entries */ \
+				if (!be_wewy_wewy_quiet) { \
+					if (*found_needed) xchrcat(ret, ',', ret_len); \
+					if (use_ldpath) { \
+						if ((p = lookup_config_lib(needed)) != NULL) \
+							needed = p; \
+					} else if (use_ldcache) { \
+						if ((p = ldso_cache_lookup_lib(elf, needed)) != NULL) \
+							needed = p; \
+					} \
+					xstrcat(ret, needed, ret_len); \
 				} \
-				needed = elf->data + offset; \
-				if (op == 0) { \
-					/* -n -> print all entries */ \
-					if (!be_wewy_wewy_quiet) { \
-						if (*found_needed) xchrcat(ret, ',', ret_len); \
-						if (use_ldpath) { \
-							if ((p = lookup_config_lib(needed)) != NULL) \
-								needed = p; \
-						} else if (use_ldcache) { \
-							if ((p = ldso_cache_lookup_lib(elf, needed)) != NULL) \
-								needed = p; \
-						} \
-						xstrcat(ret, needed, ret_len); \
-					} \
-					*found_needed = 1; \
-				} else { \
-					/* -N -> print matching entries */ \
-					size_t n; \
-					const char *find_lib_name; \
-					\
-					array_for_each(find_lib_arr, n, find_lib_name) { \
-						int invert = 1; \
-						if (find_lib_name[0] == '!') \
-							invert = 0, ++find_lib_name; \
-						if ((!strcmp(find_lib_name, needed)) == invert) \
-							++matched; \
-					} \
-					\
-					if (matched == array_cnt(find_lib_arr)) { \
-						*found_lib = 1; \
-						return (be_wewy_wewy_quiet ? NULL : find_lib); \
-					} \
+				*found_needed = 1; \
+			} else { \
+				/* -N -> print matching entries */ \
+				size_t n; \
+				const char *find_lib_name; \
+				\
+				array_for_each(find_lib_arr, n, find_lib_name) { \
+					int invert = 1; \
+					if (find_lib_name[0] == '!') \
+						invert = 0, ++find_lib_name; \
+					if ((!strcmp(find_lib_name, needed)) == invert) \
+						++matched; \
+				} \
+				\
+				if (matched == array_cnt(find_lib_arr)) { \
+					*found_lib = 1; \
+					return (be_wewy_wewy_quiet ? NULL : find_lib); \
 				} \
 			} \
-			++dyn; \
 		} \
+		++dyn; \
 	}
 	if (elf->phdr && strtbl_void) {
 		SCANELF_ELF_SIZED(SHOW_NEEDED);
