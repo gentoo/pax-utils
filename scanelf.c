@@ -572,8 +572,8 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
  */
 static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
-	unsigned long s, r, rmax;
-	void *symtab_void, *strtab_void, *text_void;
+	unsigned long r, rmax;
+	void *symtab_void, *strtab_void;
 
 	if (!show_textrels) return NULL;
 
@@ -582,32 +582,87 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	if (!*found_textrel) return NULL;
 
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
-	text_void = elf_findsecbyname(elf, ".text");
 
 #define SHOW_TEXTRELS(B) \
+	size_t i; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+	Elf ## B ## _Phdr *phdr; \
+	Elf ## B ## _Off offset; \
 	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
-	Elf ## B ## _Shdr *text = SHDR ## B (text_void); \
-	Elf ## B ## _Addr vaddr = EGET(text->sh_addr); \
-	uint ## B ## _t memsz = EGET(text->sh_size); \
 	Elf ## B ## _Rel *rel; \
 	Elf ## B ## _Rela *rela; \
-	/* search the section headers for relocations */ \
-	for (s = 0; s < EGET(ehdr->e_shnum); ++s) { \
-		uint32_t sh_type = EGET(shdr[s].sh_type); \
-		if (sh_type == SHT_REL) { \
-			rel = REL ## B (elf->vdata + EGET(shdr[s].sh_offset)); \
-			rela = NULL; \
-			rmax = EGET(shdr[s].sh_size) / sizeof(*rel); \
-		} else if (sh_type == SHT_RELA) { \
-			rel = NULL; \
-			rela = RELA ## B (elf->vdata + EGET(shdr[s].sh_offset)); \
-			rmax = EGET(shdr[s].sh_size) / sizeof(*rela); \
-		} else \
+	Elf ## B ## _Dyn *dyn, *drel, *drelsz, *drelent, *dpltrel; \
+	uint32_t pltrel; \
+	\
+	/* Find the dynamic headers */ \
+	phdr = scanelf_file_get_pt_dynamic(elf); \
+	if (phdr == NULL) \
+		break; \
+	offset = EGET(phdr->p_offset); \
+	\
+	/* Walk all the dynamic tags to find relocation info */ \
+	dyn = DYN ## B (elf->vdata + offset); \
+	drel = drelsz = drelent = dpltrel = NULL; \
+	while (EGET(dyn->d_tag) != DT_NULL) { \
+		switch (EGET(dyn->d_tag)) { \
+		case DT_REL: \
+		case DT_RELA: \
+			drel = dyn; \
+			break; \
+		case DT_RELSZ: \
+		case DT_RELASZ: \
+			drelsz = dyn; \
+			break; \
+		case DT_RELENT: \
+		case DT_RELAENT: \
+			drelent = dyn; \
+			break; \
+		case DT_PLTREL: \
+			dpltrel = dyn; \
+			break; \
+		} \
+		++dyn; \
+	} \
+	if (!drel || !drelsz || !drelent || !dpltrel) { \
+		warnf("ELF is missing relocation information"); \
+		break; \
+	} \
+	switch (EGET(dpltrel->d_un.d_val)) { \
+	case DT_REL: \
+		rel = REL##B(elf->vdata + EGET(drel->d_un.d_val)); \
+		rela = NULL; \
+		pltrel = DT_REL; \
+		break; \
+	case DT_RELA: \
+		rel = NULL; \
+		rela = RELA##B(elf->vdata + EGET(drel->d_un.d_val)); \
+		pltrel = DT_RELA; \
+		break; \
+	default: \
+		warn("Unknown relocation type"); \
+		rel = NULL; \
+		rela = NULL; \
+		break; \
+	} \
+	if (!rel && !rela) \
+		break; \
+	rmax = EGET(drelsz->d_un.d_val) / EGET(drelent->d_un.d_val); \
+	\
+	/* search the program segments for relocations */ \
+	phdr = PHDR ## B(elf->phdr); \
+	for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
+		uint ## B ## _t memsz = EGET(phdr[i].p_memsz); \
+		\
+		/* Only care about loadable segments. */ \
+		if (EGET(phdr[i].p_type) != PT_LOAD) \
 			continue; \
-		/* now see if any of the relocs are in the .text */ \
+		/* Only care about executable segments. */ \
+		if ((EGET(phdr[i].p_flags) & PF_X) != PF_X) \
+			continue; \
+		\
+		/* now see if any of the relocs touch this segment */ \
 		for (r = 0; r < rmax; ++r) { \
 			unsigned long sym_max; \
 			Elf ## B ## _Addr offset_tmp; \
@@ -615,7 +670,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			Elf ## B ## _Sym *sym; \
 			Elf ## B ## _Addr r_offset; \
 			uint ## B ## _t r_info; \
-			if (sh_type == SHT_REL) { \
+			if (pltrel == DT_REL) { \
 				r_offset = EGET(rel[r].r_offset); \
 				r_info = EGET(rel[r].r_info); \
 			} else { \
@@ -641,7 +696,9 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			sym_max = EGET(symtab->sh_size) / EGET(symtab->sh_entsize); \
 			/* show the raw details about this reloc */ \
 			printf("  %s: ", elf->base_filename); \
-			if (sym && sym->st_name) \
+			if (!strtab) \
+				printf("(missing symbols)"); \
+			else if (sym && sym->st_name) \
 				printf("%s", elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 			else \
 				printf("(memory/data?)"); \
@@ -659,11 +716,14 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			} \
 			printf(" in "); \
 			if (func && func->st_name) { \
-				const char *func_name = elf->data + EGET(strtab->sh_offset) + EGET(func->st_name); \
-				if (r_offset > EGET(func->st_size)) \
-					printf("(optimized out: previous %s)", func_name); \
-				else \
-					printf("%s", func_name); \
+				if (strtab) { \
+					const char *func_name = elf->data + EGET(strtab->sh_offset) + EGET(func->st_name); \
+					if (r_offset > EGET(func->st_size)) \
+						printf("(optimized out: previous %s)", func_name); \
+					else \
+						printf("%s", func_name); \
+				} else \
+					printf("(missing symbols)"); \
 			} else \
 				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
@@ -690,7 +750,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			} \
 		} \
 	}
-	if (symtab_void && strtab_void && text_void && elf->shdr)
+	if (symtab_void && elf->phdr)
 		SCANELF_ELF_SIZED(SHOW_TEXTRELS);
 	if (!*found_textrels)
 		warnf("ELF %s has TEXTREL markings but doesnt appear to have any real TEXTREL's !?", elf->filename);
