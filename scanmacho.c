@@ -25,7 +25,7 @@ static void usage(int status);
 static int parseargs(int argc, char *argv[]);
 
 /* variables to control behavior */
-static char match_etypes[126] = "";
+static const char *match_etypes = NULL;
 static char scan_envpath = 0;
 static char scan_symlink = 1;
 static char scan_archives = 0;
@@ -348,7 +348,7 @@ static int scanmacho_fat(const char *filename, int fd, size_t len)
 		default:
 			break;
 	}
-	if (strlen(match_etypes)) {
+	if (match_etypes) {
 		char sbuf[128];
 		char ftype[32];
 
@@ -640,7 +640,7 @@ static int parseargs(int argc, char *argv[])
 			from_file = optarg;
 			break;
 		case 'E':
-			strncpy(match_etypes, optarg, sizeof(match_etypes));
+			match_etypes = optarg;
 			break;
 		case 'M':
 			match_bits = atoi(optarg);
