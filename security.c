@@ -9,6 +9,23 @@
 
 #ifdef __linux__
 
+/* Older versions of Linux might not have these. */
+#ifndef CLONE_NEWIPC
+#define CLONE_NEWIPC 0
+#endif
+#ifndef CLONE_NEWNET
+#define CLONE_NEWNET 0
+#endif
+#ifndef CLONE_NEWNS
+#define CLONE_NEWNS 0
+#endif
+#ifndef CLONE_NEWPID
+#define CLONE_NEWPID 0
+#endif
+#ifndef CLONE_NEWUTS
+#define CLONE_NEWUTS 0
+#endif
+
 #ifdef __SANITIZE_ADDRESS__
 /* ASAN does some weird stuff. */
 # define ALLOW_PIDNS 0
@@ -229,7 +246,7 @@ void security_init_pid(void)
 {
 	int flags;
 
-	if (!ALLOW_PIDNS)
+	if (!ALLOW_PIDNS || CLONE_NEWPID == 0)
 		return;
 
 	flags = ns_unshare(CLONE_NEWPID);
@@ -248,13 +265,19 @@ void security_init(bool allow_forking)
 		allow_forking = true;
 
 	/* Drop all possible caps for us and our children.  */
+#ifdef PR_SET_NO_NEW_PRIVS /* New to linux-3.5 */
 	prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+#endif
+#ifdef PR_SET_SECUREBITS /* New to linux-2.6.26 */
+# ifdef SECBIT_KEEP_CAPS_LOCKED /* New to linux-2.6.33 (all SECBIT_xxx) */
 	prctl(PR_SET_SECUREBITS,
 		SECBIT_KEEP_CAPS_LOCKED |
 		SECBIT_NO_SETUID_FIXUP |
 		SECBIT_NO_SETUID_FIXUP_LOCKED |
 		SECBIT_NOROOT |
 		SECBIT_NOROOT_LOCKED, 0, 0, 0);
+# endif
+#endif
 
 	/* None of the pax tools need access to these features. */
 	flags = CLONE_NEWIPC | CLONE_NEWUTS;
