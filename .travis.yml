@@ -29,7 +29,5 @@ addons:
     - autoconf-archive
     - gnulib
     - xmlto
-    - python-pyelftools
-    - python3-pyelftools
 
 script: ./travis/main.sh
