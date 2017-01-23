@@ -836,7 +836,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 				while (start) { \
 					rpath_security_checks(elf, start, get_elfdtype(word)); \
 					end = strchr(start, ':'); \
-					len = (end ? abs(end - start) : strlen(start)); \
+					len = (end ? (size_t)(end - start) : strlen(start)); \
 					if (use_ldcache) { \
 						size_t n; \
 						const char *ldpath; \
