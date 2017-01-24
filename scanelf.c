@@ -261,7 +261,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Addr vsym, vstr, vhash, vgnu_hash; \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Off offset; \
+	Elf ## B ## _Off doffset; \
 	\
 	/* lookup symbols used at runtime with DT_SYMTAB / DT_STRTAB */ \
 	vsym = vstr = vhash = vgnu_hash = 0; \
@@ -272,9 +272,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	phdr = scanelf_file_get_pt_dynamic(elf); \
 	if (phdr == NULL) \
 		break; \
-	offset = EGET(phdr->p_offset); \
+	doffset = EGET(phdr->p_offset); \
 	\
-	dyn = DYN ## B (elf->vdata + offset); \
+	dyn = DYN ## B (elf->vdata + doffset); \
 	while (EGET(dyn->d_tag) != DT_NULL) { \
 		switch (EGET(dyn->d_tag)) { \
 		case DT_SYMTAB:   vsym = EGET(dyn->d_un.d_val); break; \
@@ -290,15 +290,16 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		return; \
 	\
 	/* calc offset into the ELF by finding the load addr of the syms */ \
+	phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
 		Elf ## B ## _Addr filesz = EGET(phdr[i].p_filesz); \
+		Elf ## B ## _Off offset = EGET(phdr[i].p_offset); \
 		Elf ## B ## _Off hash_offset = offset + (vhash - vaddr); \
 		\
 		if (EGET(phdr[i].p_type) != PT_LOAD) \
 			continue; \
 		\
-		offset = EGET(phdr[i].p_offset); \
 		if (offset >= (uint64_t)elf->len) \
 			goto corrupt_hash; \
 		if (filesz >= (uint64_t)elf->len) \
