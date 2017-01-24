@@ -9,16 +9,9 @@ care though ?  this would be an issue if:
  - object being analyzed is 64bit
  - object has symbols which is larger than 32bits
 
-scanelf does not check offsets of DT's when scanning PT_DYNAMIC ... if a bogus
-ELF had a PHDR of type PT_DYNAMIC which claimed to be of size say 1 and had an
-offset just shy of the end of the file, we'll probably crash ...
-
 dumpelf does not do string checking in very very verbose mode.  it assumes the
 strings are sane when dumping the sections.  only way around this is to check
 everything single byte and print it out a character at a time ... sucks ...
-
-we look at the section named ".text" for TEXTRELs when we should look at the
-PT_LOAD program headers which are marked Executable.
 
 we don't handle versioned symbols well.  take an ELF with debugging and do:
 	scanelf -s '' elf
@@ -34,3 +27,7 @@ allow digging into ARM_ATTRIBUTES (.ARM.attributes) sections
 scanelf should look at the dynamic table for rpath/needed/soname entries instead
 of requiring section headers and looking up by section names.  need to implement
 support for GNU_HASH first though so we can get the string table sizes.
+
+rewrite elf->e_shnum handling.  if it's 0 (SH_UNDEF), then the size is
+contained in the sh_size of the first section header at index 0.  add a
+source code check too.
