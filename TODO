@@ -30,3 +30,7 @@ allow digging into ARM_ATTRIBUTES (.ARM.attributes) sections
 	- need info on the section layout
 	- figure out how to integrate cleanly (target-independent driller)
 	http://sourceware.org/binutils/docs/as/GNU-Object-Attributes.html
+
+scanelf should look at the dynamic table for rpath/needed/soname entries instead
+of requiring section headers and looking up by section names.  need to implement
+support for GNU_HASH first though so we can get the string table sizes.

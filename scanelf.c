@@ -767,11 +767,16 @@ static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	char *rpath, *runpath, **r;
-	void *symtab_void, *strtab_void;
+	void *strtab_void;
 
 	if (!show_rpath) return;
 
-	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	/*
+	 * TODO: Switch to the string table found via dynamic tags.
+	 * Note: We can't use scanelf_file_get_symtabs as these strings are
+	 *       *only* found in dynstr and not in .strtab.
+	 */
+	strtab_void = elf_findsecbyname(elf, ".dynstr");
 	rpath = runpath = NULL;
 
 #define SHOW_RPATH(B) \
@@ -913,7 +918,7 @@ static char *lookup_config_lib(const char *fname)
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
 	char *needed;
-	void *symtab_void, *strtab_void;
+	void *strtab_void;
 	char *p;
 
 	/*
@@ -923,7 +928,12 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 	if ((op == 0 && !show_needed) || (op == 1 && !find_lib))
 		return NULL;
 
-	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	/*
+	 * TODO: Switch to the string table found via dynamic tags.
+	 * Note: We can't use scanelf_file_get_symtabs as these strings are
+	 *       *only* found in dynstr and not in .strtab.
+	 */
+	strtab_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_NEEDED(B) \
 	Elf ## B ## _Dyn *dyn; \
@@ -1059,11 +1069,16 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 {
 	char *soname;
-	void *symtab_void, *strtab_void;
+	void *strtab_void;
 
 	if (!show_soname) return NULL;
 
-	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	/*
+	 * TODO: Switch to the string table found via dynamic tags.
+	 * Note: We can't use scanelf_file_get_symtabs as these strings are
+	 *       *only* found in dynstr and not in .strtab.
+	 */
+	strtab_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_SONAME(B) \
 	Elf ## B ## _Dyn *dyn; \
