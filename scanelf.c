@@ -189,6 +189,14 @@ static void *scanelf_file_get_pt_dynamic(elfobj *elf)
 	return NULL;
 }
 
+#define scanelf_dt_for_each(B, elf, dyn) \
+	{ \
+		Elf##B##_Phdr *_phdr = scanelf_file_get_pt_dynamic(elf); \
+		dyn = (_phdr == NULL) ? elf->data_end : DYN##B(elf->vdata + EGET(_phdr->p_offset)); \
+	} \
+	--dyn; \
+	while ((void *)++dyn < elf->data_end - sizeof(*dyn) && EGET(dyn->d_tag) != DT_NULL)
+
 /* sub-funcs for scanelf_fileat() */
 static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 {
@@ -258,10 +266,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	size_t i; \
 	static Elf ## B ## _Shdr sym_shdr, str_shdr; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr; \
+	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Addr vsym, vstr, vhash, vgnu_hash; \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Off doffset; \
 	\
 	/* lookup symbols used at runtime with DT_SYMTAB / DT_STRTAB */ \
 	vsym = vstr = vhash = vgnu_hash = 0; \
@@ -269,13 +276,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	memset(&str_shdr, 0, sizeof(str_shdr)); \
 	\
 	/* Find the dynamic headers */ \
-	phdr = scanelf_file_get_pt_dynamic(elf); \
-	if (phdr == NULL) \
-		break; \
-	doffset = EGET(phdr->p_offset); \
-	\
-	dyn = DYN ## B (elf->vdata + doffset); \
-	while (EGET(dyn->d_tag) != DT_NULL) { \
+	scanelf_dt_for_each(B, elf, dyn) { \
 		switch (EGET(dyn->d_tag)) { \
 		case DT_SYMTAB:   vsym = EGET(dyn->d_un.d_val); break; \
 		case DT_SYMENT:   sym_shdr.sh_entsize = dyn->d_un.d_val; break; \
@@ -284,13 +285,11 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		case DT_HASH:     vhash = EGET(dyn->d_un.d_val); break; \
 		/*case DT_GNU_HASH: vgnu_hash = EGET(dyn->d_un.d_val); break;*/ \
 		} \
-		++dyn; \
 	} \
 	if (!vsym || !vstr || !(vhash || vgnu_hash)) \
 		return; \
 	\
 	/* calc offset into the ELF by finding the load addr of the syms */ \
-	phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
 		Elf ## B ## _Addr filesz = EGET(phdr[i].p_filesz); \
@@ -539,23 +538,13 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 
 #define SHOW_TEXTREL(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Phdr *phdr; \
-	Elf ## B ## _Off offset; \
 	\
-	/* Find the dynamic headers */ \
-	phdr = scanelf_file_get_pt_dynamic(elf); \
-	if (phdr == NULL) \
-		break; \
-	offset = EGET(phdr->p_offset); \
-	\
-	dyn = DYN ## B (elf->vdata + offset); \
-	while (EGET(dyn->d_tag) != DT_NULL) { \
+	scanelf_dt_for_each(B, elf, dyn) { \
 		if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
 			*found_textrel = 1; \
 			/*if (dyn->d_un.d_val & DF_TEXTREL)*/ \
 			return (be_wewy_wewy_quiet ? NULL : ret); \
 		} \
-		++dyn; \
 	}
 	if (elf->phdr)
 		SCANELF_ELF_SIZED(SHOW_TEXTREL);
@@ -588,7 +577,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	size_t i; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr; \
-	Elf ## B ## _Off offset; \
 	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
 	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 	Elf ## B ## _Rel *rel; \
@@ -596,16 +584,9 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	Elf ## B ## _Dyn *dyn, *drel, *drelsz, *drelent, *dpltrel; \
 	uint32_t pltrel; \
 	\
-	/* Find the dynamic headers */ \
-	phdr = scanelf_file_get_pt_dynamic(elf); \
-	if (phdr == NULL) \
-		break; \
-	offset = EGET(phdr->p_offset); \
-	\
 	/* Walk all the dynamic tags to find relocation info */ \
-	dyn = DYN ## B (elf->vdata + offset); \
 	drel = drelsz = drelent = dpltrel = NULL; \
-	while (EGET(dyn->d_tag) != DT_NULL) { \
+	scanelf_dt_for_each(B, elf, dyn) { \
 		switch (EGET(dyn->d_tag)) { \
 		case DT_REL: \
 		case DT_RELA: \
@@ -623,7 +604,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 			dpltrel = dyn; \
 			break; \
 		} \
-		++dyn; \
 	} \
 	if (!drel || !drelsz || !drelent || !dpltrel) { \
 		warnf("ELF is missing relocation information"); \
@@ -796,26 +776,18 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 
 #define SHOW_RPATH(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
 	Elf ## B ## _Off offset; \
 	Elf ## B ## _Xword word; \
 	\
-	/* Find the dynamic headers */ \
-	phdr = scanelf_file_get_pt_dynamic(elf); \
-	if (phdr == NULL) \
-		break; \
-	offset = EGET(phdr->p_offset); \
-	\
 	/* Just scan dynamic RPATH/RUNPATH headers */ \
-	dyn = DYN ## B (elf->vdata + offset); \
-	while ((word=EGET(dyn->d_tag)) != DT_NULL) { \
+	scanelf_dt_for_each(B, elf, dyn) { \
+		word = EGET(dyn->d_tag); \
 		if (word == DT_RPATH) { \
 			r = &rpath; \
 		} else if (word == DT_RUNPATH) { \
 			r = &runpath; \
 		} else { \
-			++dyn; \
 			continue; \
 		} \
 		/* Verify the memory is somewhat sane */ \
@@ -900,7 +872,6 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 					*found_rpath = 1; \
 			} \
 		} \
-		++dyn; \
 	}
 	if (elf->phdr && strtbl_void)
 		SCANELF_ELF_SIZED(SHOW_RPATH);
@@ -956,26 +927,15 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 
 #define SHOW_NEEDED(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Phdr *phdr; \
 	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-	Elf ## B ## _Off offset; \
 	size_t matched = 0; \
 	\
-	/* Find the dynamic headers */ \
-	phdr = scanelf_file_get_pt_dynamic(elf); \
-	if (phdr == NULL) \
-		break; \
-	offset = EGET(phdr->p_offset); \
-	\
 	/* Walk all the dynamic tags to find NEEDED entries */ \
-	dyn = DYN ## B (elf->vdata + offset); \
-	while (EGET(dyn->d_tag) != DT_NULL) { \
+	scanelf_dt_for_each(B, elf, dyn) { \
 		if (EGET(dyn->d_tag) == DT_NEEDED) { \
-			offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-			if (offset >= (Elf ## B ## _Off)elf->len) { \
-				++dyn; \
+			Elf ## B ## _Off offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+			if (offset >= (Elf ## B ## _Off)elf->len) \
 				continue; \
-			} \
 			needed = elf->data + offset; \
 			if (op == 0) { \
 				/* -n -> print all entries */ \
@@ -1010,7 +970,6 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 				} \
 			} \
 		} \
-		++dyn; \
 	}
 	if (elf->phdr && strtbl_void) {
 		SCANELF_ELF_SIZED(SHOW_NEEDED);
@@ -1066,7 +1025,6 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 }
 static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 {
-	unsigned long i;
 	struct stat s;
 	bool dynamic = false;
 
@@ -1075,24 +1033,15 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 
 #define SHOW_BIND(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
-	Elf ## B ## _Off offset; \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
+	\
+	scanelf_dt_for_each(B, elf, dyn) { \
 		dynamic = true; \
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-		dyn = DYN ## B (elf->vdata + offset); \
-		while (EGET(dyn->d_tag) != DT_NULL) { \
-			if (EGET(dyn->d_tag) == DT_BIND_NOW || \
-			   (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) \
-			{ \
-				if (be_quiet) return NULL; \
-				*found_bind = 1; \
-				return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
-			} \
-			++dyn; \
+		if (EGET(dyn->d_tag) == DT_BIND_NOW || \
+		    (EGET(dyn->d_tag) == DT_FLAGS && EGET(dyn->d_un.d_val) & DF_BIND_NOW)) { \
+			if (be_quiet) \
+				return NULL; \
+			*found_bind = 1; \
+			return (char *)(be_wewy_wewy_quiet ? NULL : "NOW"); \
 		} \
 	}
 	SCANELF_ELF_SIZED(SHOW_BIND);
@@ -1109,7 +1058,6 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 }
 static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 {
-	unsigned long i;
 	char *soname;
 	void *strtbl_void;
 
@@ -1120,29 +1068,20 @@ static char *scanelf_file_soname(elfobj *elf, char *found_soname)
 #define SHOW_SONAME(B) \
 	Elf ## B ## _Dyn *dyn; \
 	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Shdr *strtbl = SHDR ## B (strtbl_void); \
-	Elf ## B ## _Off offset; \
+	\
 	/* only look for soname in shared objects */ \
 	if (EGET(ehdr->e_type) != ET_DYN) \
 		return NULL; \
-	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
-		if (EGET(phdr[i].p_type) != PT_DYNAMIC || EGET(phdr[i].p_filesz) == 0) continue; \
-		offset = EGET(phdr[i].p_offset); \
-		if (offset >= elf->len - sizeof(Elf ## B ## _Dyn)) continue; \
-		dyn = DYN ## B (elf->vdata + offset); \
-		while (EGET(dyn->d_tag) != DT_NULL) { \
-			if (EGET(dyn->d_tag) == DT_SONAME) { \
-				offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
-				if (offset >= (Elf ## B ## _Off)elf->len) { \
-					++dyn; \
-					continue; \
-				} \
-				soname = elf->data + offset; \
-				*found_soname = 1; \
-				return (be_wewy_wewy_quiet ? NULL : soname); \
-			} \
-			++dyn; \
+	\
+	scanelf_dt_for_each(B, elf, dyn) { \
+		if (EGET(dyn->d_tag) == DT_SONAME) { \
+			Elf ## B ## _Off offset = EGET(strtbl->sh_offset) + EGET(dyn->d_un.d_ptr); \
+			if (offset >= (Elf ## B ## _Off)elf->len) \
+				continue; \
+			soname = elf->data + offset; \
+			*found_soname = 1; \
+			return (be_wewy_wewy_quiet ? NULL : soname); \
 		} \
 	}
 	if (elf->phdr && strtbl_void)
