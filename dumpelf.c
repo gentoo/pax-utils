@@ -293,9 +293,6 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 	Elf ## B ## _Off offset = EGET(phdr->p_offset); \
 	void *vdata = elf->vdata + offset; \
 	uint32_t p_type = EGET(phdr->p_type); \
-	switch (p_type) { \
-	case PT_DYNAMIC: phdr_dynamic_void = phdr_void; break; \
-	} \
 	printf("/* Program Header #%zu 0x%tX */\n{\n", \
 	       phdr_cnt, (uintptr_t)phdr_void - elf->udata); \
 	printf("\t.p_type   = %-10u , /* [%s] */\n", p_type, get_elfptype(p_type)); \
@@ -307,12 +304,15 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 	printf("\t.p_flags  = 0x%-8X , /* %s */\n", (uint32_t)EGET(phdr->p_flags), dump_p_flags(p_type, EGET(phdr->p_flags))); \
 	printf("\t.p_align  = %-10"PRIu64" , /* (min mem alignment in bytes) */\n", EGET(phdr->p_align)); \
 	\
-	if ((off_t)EGET(phdr->p_offset) > elf->len) { \
+	if (!VALID_PHDR(elf, phdr)) { \
 		printf("\t/* Warning: Program segment is corrupt. */\n"); \
 		goto done##B; \
 	} \
 	\
 	switch (p_type) { \
+	case PT_DYNAMIC: \
+		phdr_dynamic_void = phdr_void; \
+		break; \
 	case PT_NOTE: \
 		dump_notes(elf, B, vdata, vdata + EGET(phdr->p_filesz)); \
 		break; \

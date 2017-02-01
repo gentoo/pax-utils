@@ -45,6 +45,11 @@ typedef struct {
 	 EGET(shdr->sh_offset) < (uint64_t)elf->len && \
 	 EGET(shdr->sh_size) < (uint64_t)elf->len && \
 	 EGET(shdr->sh_offset) <= elf->len - EGET(shdr->sh_size))
+#define VALID_PHDR(elf, phdr) \
+	(phdr && \
+	 EGET(phdr->p_filesz) < (uint64_t)elf->len && \
+	 EGET(phdr->p_offset) < (uint64_t)elf->len && \
+	 EGET(phdr->p_filesz) <= elf->len - EGET(phdr->p_offset))
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);
