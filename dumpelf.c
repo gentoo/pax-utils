@@ -209,6 +209,7 @@ static void dump_notes(elfobj *elf, size_t B, const void *memory, const void *me
 	 * world, the two structs are exactly the same.  So avoid ugly CPP.
 	 */
 	size_t i;
+	bool corrupt = false;
 	const void *ndata = memory;
 	const char *name;
 	const unsigned char *desc;
@@ -223,23 +224,31 @@ static void dump_notes(elfobj *elf, size_t B, const void *memory, const void *me
 	}
 
 	printf("\n\t/%c note section dump:\n", '*');
-	for (i = 0; ndata < memory_end; ++i) {
+	for (i = 0; ndata < memory_end && !corrupt; ++i) {
 		note = ndata;
 		namesz = EGET(note->n_namesz);
 		descsz = EGET(note->n_descsz);
-		name = namesz ? ndata + sizeof(*note) : "";
-		desc = descsz ? ndata + sizeof(*note) + ALIGN_UP(namesz, 4) : "";
+		if (namesz > elf->len || descsz > elf->len)
+			corrupt = true;
+		name = namesz ? ndata + sizeof(*note) : NULL;
+		desc = descsz ? ndata + sizeof(*note) + ALIGN_UP(namesz, 4) : NULL;
 		ndata += sizeof(*note) + ALIGN_UP(namesz, 4) + ALIGN_UP(descsz, 4);
 
-		if (ndata > memory_end) {
+		if (ndata > memory_end)
+			corrupt = true;
+		if (corrupt) {
+			name = NULL;
+			desc = NULL;
 			printf("\tNote is corrupt\n");
-			break;
 		}
 
 		printf("\t * Elf%zu_Nhdr note%zu = {\n", B, i);
-		printf("\t * \t.n_namesz = %u, (bytes) [%s]\n", namesz, name);
+		printf("\t * \t.n_namesz = %u, (bytes)", namesz);
+		if (name)
+			printf(" [%s]", name);
+		printf("\n");
 		printf("\t * \t.n_descsz = %u, (bytes)", descsz);
-		if (descsz) {
+		if (desc) {
 			printf(" [ ");
 			for (i = 0; i < descsz; ++i)
 				printf("%.2X ", desc[i]);
