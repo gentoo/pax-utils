@@ -413,17 +413,20 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 		case SHT_DYNSYM: { \
 			Elf##B##_Sym *sym = vdata; \
 			printf("\n\t/%c section dump:\n", '*'); \
-			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
-				printf("\t * Elf%i_Sym sym%zu = {\n", B, i); \
-				printf("\t * \t.st_name  = %u,\n", (uint32_t)EGET(sym->st_name)); \
-				printf("\t * \t.st_value = 0x%"PRIX64",\n", EGET(sym->st_value)); \
-				printf("\t * \t.st_size  = %"PRIu64", (bytes)\n", EGET(sym->st_size)); \
-				printf("\t * \t.st_info  = %u,\n", (unsigned char)EGET(sym->st_info)); \
-				printf("\t * \t.st_other = %u,\n", (unsigned char)EGET(sym->st_other)); \
-				printf("\t * \t.st_shndx = %u\n", (uint16_t)EGET(sym->st_shndx)); \
-				printf("\t * };\n"); \
-				++sym; \
-			} \
+			if (EGET(shdr->sh_entsize) < sizeof(*sym)) \
+				printf(" /* corrupt section ! */ "); \
+			else \
+				for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
+					printf("\t * Elf%i_Sym sym%zu = {\n", B, i); \
+					printf("\t * \t.st_name  = %u,\n", (uint32_t)EGET(sym->st_name)); \
+					printf("\t * \t.st_value = 0x%"PRIX64",\n", EGET(sym->st_value)); \
+					printf("\t * \t.st_size  = %"PRIu64", (bytes)\n", EGET(sym->st_size)); \
+					printf("\t * \t.st_info  = %u,\n", (unsigned char)EGET(sym->st_info)); \
+					printf("\t * \t.st_other = %u,\n", (unsigned char)EGET(sym->st_other)); \
+					printf("\t * \t.st_shndx = %u\n", (uint16_t)EGET(sym->st_shndx)); \
+					printf("\t * };\n"); \
+					++sym; \
+				} \
 			printf("\t */\n"); \
 			break; \
 		} \
@@ -433,17 +436,20 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 		case SHT_GNU_LIBLIST: { \
 			Elf##B##_Lib *lib = vdata; \
 			printf("\n\t/%c section dump:\n", '*'); \
-			for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
-				printf("\t * Elf%i_Lib lib%zu = {\n", B, i); \
-				printf("\t * \t.l_name       = %"PRIu64",\n", EGET(lib->l_name)); \
-				printf("\t * \t.l_time_stamp = 0x%"PRIX64", (%s)\n", \
-				       EGET(lib->l_time_stamp), timestamp(EGET(lib->l_time_stamp))); \
-				printf("\t * \t.l_checksum   = 0x%"PRIX64",\n", EGET(lib->l_checksum)); \
-				printf("\t * \t.l_version    = %"PRIu64",\n", EGET(lib->l_version)); \
-				printf("\t * \t.l_flags      = 0x%"PRIX64"\n", EGET(lib->l_flags)); \
-				printf("\t * };\n"); \
-				++lib; \
-			} \
+			if (EGET(shdr->sh_entsize) < sizeof(*lib)) \
+				printf(" /* corrupt section ! */ "); \
+			else \
+				for (i = 0; i < EGET(shdr->sh_size) / EGET(shdr->sh_entsize); ++i) { \
+					printf("\t * Elf%i_Lib lib%zu = {\n", B, i); \
+					printf("\t * \t.l_name       = %"PRIu64",\n", EGET(lib->l_name)); \
+					printf("\t * \t.l_time_stamp = 0x%"PRIX64", (%s)\n", \
+					       EGET(lib->l_time_stamp), timestamp(EGET(lib->l_time_stamp))); \
+					printf("\t * \t.l_checksum   = 0x%"PRIX64",\n", EGET(lib->l_checksum)); \
+					printf("\t * \t.l_version    = %"PRIu64",\n", EGET(lib->l_version)); \
+					printf("\t * \t.l_flags      = 0x%"PRIX64"\n", EGET(lib->l_flags)); \
+					printf("\t * };\n"); \
+					++lib; \
+				} \
 			printf("\t */\n"); \
 		} \
 		default: { \
