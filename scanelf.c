@@ -332,7 +332,8 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 				if (!buckets[b]) \
 					continue; \
 				for (sym_idx = buckets[b], chained = 0; \
-				     sym_idx < nchains && sym_idx && chained <= nchains; \
+				     (sym_idx < nchains && sym_idx && chained <= nchains && \
+				      (void *)&chains[sym_idx] + sizeof(*chains) < elf->data_end); \
 				     sym_idx = chains[sym_idx], ++chained) { \
 					if (max_sym_idx < sym_idx) \
 						max_sym_idx = sym_idx; \
