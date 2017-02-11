@@ -385,7 +385,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 		/* Special case so we can do valid check next. */ \
 		if (be_verbose) \
 			printf("\t/* NOBITS sections do not occupy the file. */\n"); \
-	} else if (!(offset < (uint64_t)elf->len && size < (uint64_t)elf->len && offset <= elf->len - size)) { \
+	} else if (!VALID_RANGE(elf, offset, size)) { \
 		printf(" /* corrupt section header ! */ "); \
 	} else if (size && be_verbose) { \
 		void *vdata = elf->vdata + offset; \

@@ -181,7 +181,7 @@ static void *scanelf_file_get_pt_dynamic(elfobj *elf)
 	if (EGET(phdr->p_filesz) == 0) \
 		break; \
 	offset = EGET(phdr->p_offset); \
-	if (offset >= elf->len - sizeof(Elf##B##_Dyn)) \
+	if (!VALID_RANGE(elf, offset, sizeof(Elf##B##_Dyn))) \
 		break; \
 	return phdr;
 	SCANELF_ELF_SIZED(CHECK_PT_DYNAMIC);
@@ -299,11 +299,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		if (EGET(phdr[i].p_type) != PT_LOAD) \
 			continue; \
 		\
-		if (offset >= (uint64_t)elf->len) \
+		if (!VALID_RANGE(elf, offset, filesz)) \
 			goto corrupt_hash; \
-		if (filesz >= (uint64_t)elf->len) \
-			goto corrupt_hash; \
-		if (hash_offset + (sizeof(Elf32_Word) * 4) > (uint64_t)elf->len) \
+		if (!VALID_RANGE(elf, hash_offset, sizeof(Elf32_Word) * 4)) \
 			goto corrupt_hash; \
 		\
 		if (vhash >= vaddr && vhash < vaddr + filesz) { \
@@ -317,15 +315,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 			Elf32_Word sym_idx; \
 			Elf32_Word chained; \
 			\
-			if (hash_offset >= (uint64_t)elf->len) \
+			if (!VALID_RANGE(elf, offset, nbuckets * 4)) \
 				goto corrupt_hash; \
-			if (nbuckets >= UINT32_MAX / 4) \
-				goto corrupt_hash; \
-			if (nchains >= UINT32_MAX / 4) \
-				goto corrupt_hash; \
-			if (nbuckets * 4 > elf->len - offset) \
-				goto corrupt_hash; \
-			if (nchains * 4 > elf->len - offset) \
+			if (!VALID_RANGE(elf, offset, nchains * 4)) \
 				goto corrupt_hash; \
 			\
 			for (b = 0; b < nbuckets; ++b) { \
@@ -345,13 +337,17 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		} \
 		\
 		if (vsym >= vaddr && vsym < vaddr + filesz) { \
+			Elf##B##_Shdr *shdr = &sym_shdr; \
 			ESET(sym_shdr.sh_offset, offset + (vsym - vaddr)); \
-			*sym = &sym_shdr; \
+			if (VALID_SHDR(elf, shdr)) \
+				*sym = shdr; \
 		} \
 		\
 		if (vstr >= vaddr && vstr < vaddr + filesz) { \
+			Elf##B##_Shdr *shdr = &str_shdr; \
 			ESET(str_shdr.sh_offset, offset + (vstr - vaddr)); \
-			*str = &str_shdr; \
+			if (VALID_SHDR(elf, shdr)) \
+				*str = shdr; \
 		} \
 	}
 	if (elf->phdr)
@@ -487,7 +483,7 @@ static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro,
 		for (i = 0; i < shnum; ++i) { \
 			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
-			if (offset >= elf->len - sizeof(NOTE_GNU_STACK)) \
+			if (!VALID_RANGE(elf, offset, sizeof(NOTE_GNU_STACK))) \
 				continue; \
 			if (!strcmp(elf->data + offset, NOTE_GNU_STACK)) { \
 				if (multi_stack++) warnf("%s: multiple .note.GNU-stack's !?", elf->filename); \
@@ -1505,7 +1501,7 @@ static int scanelf_elfobj(elfobj *elf)
 		case 'a': out = get_elfemtype(elf); break;
 		case 'I': out = get_elfosabi(elf); break;
 		case 'Y': out = get_elf_eabi(elf); break;
-		case 'Z': snprintf(ubuf, sizeof(ubuf), "%lu", (unsigned long)elf->len); out = ubuf; break;;
+		case 'Z': snprintf(ubuf, sizeof(ubuf), "%"PRIu64, (uint64_t)elf->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
 		}
 		if (out) {

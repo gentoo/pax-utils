@@ -39,17 +39,15 @@ typedef struct {
 #define SYM32(ptr) ((Elf32_Sym *)(ptr))
 #define SYM64(ptr) ((Elf64_Sym *)(ptr))
 
+#define VALID_RANGE(elf, offset, size) \
+	((uint64_t)(size) <= (uint64_t)elf->len && \
+	 (uint64_t)(offset) <= (uint64_t)elf->len - (uint64_t)(size))
 #define VALID_SHDR(elf, shdr) \
 	(shdr && \
 	 EGET(shdr->sh_type) != SHT_NOBITS && \
-	 EGET(shdr->sh_offset) < (uint64_t)elf->len && \
-	 EGET(shdr->sh_size) < (uint64_t)elf->len && \
-	 EGET(shdr->sh_offset) <= elf->len - EGET(shdr->sh_size))
+	 VALID_RANGE(elf, EGET(shdr->sh_offset), EGET(shdr->sh_size)))
 #define VALID_PHDR(elf, phdr) \
-	(phdr && \
-	 EGET(phdr->p_filesz) < (uint64_t)elf->len && \
-	 EGET(phdr->p_offset) < (uint64_t)elf->len && \
-	 EGET(phdr->p_filesz) <= elf->len - EGET(phdr->p_offset))
+	(phdr && VALID_RANGE(elf, EGET(phdr->p_offset), EGET(phdr->p_filesz)))
 
 /* prototypes */
 extern char *pax_short_hf_flags(unsigned long flags);
