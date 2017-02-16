@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Copyright 2012-2014 Gentoo Foundation
 # Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
 # Copyright 2012-2014 The Chromium OS Authors
@@ -73,7 +74,7 @@ def dbg(debug, *args, **kwargs):
 def bstr(buf):
   """Decode the byte string into a string"""
   if isinstance(buf, str):
-      return buf
+    return buf
   return buf.decode('utf-8')
 
 
@@ -351,6 +352,8 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
   return (None, None)
 
 
+# We abuse the _all_libs state.  We probably shouldn't, but we do currently.
+# pylint: disable=dangerous-default-value
 def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[]},
              display=None, debug=False, _first=True, _all_libs={}):
   """Parse the ELF dependency tree of the specified file
@@ -491,6 +494,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
     del elf
 
   return ret
+# pylint: enable=dangerous-default-value
 
 
 class _NormalizePathAction(argparse.Action):
@@ -608,7 +612,7 @@ def _ActionCopy(options, elf):
   # Similarly, we should provide an option for automatically copying over
   # the libnsl.so and libnss_*.so libraries, as well as an open ended list
   # for known libs that get loaded (e.g. curl will dlopen(libresolv)).
-  libpaths = set()
+  uniq_libpaths = set()
   for lib in elf['libs']:
     libdata = elf['libs'][lib]
     path = libdata['realpath']
@@ -616,17 +620,18 @@ def _ActionCopy(options, elf):
       warn('could not locate library: %s' % lib)
       continue
     if not options.libdir:
-      libpaths.add(_StripRoot(os.path.dirname(path)))
+      uniq_libpaths.add(_StripRoot(os.path.dirname(path)))
     _copy(path, libdata['path'], outdir=options.libdir)
 
   if not options.libdir:
-    libpaths = list(libpaths)
+    libpaths = list(uniq_libpaths)
     if elf['runpath']:
       libpaths = elf['runpath'] + libpaths
     else:
       libpaths = elf['rpath'] + libpaths
   else:
-    libpaths.add(options.libdir)
+    uniq_libpaths.add(options.libdir)
+    libpaths = list(uniq_libpaths)
 
   # We don't bother to copy this as ParseElf adds the interp to the 'libs',
   # so it was already copied in the libs loop above.
@@ -637,6 +642,7 @@ def _ActionCopy(options, elf):
 
 
 def main(argv):
+  """The main entry point!"""
   parser = argparse.ArgumentParser(
       description=__doc__,
       formatter_class=argparse.RawDescriptionHelpFormatter)

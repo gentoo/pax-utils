@@ -1,0 +1,34 @@
+[MESSAGES CONTROL]
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifier separated by comma (,) or put this option
+# multiple times (only on the command line, not in the configuration file where
+# it should appear only once).
+disable=
+	too-many-lines,
+	too-many-branches,
+	too-many-statements,
+	too-few-public-methods,
+	too-many-instance-attributes,
+	too-many-public-methods,
+	too-many-locals,
+	too-many-arguments,
+	locally-enabled,
+	locally-disabled,
+	fixme,
+	invalid-name,
+
+[REPORTS]
+reports=no
+
+[FORMAT]
+max-line-length=80
+indent-string='  '
+
+[SIMILARITIES]
+min-similarity-lines=20
+
+[VARIABLES]
+dummy-variables-rgx=_
+
+[DESIGN]
+max-parents=10
