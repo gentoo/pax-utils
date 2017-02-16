@@ -641,8 +641,8 @@ def _ActionCopy(options, elf):
         outdir=options.bindir)
 
 
-def main(argv):
-  """The main entry point!"""
+def GetParser():
+  """Get a CLI parser."""
   parser = argparse.ArgumentParser(
       description=__doc__,
       formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -699,6 +699,12 @@ def main(argv):
                      action='store_true', default=False,
                      help='Copy over plain (non-ELF) files instead of warn+ignore')
 
+  return parser
+
+
+def main(argv):
+  """The main entry point!"""
+  parser = GetParser()
   options = parser.parse_args(argv)
   paths = options.path
 
