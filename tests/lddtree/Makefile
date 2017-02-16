@@ -1,7 +1,7 @@
 all: check
 
 %.check:
-	./dotest.$(@:.check=)
+	./dotest-$(@:.check=)
 
 test check: sh.check
 ifneq ($(USE_PYTHON),no)
