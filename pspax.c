@@ -75,7 +75,7 @@ static elfobj *proc_readelf(int pfd)
 	return elf;
 }
 
-static char *get_proc_name_cmdline(int pfd)
+static const char *get_proc_name_cmdline(int pfd)
 {
 	FILE *fp;
 	static char str[1024];
@@ -93,7 +93,7 @@ static char *get_proc_name_cmdline(int pfd)
 	return (str);
 }
 
-static char *get_proc_name(int pfd)
+static const char *get_proc_name(int pfd)
 {
 	FILE *fp;
 	static char str[BUFSIZ];
@@ -198,10 +198,10 @@ static int print_executable_mappings(int pfd)
 # define NOTE_TO_SELF
 #endif
 
-static struct passwd *get_proc_passwd(int pfd)
+static const struct passwd *get_proc_passwd(int pfd)
 {
 	struct stat st;
-	struct passwd *pwd = NULL;
+	const struct passwd *pwd = NULL;
 
 	if (fstatat(pfd, "stat", &st, AT_SYMLINK_NOFOLLOW) != -1)
 		pwd = getpwuid(st.st_uid);
@@ -209,7 +209,7 @@ static struct passwd *get_proc_passwd(int pfd)
 	return pwd;
 }
 
-static char *get_proc_status(int pfd, const char *name)
+static const char *get_proc_status(int pfd, const char *name)
 {
 	FILE *fp;
 	size_t len;
@@ -233,7 +233,7 @@ static char *get_proc_status(int pfd, const char *name)
 	return NULL;
 }
 
-static char *get_pid_attr(int pfd)
+static const char *get_pid_attr(int pfd)
 {
 	FILE *fp;
 	char *p;
@@ -250,7 +250,7 @@ static char *get_pid_attr(int pfd)
 	return buf;
 }
 
-static char *get_pid_addr(int pfd)
+static const char *get_pid_addr(int pfd)
 {
 	FILE *fp;
 	char *p;
@@ -281,7 +281,7 @@ static const char *get_proc_type(int pfd)
 	return ret;
 }
 
-static char *scanelf_file_phdr(elfobj *elf)
+static const char *scanelf_file_phdr(elfobj *elf)
 {
 	static char ret[8];
 	unsigned long i, off, multi_stack, multi_load;
@@ -294,8 +294,8 @@ static char *scanelf_file_phdr(elfobj *elf)
 	uint32_t flags;
 #define SHOW_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
 			if (multi_stack++) warnf("%s: multiple PT_GNU_STACK's !?", elf->filename); \
@@ -336,7 +336,7 @@ static void pspax(const char *find_name)
 	pid_t pid;
 	pid_t ppid = show_pid;
 	int have_attr, have_addr, wx;
-	struct passwd *pwd;
+	const struct passwd *pwd;
 	const char *pax, *type, *name, *attr, *addr;
 	char *caps;
 	int pfd;
@@ -375,7 +375,7 @@ static void pspax(const char *find_name)
 			continue;
 
 		if (find_name && pid) {
-			char *str = get_proc_name(pfd);
+			const char *str = get_proc_name(pfd);
 			if (!str)
 				goto next_pid;
 			if (strcmp(str, find_name) != 0)
@@ -504,8 +504,8 @@ static void usage(int status)
 static void parseargs(int argc, char *argv[])
 {
 	int flag;
-	struct passwd *pwd = NULL;
-	struct  group *gwd = NULL;
+	const struct passwd *pwd = NULL;
+	const struct  group *gwd = NULL;
 
 	opterr = 0;
 	while ((flag=getopt_long(argc, argv, PARSE_FLAGS, long_opts, NULL)) != -1) {
@@ -563,7 +563,7 @@ static void parseargs(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	/* We unshare pidns but don't actually enter it.  That means
 	 * we still get to scan /proc, but just not fork children.  */
