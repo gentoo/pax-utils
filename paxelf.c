@@ -86,7 +86,7 @@ static pairtype elf_etypes[] = {
 	{ 0, 0 }
 };
 
-unsigned int get_etype(elfobj *elf)
+unsigned int get_etype(const elfobj *elf)
 {
 	if (elf->elf_class == ELFCLASS32)
 		return EGET(EHDR32(elf->ehdr)->e_type);
@@ -94,12 +94,12 @@ unsigned int get_etype(elfobj *elf)
 		return EGET(EHDR64(elf->ehdr)->e_type);
 }
 
-const char *get_elfetype(elfobj *elf)
+const char *get_elfetype(const elfobj *elf)
 {
 	return find_pairtype(elf_etypes, get_etype(elf));
 }
 
-const char *get_endian(elfobj *elf)
+const char *get_endian(const elfobj *elf)
 {
 	switch (elf->data[EI_DATA]) {
 		case ELFDATA2LSB: return "LE";
@@ -109,7 +109,7 @@ const char *get_endian(elfobj *elf)
 }
 
 /* translate elf EF_ defines -- tricky as it's based on EM_ */
-static unsigned int get_eflags(elfobj *elf)
+static unsigned int get_eflags(const elfobj *elf)
 {
 	if (elf->elf_class == ELFCLASS32)
 		return EGET(EHDR32(elf->ehdr)->e_flags);
@@ -117,7 +117,7 @@ static unsigned int get_eflags(elfobj *elf)
 		return EGET(EHDR64(elf->ehdr)->e_flags);
 }
 
-static int arm_eabi_poker(elfobj *elf)
+static int arm_eabi_poker(const elfobj *elf)
 {
 	unsigned int emachine, eflags;
 
@@ -133,7 +133,7 @@ static int arm_eabi_poker(elfobj *elf)
 		return -1;
 }
 
-const char *get_elf_eabi(elfobj *elf)
+const char *get_elf_eabi(const elfobj *elf)
 {
 	static char buf[26];
 	int eabi = arm_eabi_poker(elf);
@@ -144,7 +144,7 @@ const char *get_elf_eabi(elfobj *elf)
 	return buf;
 }
 
-const char *get_elfosabi(elfobj *elf)
+const char *get_elfosabi(const elfobj *elf)
 {
 	const char *str = get_elfeitype(EI_OSABI, elf->data[EI_OSABI]);
 	if (strncmp(str, "ELFOSABI_", 9) == 0)
@@ -279,7 +279,7 @@ static pairtype elf_emtypes[] = {
 	{ 0, 0 }
 };
 
-unsigned int get_emtype(elfobj *elf)
+unsigned int get_emtype(const elfobj *elf)
 {
 	if (elf->elf_class == ELFCLASS32)
 		return EGET(EHDR32(elf->ehdr)->e_machine);
@@ -287,7 +287,7 @@ unsigned int get_emtype(elfobj *elf)
 		return EGET(EHDR64(elf->ehdr)->e_machine);
 }
 
-const char *get_elfemtype(elfobj *elf)
+const char *get_elfemtype(const elfobj *elf)
 {
 	return find_pairtype(elf_emtypes, get_emtype(elf));
 }
@@ -784,7 +784,7 @@ const char *gnu_short_stack_flags(unsigned long flags)
 	return buffer;
 }
 
-const void *elf_findsecbyname(elfobj *elf, const char *name)
+const void *elf_findsecbyname(const elfobj *elf, const char *name)
 {
 	unsigned int i;
 	const char *shdr_name;
