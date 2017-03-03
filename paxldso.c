@@ -68,7 +68,7 @@ static bool is_compatible(elfobj *elf, libentry_t *libent)
 	 */
 
 	if (elf->elf_class == ELFCLASS32) {
-		Elf32_Ehdr *ehdr = EHDR32(elf->ehdr);
+		const Elf32_Ehdr *ehdr = EHDR32(elf->ehdr);
 
 		switch (EGET(ehdr->e_machine)) {
 		case EM_AARCH64:
@@ -101,7 +101,7 @@ static bool is_compatible(elfobj *elf, libentry_t *libent)
 			break;
 		}
 	} else {
-		Elf64_Ehdr *ehdr = EHDR64(elf->ehdr);
+		const Elf64_Ehdr *ehdr = EHDR64(elf->ehdr);
 
 		switch (EGET(ehdr->e_machine)) {
 		case EM_AARCH64:
