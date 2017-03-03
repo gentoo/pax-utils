@@ -616,7 +616,7 @@ free_elf_and_return:
 #define READELF_HEADER(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
 		char invalid; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Off size; \
 		/* verify program header */ \
 		invalid = 0; \
@@ -794,9 +794,9 @@ const void *elf_findsecbyname(elfobj *elf, const char *name)
 
 #define FINDSEC(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
-	Elf ## B ## _Shdr *strtbl; \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+	const Elf ## B ## _Shdr *strtbl; \
 	Elf ## B ## _Off offset; \
 	uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
 	uint16_t shnum = EGET(ehdr->e_shnum); \
