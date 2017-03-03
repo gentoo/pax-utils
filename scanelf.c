@@ -733,19 +733,21 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 			if (be_verbose && objdump) { \
 				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
-				size_t syslen; \
-				const char sysfmt[] = "%s -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n"; \
-				syslen = sizeof(sysfmt) + strlen(objdump) + strlen(elf->filename) + 3 * sizeof(unsigned long) + 1; \
-				sysbuf = xmalloc(syslen); \
+				int ret; \
 				if (end_addr < r_offset) \
 					/* not uncommon when things are optimized out */ \
 					end_addr = r_offset + 0x100; \
-				snprintf(sysbuf, syslen, sysfmt, \
+				ret = asprintf( \
+					&sysbuf, \
+					"%s -r -R -d -w -l --start-address=0x%lX --stop-address=0x%lX %s | " \
+					"grep --color -i -C 3 '.*[[:space:]]%lX:[[:space:]]*R_.*'\n", \
 					objdump, \
 					(unsigned long)offset_tmp, \
 					(unsigned long)end_addr, \
 					elf->filename, \
 					(unsigned long)r_offset); \
+				if (ret < 0) \
+					errp("asprintf() failed"); \
 				fflush(stdout); \
 				if (system(sysbuf)) {/* don't care */} \
 				fflush(stdout); \
