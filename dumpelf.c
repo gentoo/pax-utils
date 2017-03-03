@@ -55,7 +55,7 @@ static void dumpelf(const char *filename, size_t file_cnt)
 	/* setup the struct to namespace this elf */
 #define MAKE_STRUCT(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	b = B; \
 	printf( \
 		"Elf%1$i_Dyn dumpedelf_dyn_%2$zu[];\n" \
@@ -300,7 +300,7 @@ static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 	if (elf->elf_class == ELFCLASS ## B) { \
 	const Elf ## B ## _Phdr *phdr = PHDR ## B (phdr_void); \
 	Elf ## B ## _Off offset = EGET(phdr->p_offset); \
-	void *vdata = elf->vdata + offset; \
+	const void *vdata = elf->vdata + offset; \
 	uint32_t p_type = EGET(phdr->p_type); \
 	printf("/* Program Header #%zu 0x%tX */\n{\n", \
 	       phdr_cnt, (uintptr_t)phdr_void - elf->udata); \
@@ -356,7 +356,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 	size_t i;
 
 	/* Make sure the string is valid. */
-	if ((void *)section_name >= elf->data_end)
+	if ((const void *)section_name >= elf->data_end)
 		section_name = "<corrupt>";
 	else if (memchr(section_name, 0, elf->len - (section_name - elf->data)) == NULL)
 		section_name = "<corrupt>";
@@ -388,8 +388,8 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 	} else if (!VALID_RANGE(elf, offset, size)) { \
 		printf(" /* corrupt section header ! */ "); \
 	} else if (size && be_verbose) { \
-		void *vdata = elf->vdata + offset; \
-		unsigned char *data = vdata; \
+		const void *vdata = elf->vdata + offset; \
+		const unsigned char *data = vdata; \
 		switch (type) { \
 		case SHT_PROGBITS: { \
 			if (strcmp(section_name, ".interp") == 0) { \
@@ -420,7 +420,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 			break; \
 		} \
 		case SHT_DYNSYM: { \
-			Elf##B##_Sym *sym = vdata; \
+			const Elf##B##_Sym *sym = vdata; \
 			printf("\n\t/%c section dump:\n", '*'); \
 			if (EGET(shdr->sh_entsize) < sizeof(*sym)) \
 				printf(" /* corrupt section ! */ "); \
@@ -443,7 +443,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 			dump_notes(elf, B, vdata, vdata + EGET(shdr->sh_size)); \
 			break; \
 		case SHT_GNU_LIBLIST: { \
-			Elf##B##_Lib *lib = vdata; \
+			const Elf##B##_Lib *lib = vdata; \
 			printf("\n\t/%c section dump:\n", '*'); \
 			if (EGET(shdr->sh_entsize) < sizeof(*lib)) \
 				printf(" /* corrupt section ! */ "); \
