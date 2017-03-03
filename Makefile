@@ -2,13 +2,15 @@
 # Distributed under the terms of the GNU General Public License v2
 ####################################################################
 
-check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; \
+check_compiler = \
+	$(shell if $(CC) $(WUNKNOWN) $(1) -S -o /dev/null -xc /dev/null >/dev/null 2>&1; \
 	then echo "$(1)"; else echo "$(2)"; fi)
-check_gcc_many = $(foreach flag,$(1),$(call check_gcc,$(flag)))
+check_compiler_many = $(foreach flag,$(1),$(call check_compiler,$(flag)))
 
 ####################################################################
 # Avoid CC overhead when installing
 ifneq ($(MAKECMDGOALS),install)
+WUNKNOWN  := $(call check_compiler,-Werror=unknown-warning-option)
 _WFLAGS   := \
 	-Wdeclaration-after-statement \
 	-Wextra \
@@ -19,7 +21,7 @@ WFLAGS    := -Wall -Wunused -Wimplicit -Wshadow -Wformat=2 \
              -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
              -Wbad-function-cast -Wnested-externs -Wcomment -Winline \
              -Wchar-subscripts -Wcast-align -Wno-format-nonliteral \
-             $(call check_gcc_many,$(_WFLAGS))
+             $(call check_compiler_many,$(_WFLAGS))
 endif
 
 CFLAGS    ?= -O2 -pipe
@@ -86,7 +88,7 @@ DEBUG_FLAGS = \
 	-fsanitize=leak \
 	-fsanitize=undefined
 debug: clean
-	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_gcc_many,$(DEBUG_FLAGS))" all
+	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_compiler_many,$(DEBUG_FLAGS))" all
 	@-chpax  -permsx $(ELF_TARGETS)
 	@-paxctl -permsx $(ELF_TARGETS)
 
