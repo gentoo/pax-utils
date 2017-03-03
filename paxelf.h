@@ -50,9 +50,9 @@ typedef struct {
 	(phdr && VALID_RANGE(elf, EGET(phdr->p_offset), EGET(phdr->p_filesz)))
 
 /* prototypes */
-extern char *pax_short_hf_flags(unsigned long flags);
-extern char *pax_short_pf_flags(unsigned long flags);
-extern char *gnu_short_stack_flags(unsigned long flags);
+extern const char *pax_short_hf_flags(unsigned long flags);
+extern const char *pax_short_pf_flags(unsigned long flags);
+extern const char *gnu_short_stack_flags(unsigned long flags);
 extern elfobj *readelf_buffer(const char *filename, void *buffer, size_t buffer_len);
 extern elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only);
 #define readelf_fd(filename, fd, len) _readelf_fd(filename, fd, len, 1)

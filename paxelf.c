@@ -726,7 +726,7 @@ void unreadelf(elfobj *elf)
 	free(elf);
 }
 
-char *pax_short_hf_flags(unsigned long flags)
+const char *pax_short_hf_flags(unsigned long flags)
 {
 	static char buffer[7];
 
@@ -746,7 +746,7 @@ char *pax_short_hf_flags(unsigned long flags)
  * lower case: explicitly disabled
  * upper case: explicitly enabled
  *      -    : default */
-char *pax_short_pf_flags(unsigned long flags)
+const char *pax_short_pf_flags(unsigned long flags)
 {
 	static char buffer[7];
 
@@ -772,7 +772,7 @@ char *pax_short_pf_flags(unsigned long flags)
 	return buffer;
 }
 
-char *gnu_short_stack_flags(unsigned long flags)
+const char *gnu_short_stack_flags(unsigned long flags)
 {
 	static char buffer[4];
 

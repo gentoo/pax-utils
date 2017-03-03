@@ -358,7 +358,7 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	warn("%s: ELF hash table is corrupt", elf->filename);
 }
 
-static char *scanelf_file_pax(elfobj *elf, char *found_pax)
+static const char *scanelf_file_pax(elfobj *elf, char *found_pax)
 {
 	static char ret[7];
 	unsigned long i, shown;
@@ -397,8 +397,7 @@ static char *scanelf_file_pax(elfobj *elf, char *found_pax)
 
 	/* fall back to EI_PAX if no PT_PAX was found */
 	if (!*ret) {
-		static char *paxflags;
-		paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
+		const char *paxflags = pax_short_hf_flags(EI_PAX_FLAGS(elf));
 		if (!be_quiet || (be_quiet && EI_PAX_FLAGS(elf))) {
 			*found_pax = 1;
 			return (be_wewy_wewy_quiet ? NULL : paxflags);
