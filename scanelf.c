@@ -761,7 +761,7 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	return NULL;
 }
 
-static void rpath_security_checks(elfobj *elf, char *item, const char *dt_type)
+static void rpath_security_checks(elfobj *elf, const char *item, const char *dt_type)
 {
 	struct stat st;
 	switch (*item) {
