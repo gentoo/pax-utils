@@ -411,7 +411,7 @@ static const char *scanelf_file_pax(elfobj *elf, char *found_pax)
 		return ret;
 }
 
-static char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro, char *found_load)
+static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_relro, char *found_load)
 {
 	static char ret[12];
 	char *found;
@@ -556,7 +556,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
  * Should rewrite this to check PT_LOAD sections that are marked
  * Executable rather than the section named '.text'.
  */
-static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
+static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
 	unsigned long r, rmax;
 	void *symtab_void, *strtab_void;
@@ -939,7 +939,7 @@ static char *lookup_config_lib(const char *fname)
 
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
-	char *needed;
+	const char *needed;
 	void *strtab_void;
 	char *p;
 
@@ -1011,7 +1011,7 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 
 	return NULL;
 }
-static char *scanelf_file_interp(elfobj *elf, char *found_interp)
+static const char *scanelf_file_interp(elfobj *elf, char *found_interp)
 {
 	uint64_t offset = 0;
 
@@ -1043,7 +1043,7 @@ static char *scanelf_file_interp(elfobj *elf, char *found_interp)
 
 	/* Validate the pointer even if we don't use it in output */
 	if (offset && offset <= (uint64_t)elf->len) {
-		char *interp = elf->data + offset;
+		const char *interp = elf->data + offset;
 
 		/* If it isn't a C pointer, it's garbage */
 		if (memchr(interp, 0, elf->len - offset)) {
@@ -1088,9 +1088,9 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 		return dynamic ? "LAZY" : "STATIC";
 	}
 }
-static char *scanelf_file_soname(elfobj *elf, char *found_soname)
+static const char *scanelf_file_soname(elfobj *elf, char *found_soname)
 {
-	char *soname;
+	const char *soname;
 	void *strtab_void;
 
 	if (!show_soname) return NULL;
