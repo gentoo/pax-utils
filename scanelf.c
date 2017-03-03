@@ -198,16 +198,16 @@ static void *scanelf_file_get_pt_dynamic(elfobj *elf)
 	while ((void *)++dyn < elf->data_end - sizeof(*dyn) && EGET(dyn->d_tag) != DT_NULL)
 
 /* sub-funcs for scanelf_fileat() */
-static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
+static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void **str)
 {
 	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
 
 	/* debug sections */
-	void *symtab = elf_findsecbyname(elf, ".symtab");
-	void *strtab = elf_findsecbyname(elf, ".strtab");
+	const void *symtab = elf_findsecbyname(elf, ".symtab");
+	const void *strtab = elf_findsecbyname(elf, ".strtab");
 	/* runtime sections */
-	void *dynsym = elf_findsecbyname(elf, ".dynsym");
-	void *dynstr = elf_findsecbyname(elf, ".dynstr");
+	const void *dynsym = elf_findsecbyname(elf, ".dynsym");
+	const void *dynstr = elf_findsecbyname(elf, ".dynstr");
 
 	/*
 	 * If the sections are marked NOBITS, then they don't exist, so we just
@@ -219,10 +219,10 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 	 * as they are generated in sync.  Trying to mix them won't work.
 	 */
 #define GET_SYMTABS(B) \
-	Elf ## B ## _Shdr *esymtab = symtab; \
-	Elf ## B ## _Shdr *estrtab = strtab; \
-	Elf ## B ## _Shdr *edynsym = dynsym; \
-	Elf ## B ## _Shdr *edynstr = dynstr; \
+	const Elf ## B ## _Shdr *esymtab = symtab; \
+	const Elf ## B ## _Shdr *estrtab = strtab; \
+	const Elf ## B ## _Shdr *edynsym = dynsym; \
+	const Elf ## B ## _Shdr *edynstr = dynstr; \
 	\
 	if (!VALID_SHDR(elf, esymtab)) \
 		symtab = NULL; \
@@ -265,10 +265,10 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 #define GET_SYMTABS_DT(B) \
 	size_t i; \
 	static Elf ## B ## _Shdr sym_shdr, str_shdr; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	Elf ## B ## _Addr vsym, vstr, vhash, vgnu_hash; \
-	Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Dyn *dyn; \
 	\
 	/* lookup symbols used at runtime with DT_SYMTAB / DT_STRTAB */ \
 	vsym = vstr = vhash = vgnu_hash = 0; \
@@ -307,11 +307,11 @@ static void scanelf_file_get_symtabs(elfobj *elf, void **sym, void **str)
 		if (vhash >= vaddr && vhash < vaddr + filesz) { \
 			/* Scan the hash table to see how many entries we have */ \
 			Elf32_Word max_sym_idx = 0; \
-			Elf32_Word *hashtbl = elf->vdata + hash_offset; \
+			const Elf32_Word *hashtbl = elf->vdata + hash_offset; \
 			Elf32_Word b, nbuckets = EGET(hashtbl[0]); \
 			Elf32_Word nchains = EGET(hashtbl[1]); \
-			Elf32_Word *buckets = &hashtbl[2]; \
-			Elf32_Word *chains = &buckets[nbuckets]; \
+			const Elf32_Word *buckets = &hashtbl[2]; \
+			const Elf32_Word *chains = &buckets[nbuckets]; \
 			Elf32_Word sym_idx; \
 			Elf32_Word chained; \
 			\
@@ -559,7 +559,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *found_textrel)
 {
 	unsigned long r, rmax;
-	void *symtab_void, *strtab_void;
+	const void *symtab_void, *strtab_void;
 
 	if (!show_textrels) return NULL;
 
@@ -789,7 +789,7 @@ static void rpath_security_checks(elfobj *elf, const char *item, const char *dt_
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
 	char *rpath, *runpath, **r;
-	void *strtab_void;
+	const void *strtab_void;
 
 	if (!show_rpath) return;
 
@@ -940,7 +940,7 @@ static char *lookup_config_lib(const char *fname)
 static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char *found_lib, int op, char **ret, size_t *ret_len)
 {
 	const char *needed;
-	void *strtab_void;
+	const void *strtab_void;
 	char *p;
 
 	/*
@@ -1032,7 +1032,7 @@ static const char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		SCANELF_ELF_SIZED(GET_PT_INTERP);
 	} else if (elf->shdr) {
 		/* Use the section headers to find it */
-		void *section = elf_findsecbyname(elf, ".interp");
+		const void *section = elf_findsecbyname(elf, ".interp");
 
 #define GET_INTERP(B) \
 		Elf ## B ## _Shdr *shdr = SHDR ## B (section); \
@@ -1091,7 +1091,7 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 static const char *scanelf_file_soname(elfobj *elf, char *found_soname)
 {
 	const char *soname;
-	void *strtab_void;
+	const void *strtab_void;
 
 	if (!show_soname) return NULL;
 
@@ -1296,7 +1296,7 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	char *ret;
-	void *symtab_void, *strtab_void;
+	const void *symtab_void, *strtab_void;
 
 	if (!find_sym) return NULL;
 	ret = NULL;

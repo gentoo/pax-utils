@@ -784,11 +784,11 @@ const char *gnu_short_stack_flags(unsigned long flags)
 	return buffer;
 }
 
-void *elf_findsecbyname(elfobj *elf, const char *name)
+const void *elf_findsecbyname(elfobj *elf, const char *name)
 {
 	unsigned int i;
-	char *shdr_name;
-	void *ret = NULL;
+	const char *shdr_name;
+	const void *ret = NULL;
 
 	if (elf->shdr == NULL) return NULL;
 
@@ -808,7 +808,7 @@ void *elf_findsecbyname(elfobj *elf, const char *name)
 		shdr_name = elf->data + offset; \
 		if (!strcmp(shdr_name, name)) { \
 			if (ret) warnf("Multiple '%s' sections !?", name); \
-			ret = (void*)&(shdr[i]); \
+			ret = &shdr[i]; \
 		} \
 	} }
 	FINDSEC(32)
