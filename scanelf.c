@@ -150,8 +150,8 @@ static ssize_t scanelf_file_find_phdr(elfobj *elf, uint32_t p_type)
 
 #define FIND_PT_TYPE(B) \
 	size_t i; \
-	Elf##B##_Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf##B##_Phdr *phdr = PHDR ## B (elf->phdr); \
+	const Elf##B##_Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf##B##_Phdr *phdr = PHDR ## B (elf->phdr); \
 	\
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) != p_type) \
@@ -168,14 +168,14 @@ static ssize_t scanelf_file_find_phdr(elfobj *elf, uint32_t p_type)
 	return ret;
 }
 
-static void *scanelf_file_get_pt_dynamic(elfobj *elf)
+static const void *scanelf_file_get_pt_dynamic(elfobj *elf)
 {
 	ssize_t i = scanelf_file_find_phdr(elf, PT_DYNAMIC);
 	if (i == -1)
 		return NULL;
 
 #define CHECK_PT_DYNAMIC(B) \
-	Elf##B##_Phdr *phdr = &PHDR##B(elf->phdr)[i]; \
+	const Elf##B##_Phdr *phdr = &PHDR##B(elf->phdr)[i]; \
 	Elf##B##_Off offset; \
 	\
 	if (EGET(phdr->p_filesz) == 0) \
@@ -191,7 +191,7 @@ static void *scanelf_file_get_pt_dynamic(elfobj *elf)
 
 #define scanelf_dt_for_each(B, elf, dyn) \
 	{ \
-		Elf##B##_Phdr *_phdr = scanelf_file_get_pt_dynamic(elf); \
+		const Elf##B##_Phdr *_phdr = scanelf_file_get_pt_dynamic(elf); \
 		dyn = (_phdr == NULL) ? elf->data_end : DYN##B(elf->vdata + EGET(_phdr->p_offset)); \
 	} \
 	--dyn; \
@@ -337,14 +337,14 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
 		} \
 		\
 		if (vsym >= vaddr && vsym < vaddr + filesz) { \
-			Elf##B##_Shdr *shdr = &sym_shdr; \
+			const Elf##B##_Shdr *shdr = &sym_shdr; \
 			ESET(sym_shdr.sh_offset, offset + (vsym - vaddr)); \
 			if (VALID_SHDR(elf, shdr)) \
 				*sym = shdr; \
 		} \
 		\
 		if (vstr >= vaddr && vstr < vaddr + filesz) { \
-			Elf##B##_Shdr *shdr = &str_shdr; \
+			const Elf##B##_Shdr *shdr = &str_shdr; \
 			ESET(str_shdr.sh_offset, offset + (vstr - vaddr)); \
 			if (VALID_SHDR(elf, shdr)) \
 				*str = shdr; \
@@ -369,7 +369,7 @@ static const char *scanelf_file_pax(elfobj *elf, char *found_pax)
 	memset(&ret, 0, sizeof(ret));
 
 #define SHOW_PAX(B) \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) != PT_PAX_FLAGS) \
@@ -426,7 +426,7 @@ static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_
 
 #define NOTE_GNU_STACK ".note.GNU-stack"
 #define SHOW_PHDR(B) \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 	Elf ## B ## _Off offset; \
 	uint32_t flags, check_flags; \
 	if (elf->phdr != NULL) { \
@@ -468,9 +468,9 @@ static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_
 		} \
 	} else if (elf->shdr != NULL) { \
 		/* no program headers which means this is prob an object file */ \
-		Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
+		const Elf ## B ## _Shdr *shdr = SHDR ## B (elf->shdr); \
 		uint16_t shstrndx = EGET(ehdr->e_shstrndx); \
-		Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
+		const Elf ## B ## _Shdr *strtbl = shdr + shstrndx; \
 		uint16_t shnum = EGET(ehdr->e_shnum); \
 		if (shstrndx >= shnum || !VALID_SHDR(elf, strtbl)) \
 			goto corrupt_shdr; \
@@ -533,7 +533,7 @@ static const char *scanelf_file_textrel(elfobj *elf, char *found_textrel)
 	if (file_matches_list(elf->filename, qa_textrels)) return NULL;
 
 #define SHOW_TEXTREL(B) \
-	Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Dyn *dyn; \
 	\
 	scanelf_dt_for_each(B, elf, dyn) { \
 		if (EGET(dyn->d_tag) == DT_TEXTREL) { /*dyn->d_tag != DT_FLAGS)*/ \
@@ -571,13 +571,13 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 
 #define SHOW_TEXTRELS(B) \
 	size_t i; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr; \
-	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
-	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
-	Elf ## B ## _Rel *rel; \
-	Elf ## B ## _Rela *rela; \
-	Elf ## B ## _Dyn *dyn, *drel, *drelsz, *drelent, *dpltrel; \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Phdr *phdr; \
+	const Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Rel *rel; \
+	const Elf ## B ## _Rela *rela; \
+	const Elf ## B ## _Dyn *dyn, *drel, *drelsz, *drelent, *dpltrel; \
 	uint32_t pltrel; \
 	Elf ## B ## _Addr load_address = 0; \
 	Elf ## B ## _Addr file_offset; \
@@ -669,8 +669,8 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 		for (r = 0; r < rmax; ++r) { \
 			unsigned long sym_max; \
 			Elf ## B ## _Addr offset_tmp; \
-			Elf ## B ## _Sym *func; \
-			Elf ## B ## _Sym *sym; \
+			const Elf ## B ## _Sym *func; \
+			const Elf ## B ## _Sym *sym; \
 			Elf ## B ## _Addr r_offset; \
 			uint ## B ## _t r_info; \
 			if (pltrel == DT_REL) { \
@@ -805,7 +805,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 
 #define SHOW_RPATH(B) \
 	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 	Elf ## B ## _Off offset; \
 	Elf ## B ## _Xword word; \
 	\
@@ -960,8 +960,8 @@ static const char *scanelf_file_needed_lib(elfobj *elf, char *found_needed, char
 	strtab_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_NEEDED(B) \
-	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 	size_t matched = 0; \
 	\
 	/* Walk all the dynamic tags to find NEEDED entries */ \
@@ -1023,8 +1023,8 @@ static const char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		/* Walk all the program headers to find the PT_INTERP */
 #define GET_PT_INTERP(B) \
 		size_t i; \
-		Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+		const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
 			if (EGET(phdr[i].p_type) == PT_INTERP) { \
 				offset = EGET(phdr[i].p_offset); \
@@ -1037,7 +1037,7 @@ static const char *scanelf_file_interp(elfobj *elf, char *found_interp)
 		const void *section = elf_findsecbyname(elf, ".interp");
 
 #define GET_INTERP(B) \
-		Elf ## B ## _Shdr *shdr = SHDR ## B (section); \
+		const Elf ## B ## _Shdr *shdr = SHDR ## B (section); \
 		offset = EGET(shdr->sh_offset);
 		if (section)
 			SCANELF_ELF_SIZED(GET_INTERP);
@@ -1066,7 +1066,7 @@ static const char *scanelf_file_bind(elfobj *elf, char *found_bind)
 	if (!elf->phdr) return NULL;
 
 #define SHOW_BIND(B) \
-	Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Dyn *dyn; \
 	\
 	scanelf_dt_for_each(B, elf, dyn) { \
 		dynamic = true; \
@@ -1105,9 +1105,9 @@ static const char *scanelf_file_soname(elfobj *elf, char *found_soname)
 	strtab_void = elf_findsecbyname(elf, ".dynstr");
 
 #define SHOW_SONAME(B) \
-	Elf ## B ## _Dyn *dyn; \
-	Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 	\
 	/* only look for soname in shared objects */ \
 	if (EGET(ehdr->e_type) != ET_DYN) \
@@ -1306,11 +1306,11 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
 
 #define FIND_SYM(B) \
-	Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
-	Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
-	Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
+	const Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Sym *sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
 	Elf ## B ## _Word i, cnt = EGET(symtab->sh_entsize); \
-	char *symname; \
+	const char *symname; \
 	size_t ret_len = 0; \
 	if (cnt) \
 		cnt = EGET(symtab->sh_size) / cnt; \
@@ -1367,7 +1367,7 @@ static const char *scanelf_file_sections(elfobj *elf, char *found_section)
 	size_t matched, n; \
 	int invert; \
 	const char *section_name; \
-	Elf ## B ## _Shdr *section; \
+	const Elf ## B ## _Shdr *section; \
 	\
 	matched = 0; \
 	array_for_each(find_section_arr, n, section_name) { \
