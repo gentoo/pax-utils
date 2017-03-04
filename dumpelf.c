@@ -11,7 +11,6 @@ const char argv0[] = "dumpelf";
 #include "paxinc.h"
 
 /* prototypes */
-static void dumpelf(const char *filename, size_t file_cnt);
 static void dump_ehdr(elfobj *elf, const void *ehdr);
 static void dump_phdr(elfobj *elf, const void *phdr, size_t phdr_cnt);
 static void dump_shdr(elfobj *elf, const void *shdr, size_t shdr_cnt, const char *section_name);
@@ -31,14 +30,9 @@ static char be_verbose = 0;
 static const void *phdr_dynamic_void;
 
 /* dump all internal elf info */
-static void dumpelf(const char *filename, size_t file_cnt)
+static void dumpelf(elfobj *elf, size_t file_cnt)
 {
-	elfobj *elf;
 	size_t i, b;
-
-	/* verify this is real ELF */
-	if ((elf = readelf(filename)) == NULL)
-		return;
 
 	phdr_dynamic_void = NULL;
 
@@ -50,7 +44,7 @@ static void dumpelf(const char *filename, size_t file_cnt)
 		" * ELF dump of '%s'\n"
 		" *     %ji (0x%jX) bytes\n"
 		" */\n\n",
-		filename, elf->len, elf->len);
+		elf->filename, elf->len, elf->len);
 
 	/* setup the struct to namespace this elf */
 #define MAKE_STRUCT(B) \
@@ -148,6 +142,17 @@ static void dumpelf(const char *filename, size_t file_cnt)
 		printf(" /* no dynamic tags ! */ ");
 	}
 	printf("};\n");
+}
+
+static void dumpelf_file(const char *filename, size_t file_cnt)
+{
+	elfobj *elf = readelf(filename);
+
+	/* verify this is real ELF */
+	if (elf == NULL)
+		return;
+
+	dumpelf(elf, file_cnt);
 
 	/* get out of here */
 	unreadelf(elf);
@@ -570,10 +575,29 @@ static void parseargs(int argc, char *argv[])
 	size_t file_cnt = 0;
 
 	while (optind < argc)
-		dumpelf(argv[optind++], file_cnt++);
+		dumpelf_file(argv[optind++], file_cnt++);
 	}
 }
 
+#if PAX_UTILS_LIBFUZZ
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+	(void)argc;
+	(void)argv;
+	(void)parseargs;
+	security_init(false);
+	return 0;
+}
+
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+	elfobj *elf = readelf_buffer("libFuzzer", data, size);
+	if (elf == NULL)
+		return 0;
+	dumpelf(elf, 0);
+	return 0;
+}
+#else
 int main(int argc, char *argv[])
 {
 	security_init(false);
@@ -582,3 +606,4 @@ int main(int argc, char *argv[])
 	parseargs(argc, argv);
 	return EXIT_SUCCESS;
 }
+#endif

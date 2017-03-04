@@ -115,7 +115,7 @@ afl-fuzz: clean
 		"afl-fuzz -t 100 -i tests/fuzz/small/ -o findings/ ./scanelf -s '*' -axetrnibSDIYZB @@"
 
 # Not all objects support libfuzzer.
-LIBFUZZER_TARGETS =
+LIBFUZZER_TARGETS = dumpelf
 LIBFUZZER_FLAGS = \
 	-fsanitize=fuzzer \
 	-fsanitize-coverage=edge
