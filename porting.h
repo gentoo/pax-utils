@@ -94,6 +94,11 @@
 # define PAX_UTILS_CLEANUP 0
 #endif
 
+/* Support for libFuzzer: https://llvm.org/docs/LibFuzzer.html */
+#ifndef PAX_UTILS_LIBFUZZ
+# define PAX_UTILS_LIBFUZZ 0
+#endif
+
 /* Few arches can safely do unaligned accesses */
 #if defined(__cris__) || \
     defined(__i386__) || \

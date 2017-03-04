@@ -102,11 +102,29 @@ debug: clean
 analyze: clean
 	scan-build $(MAKE) all
 
-fuzz: clean
+fuzz:
+	@echo "Pick a fuzzer backend:"
+	@echo "$$ make afl-fuzz"
+	@echo "$$ make libfuzzer"
+	@false
+
+afl-fuzz: clean
 	$(MAKE) AFL_HARDEN=1 CC=afl-gcc all
 	@rm -rf findings
 	@printf '\nNow run:\n%s\n' \
 		"afl-fuzz -t 100 -i tests/fuzz/small/ -o findings/ ./scanelf -s '*' -axetrnibSDIYZB @@"
+
+# Not all objects support libfuzzer.
+LIBFUZZER_TARGETS =
+LIBFUZZER_FLAGS = \
+	-fsanitize=fuzzer \
+	-fsanitize-coverage=edge
+libfuzzer: clean
+	$(MAKE) \
+		CC="clang" \
+		CFLAGS="-g3 -ggdb $(call check_compiler_many,$(DEBUG_FLAGS)) $(LIBFUZZER_FLAGS)" \
+		CPPFLAGS="-DPAX_UTILS_LIBFUZZ=1" \
+		$(LIBFUZZER_TARGETS)
 
 compile.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(CPPFLAGS-$<) -o $@ -c $<
 
