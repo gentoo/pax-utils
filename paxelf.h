@@ -12,11 +12,16 @@
 #define _PAX_ELF_H
 
 typedef struct {
-	void *phdr;
-	void *shdr;
+	const void *phdr;
+	const void *shdr;
+	/* When we need to duplicate the ELF buffer for alignment. */
 	void *_data;
-	union { void *ehdr, *vdata; char *data; uintptr_t udata; };
-	void *data_end;
+	union {
+		const void *ehdr, *vdata;
+		const char *data;
+		uintptr_t udata;
+	};
+	const void *data_end;
 	char elf_class;
 	off_t len;
 	int fd;
@@ -53,7 +58,7 @@ typedef struct {
 extern const char *pax_short_hf_flags(unsigned long flags);
 extern const char *pax_short_pf_flags(unsigned long flags);
 extern const char *gnu_short_stack_flags(unsigned long flags);
-extern elfobj *readelf_buffer(const char *filename, void *buffer, size_t buffer_len);
+extern elfobj *readelf_buffer(const char *filename, const void *buffer, size_t buffer_len);
 extern elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only);
 #define readelf_fd(filename, fd, len) _readelf_fd(filename, fd, len, 1)
 extern elfobj *_readelf(const char *filename, int read_only);

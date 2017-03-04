@@ -370,13 +370,14 @@ static const char *scanelf_file_pax(elfobj *elf, char *found_pax)
 
 #define SHOW_PAX(B) \
 	const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
-	Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+	const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); i++) { \
 		if (EGET(phdr[i].p_type) != PT_PAX_FLAGS) \
 			continue; \
 		if (fix_elf && setpax) { \
 			/* set the paxctl flags */ \
-			ESET(phdr[i].p_flags, setpax); \
+			Elf ## B ## _Phdr *wphdr = (void *)&phdr[i]; \
+			ESET(wphdr->p_flags, setpax); \
 		} \
 		if (be_quiet && (EGET(phdr[i].p_flags) == (PF_NOEMUTRAMP | PF_NORANDEXEC))) \
 			continue; \
@@ -430,7 +431,7 @@ static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_
 	Elf ## B ## _Off offset; \
 	uint32_t flags, check_flags; \
 	if (elf->phdr != NULL) { \
-		Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
+		const Elf ## B ## _Phdr *phdr = PHDR ## B (elf->phdr); \
 		for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
 			if (EGET(phdr[i].p_type) == PT_GNU_STACK) { \
 				if (multi_stack++) \
@@ -458,7 +459,8 @@ static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_
 			if (be_quiet && ((flags & check_flags) != check_flags)) \
 				continue; \
 			if ((EGET(phdr[i].p_type) != PT_LOAD) && (fix_elf && ((flags & PF_X) != flags))) { \
-				ESET(phdr[i].p_flags, flags & (PF_X ^ (size_t)-1)); \
+				Elf ## B ## _Phdr *wphdr = (void *)&phdr[i]; \
+				ESET(wphdr->p_flags, flags & (PF_X ^ (size_t)-1)); \
 				ret[3] = ret[7] = '!'; \
 				flags = EGET(phdr[i].p_flags); \
 			} \
@@ -790,7 +792,7 @@ static void rpath_security_checks(elfobj *elf, const char *item, const char *dt_
 }
 static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_t *ret_len)
 {
-	char *rpath, *runpath, **r;
+	const char *rpath, *runpath, **r;
 	const void *strtab_void;
 
 	if (!show_rpath) return;
@@ -804,7 +806,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 	rpath = runpath = NULL;
 
 #define SHOW_RPATH(B) \
-	Elf ## B ## _Dyn *dyn; \
+	const Elf ## B ## _Dyn *dyn; \
 	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
 	Elf ## B ## _Off offset; \
 	Elf ## B ## _Xword word; \
@@ -830,7 +832,7 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 			/* If quiet, don't output paths in ld.so.conf */ \
 			if (be_quiet) { \
 				size_t len; \
-				char *start, *end; \
+				const char *start, *end; \
 				/* note that we only 'chop' off leading known paths. */ \
 				/* since *r is read-only memory, we can only move the ptr forward. */ \
 				start = *r; \
@@ -861,17 +863,21 @@ static void scanelf_file_rpath(elfobj *elf, char *found_rpath, char **ret, size_
 			if (*r) { \
 				if (fix_elf > 2 || (fix_elf && **r == '\0')) { \
 					/* just nuke it */ \
-					nuke_it##B: \
-					memset(*r, 0x00, offset); \
+					nuke_it##B: { \
+					/* We have to cast away the const. \
+					 * We know we mapped the backing memory as writable. */ \
+					Elf ## B ## _Dyn *wdyn = (void *)dyn; \
+					memset((void *)*r, 0x00, offset); \
 					*r = NULL; \
-					ESET(dyn->d_tag, DT_DEBUG); \
-					ESET(dyn->d_un.d_ptr, 0); \
+					ESET(wdyn->d_tag, DT_DEBUG); \
+					ESET(wdyn->d_un.d_ptr, 0); \
+					} \
 				} else if (fix_elf) { \
 					/* try to clean "bad" paths */ \
 					size_t len, tmpdir_len; \
 					char *start, *end; \
 					const char *tmpdir; \
-					start = *r; \
+					start = (void *)*r; \
 					tmpdir = (getenv("TMPDIR") ? : "."); \
 					tmpdir_len = strlen(tmpdir); \
 					while (1) { \

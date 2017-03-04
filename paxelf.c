@@ -558,7 +558,7 @@ const char *get_elfnttype(uint16_t e_type, const char *name, int type)
 	((buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64) && \
 	 (buff[EI_DATA] == ELFDATA2LSB || buff[EI_DATA] == ELFDATA2MSB) && \
 	 (buff[EI_VERSION] == EV_CURRENT))
-elfobj *readelf_buffer(const char *filename, void *buffer, size_t buffer_len)
+elfobj *readelf_buffer(const char *filename, const void *buffer, size_t buffer_len)
 {
 	elfobj *elf;
 
@@ -720,7 +720,7 @@ elfobj *_readelf(const char *filename, int read_only)
 /* undo the readelf() stuff */
 void unreadelf(elfobj *elf)
 {
-	if (elf->is_mmap) munmap(elf->vdata, elf->len);
+	if (elf->is_mmap) munmap((void *)elf->vdata, elf->len);
 	if (elf->fd != -1) close(elf->fd);
 	if (!__PAX_UNALIGNED_OK) free(elf->_data);
 	free(elf);
