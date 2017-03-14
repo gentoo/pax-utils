@@ -13,6 +13,7 @@ fi
 PATH=/usr/local/src/gnu/gnulib:${PATH}
 mods="
 	alloca
+	euidaccess
 	faccessat
 	fdopendir
 	fstatat
@@ -25,6 +26,7 @@ mods="
 	readlinkat
 	renameat
 	stat-time
+	stpcpy
 	strcasestr-simple
 	strncat
 	symlinkat

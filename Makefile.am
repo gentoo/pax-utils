@@ -15,7 +15,7 @@ libpaxutils_la_SOURCES = \
 	paxmacho.c \
 	security.c \
 	xfuncs.c
-LDADD = libpaxutils.la $(top_builddir)/autotools/gnulib/libgnu.a
+LDADD = libpaxutils.la $(top_builddir)/autotools/gnulib/libgnu.a $(LIB_EACCESS)
 
 bin_SCRIPTS = lddtree symtree
 bin_PROGRAMS = scanelf dumpelf pspax scanmacho
