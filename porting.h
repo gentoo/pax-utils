@@ -46,7 +46,9 @@
 #endif
 #if defined(__linux__)
 # include <sys/prctl.h>
-# include <linux/securebits.h>
+# if !defined(HAVE_CONFIG_H) || defined(HAVE_LINUX_SECUREBITS_H)
+#  include <linux/securebits.h>
+# endif
 #endif
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__ANDROID__)
 # include <byteswap.h>

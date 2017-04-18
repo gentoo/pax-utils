@@ -62,6 +62,8 @@ m4_foreach_w([flag], [
 	AX_CHECK_COMPILE_FLAG(flag, AS_VAR_APPEND([CFLAGS], " flag"))
 ])
 
+AC_CHECK_HEADERS([linux/securebits.h])
+
 AC_CONFIG_FILES([
 	Makefile
 	autotools/gnulib/Makefile
