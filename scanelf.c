@@ -607,11 +607,23 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	} \
 	switch (EGET(dpltrel->d_un.d_val)) { \
 	case DT_REL: \
+		if (!VALID_RANGE(elf, EGET(drel->d_un.d_val), sizeof (drel->d_un.d_val))) { \
+			rel = NULL; \
+			rela = NULL; \
+			warn("%s: DT_REL is out of file range", elf->filename); \
+			break; \
+		} \
 		rel = REL##B(elf->vdata + EGET(drel->d_un.d_val)); \
 		rela = NULL; \
 		pltrel = DT_REL; \
 		break; \
 	case DT_RELA: \
+		if (!VALID_RANGE(elf, EGET(drel->d_un.d_val), sizeof (drel->d_un.d_val))) { \
+			rel = NULL; \
+			rela = NULL; \
+			warn("%s: DT_RELA is out of file range", elf->filename); \
+			break; \
+		} \
 		rel = NULL; \
 		rela = RELA##B(elf->vdata + EGET(drel->d_un.d_val)); \
 		pltrel = DT_RELA; \
