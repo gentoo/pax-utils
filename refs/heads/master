@@ -1,0 +1,13 @@
+certificate version 0.1
+pusher Fabian Groffen <grobian@gentoo.org> 1505718368 +0200
+pushee git+ssh://git.gentoo.org/proj/pax-utils.git
+nonce 1505718368-0c99620fbf4ce852b2a7
+
+4358729342fd859b7099ae9f2d2274e677bdd306 720becce1314db8c0af8442650f496d972475327 refs/heads/master
+-----BEGIN PGP SIGNATURE-----
+
+iHEEABEKADEWIQSDHIpHdkhfn9Ptmh5fdfYHxcdOiQUCWb9wYxMcZ3JvYmlhbkBn
+ZW50b28ub3JnAAoJEF919gfFx06JqOMAnRqp4wPIgcd+3KYsq0+G3b9TbRAbAJwJ
+5JEVOZAyhSHSl6aqCTskEMSfsw==
+=34pX
+-----END PGP SIGNATURE-----
