@@ -579,6 +579,8 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	Elf ## B ## _Rela *rela; \
 	Elf ## B ## _Dyn *dyn, *drel, *drelsz, *drelent, *dpltrel; \
 	uint32_t pltrel; \
+	Elf ## B ## _Addr load_address = 0; \
+	Elf ## B ## _Addr file_offset; \
 	\
 	/* Walk all the dynamic tags to find relocation info */ \
 	drel = drelsz = drelent = dpltrel = NULL; \
@@ -605,27 +607,40 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 		warnf("ELF is missing relocation information"); \
 		break; \
 	} \
+	phdr = PHDR ## B(elf->phdr); \
+	/* Lookup load base: byte 0 is mapped at load_address */ \
+	for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
+		/* Only care about loadable segments. */ \
+		if (EGET(phdr[i].p_type) != PT_LOAD) \
+			continue; \
+		/* We search for the first program header to map into memory */ \
+		if (EGET(phdr[i].p_offset) != 0) \
+			continue; \
+		load_address = EGET(phdr[i].p_vaddr); \
+	} \
 	switch (EGET(dpltrel->d_un.d_val)) { \
 	case DT_REL: \
-		if (!VALID_RANGE(elf, EGET(drel->d_un.d_val), sizeof (drel->d_un.d_val))) { \
+		file_offset = EGET(drel->d_un.d_val) - load_address; \
+		if (!VALID_RANGE(elf, file_offset, sizeof (drel->d_un.d_val))) { \
 			rel = NULL; \
 			rela = NULL; \
 			warn("%s: DT_REL is out of file range", elf->filename); \
 			break; \
 		} \
-		rel = REL##B(elf->vdata + EGET(drel->d_un.d_val)); \
+		rel = REL##B(elf->vdata + file_offset); \
 		rela = NULL; \
 		pltrel = DT_REL; \
 		break; \
 	case DT_RELA: \
-		if (!VALID_RANGE(elf, EGET(drel->d_un.d_val), sizeof (drel->d_un.d_val))) { \
+		file_offset = EGET(drel->d_un.d_val) - load_address; \
+		if (!VALID_RANGE(elf, file_offset, sizeof (drel->d_un.d_val))) { \
 			rel = NULL; \
 			rela = NULL; \
 			warn("%s: DT_RELA is out of file range", elf->filename); \
 			break; \
 		} \
 		rel = NULL; \
-		rela = RELA##B(elf->vdata + EGET(drel->d_un.d_val)); \
+		rela = RELA##B(elf->vdata + file_offset); \
 		pltrel = DT_RELA; \
 		break; \
 	default: \
@@ -639,7 +654,6 @@ static char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char *foun
 	rmax = EGET(drelsz->d_un.d_val) / EGET(drelent->d_un.d_val); \
 	\
 	/* search the program segments for relocations */ \
-	phdr = PHDR ## B(elf->phdr); \
 	for (i = 0; i < EGET(ehdr->e_phnum); ++i) { \
 		Elf ## B ## _Addr vaddr = EGET(phdr[i].p_vaddr); \
 		uint ## B ## _t memsz = EGET(phdr[i].p_memsz); \
