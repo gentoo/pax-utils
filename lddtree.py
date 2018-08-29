@@ -182,8 +182,12 @@ def GenerateLdsoWrapper(
         "argv0_arg": '--argv0 "$0"' if interp_supports_argv0(root + interp) else "",
         "preload_arg": f'--preload "{preload}"' if preload else "",
     }
+
+    # Keep path relativeness of argv0 (in ${base}.elf). This allows tools to
+    # remove absolute paths from build outputs and enables directory independent
+    # cache sharing in distributed build systems.
     wrapper = """#!/bin/sh
-if ! base=$(realpath "$0" 2>/dev/null); then
+if ! base=$(dirname "$0")/$(readlink "$0" 2>/dev/null); then
   case $0 in
   /*) base=$0;;
   *)  base=${PWD:-`pwd`}/$0;;
