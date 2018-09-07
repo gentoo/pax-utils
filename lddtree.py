@@ -187,7 +187,13 @@ def GenerateLdsoWrapper(
     # remove absolute paths from build outputs and enables directory independent
     # cache sharing in distributed build systems.
     wrapper = """#!/bin/sh
-if ! base=$(dirname "$0")/$(readlink "$0" 2>/dev/null); then
+if base=$(readlink "$0" 2>/dev/null); then
+  # If $0 is an abspath symlink, fully resolve the target.
+  case ${base} in
+  /*) base=$(readlink -f "$0" 2>/dev/null);;
+  *)  base=$(dirname "$0")/${base};;
+  esac
+else
   case $0 in
   /*) base=$0;;
   *)  base=${PWD:-`pwd`}/$0;;
