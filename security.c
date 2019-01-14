@@ -162,6 +162,12 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(msgsnd),
 		SCMP_SYS(semget),
 		SCMP_SYS(semop),
+		/*
+		 * Some targets like ppc and i386 implement the above
+		 * syscall as subcalls via ipc() syscall.
+		 * https://bugs.gentoo.org/675378
+		 */
+		SCMP_SYS(ipc),
 	};
 	int fork_syscalls[] = {
 		SCMP_SYS(clone),
