@@ -162,6 +162,7 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(msgsnd),
 		SCMP_SYS(semget),
 		SCMP_SYS(semop),
+		SCMP_SYS(semtimedop),
 		/*
 		 * Some targets like ppc and i386 implement the above
 		 * syscall as subcalls via ipc() syscall.
