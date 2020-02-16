@@ -460,6 +460,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 					++lib; \
 				} \
 			printf("\t */\n"); \
+			break; \
 		} \
 		default: { \
 			if (be_verbose <= 1) \
