@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2012-2014 Gentoo Foundation
 # Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
