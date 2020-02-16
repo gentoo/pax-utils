@@ -53,6 +53,7 @@ dist_man_MANS += \
 EXTRA_DIST += \
 	.depend \
 	.gitignore \
+	.pylintrc \
 	.travis.yml \
 	BUGS \
 	COPYING \
@@ -88,6 +89,7 @@ EXTRA_DIST += \
 	paxmacho.h \
 	porting.h \
 	pspax.c \
+	pylint \
 	scanelf.c \
 	scanmacho.c \
 	security.c \
@@ -95,10 +97,10 @@ EXTRA_DIST += \
 	symtree.sh \
 	tests/Makefile \
 	tests/lddtree/Makefile \
-	tests/lddtree/dotest.cmp \
-	tests/lddtree/dotest.py \
-	tests/lddtree/dotest.sfx \
-	tests/lddtree/dotest.sh \
+	tests/lddtree/dotest-cmp \
+	tests/lddtree/dotest-py \
+	tests/lddtree/dotest-sfx \
+	tests/lddtree/dotest-sh \
 	tests/lib.sh \
 	tests/scanelf/Makefile \
 	tests/scanelf/dotest \
