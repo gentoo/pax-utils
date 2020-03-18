@@ -707,7 +707,8 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 				printf("%s", elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name)); \
 			else \
 				printf("(memory/data?)"); \
-			printf(" [0x%lX]", (unsigned long)r_offset); \
+			printf(" [r_offset=0x%lX]", (unsigned long)r_offset); \
+			printf(" r_type=%lu", (unsigned long)ELF ## B ## _ST_TYPE(r_info)); \
 			/* now try to find the closest symbol that this rel is probably in */ \
 			sym = SYM ## B (elf->vdata + EGET(symtab->sh_offset)); \
 			func = NULL; \
@@ -730,8 +731,8 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 				} else \
 					printf("(missing symbols)"); \
 			} else \
-				printf("(optimized out)"); \
-			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
+				printf("(optimized out?)"); \
+			printf(" [closest_prev_sym=0x%lX]\n", (unsigned long)offset_tmp); \
 			if (be_verbose && objdump && func) { \
 				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
