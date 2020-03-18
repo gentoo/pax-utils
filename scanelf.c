@@ -732,7 +732,7 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 			} else \
 				printf("(optimized out)"); \
 			printf(" [0x%lX]\n", (unsigned long)offset_tmp); \
-			if (be_verbose && objdump) { \
+			if (be_verbose && objdump && func) { \
 				Elf ## B ## _Addr end_addr = offset_tmp + EGET(func->st_size); \
 				char *sysbuf; \
 				int ret; \
