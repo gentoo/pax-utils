@@ -1,3 +1,16 @@
+[MASTER]
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+load-plugins=
+	pylint.extensions.bad_builtin,
+	pylint.extensions.check_elif,
+	pylint.extensions.docstyle,
+	pylint.extensions.emptystring,
+	pylint.extensions.overlapping_exceptions,
+	pylint.extensions.redefined_variable_type,
+
+jobs=0
+
 [MESSAGES CONTROL]
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifier separated by comma (,) or put this option
@@ -19,10 +32,19 @@ disable=
 
 [REPORTS]
 reports=no
+score=no
 
 [FORMAT]
 max-line-length=80
 indent-string='  '
+
+[BASIC]
+bad-functions=
+	exit,
+	filter,
+	input,
+	map,
+	quit,
 
 [SIMILARITIES]
 min-similarity-lines=20
@@ -32,3 +54,8 @@ dummy-variables-rgx=_
 
 [DESIGN]
 max-parents=10
+
+[IMPORTS]
+deprecated-modules=
+	mox,
+	optparse,

@@ -195,7 +195,7 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
   """
   ldpaths = []
   for ldpath in str_ldpaths.split(':'):
-    if ldpath == '':
+    if not ldpath:
       # The ldso treats "" paths as $PWD.
       ldpath = os.getcwd()
     elif '$ORIGIN' in ldpath:
