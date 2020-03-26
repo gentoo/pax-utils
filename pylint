@@ -12,38 +12,38 @@ import sys
 
 
 def find_all_modules(source_root):
-  """Locate all python modules in the tree for scanning"""
-  ret = []
+    """Locate all python modules in the tree for scanning"""
+    ret = []
 
-  for root, _dirs, files in os.walk(source_root, topdown=False):
-    # Add all of the .py modules in the tree.
-    ret += [os.path.join(root, x) for x in files if x.endswith('.py')]
+    for root, _dirs, files in os.walk(source_root, topdown=False):
+        # Add all of the .py modules in the tree.
+        ret += [os.path.join(root, x) for x in files if x.endswith('.py')]
 
-  # Add the main scripts that don't end in .py.
-  ret += [os.path.join(source_root, x) for x in ('pylint',)]
+    # Add the main scripts that don't end in .py.
+    ret += [os.path.join(source_root, x) for x in ('pylint',)]
 
-  return ret
+    return ret
 
 
 def main(argv):
-  """The main entry point"""
-  source_root = os.path.dirname(os.path.realpath(__file__))
+    """The main entry point"""
+    source_root = os.path.dirname(os.path.realpath(__file__))
 
-  if not argv:
-    argv = find_all_modules(source_root)
+    if not argv:
+        argv = find_all_modules(source_root)
 
-  pympath = source_root
-  pythonpath = os.environ.get('PYTHONPATH')
-  if pythonpath is None:
-    pythonpath = pympath
-  else:
-    pythonpath = pympath + ':' + pythonpath
-  os.environ['PYTHONPATH'] = pythonpath
+    pympath = source_root
+    pythonpath = os.environ.get('PYTHONPATH')
+    if pythonpath is None:
+        pythonpath = pympath
+    else:
+        pythonpath = pympath + ':' + pythonpath
+    os.environ['PYTHONPATH'] = pythonpath
 
-  pylintrc = os.path.join(source_root, '.pylintrc')
-  cmd = ['pylint', '--rcfile', pylintrc]
-  os.execvp(cmd[0], cmd + argv)
+    pylintrc = os.path.join(source_root, '.pylintrc')
+    cmd = ['pylint', '--rcfile', pylintrc]
+    os.execvp(cmd[0], cmd + argv)
 
 
 if __name__ == '__main__':
-  sys.exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:]))
