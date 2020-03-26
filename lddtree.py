@@ -596,6 +596,8 @@ def ParseELF(
 
 
 class _NormalizePathAction(argparse.Action):
+    """Argparse action to normalize paths."""
+
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, normpath(values))
 
