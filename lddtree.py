@@ -4,7 +4,6 @@
 # Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
 # Copyright 2012-2014 The Chromium OS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
-# pylint: disable=C0301
 
 """Read the ELF dependency tree and show it
 
@@ -477,7 +476,13 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
             if lib in _all_libs:
                 continue
             if all_ldpaths is None:
-                all_ldpaths = rpaths + ldpaths['rpath'] + ldpaths['env'] + runpaths + ldpaths['runpath'] + ldpaths['conf'] + ldpaths['interp']
+                all_ldpaths = (
+                    rpaths + ldpaths['rpath'] +
+                    ldpaths['env'] +
+                    runpaths + ldpaths['runpath'] +
+                    ldpaths['conf'] +
+                    ldpaths['interp']
+                )
             realpath, fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
             _all_libs[lib] = {
                 'realpath': realpath,

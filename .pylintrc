@@ -35,7 +35,7 @@ reports=no
 score=no
 
 [FORMAT]
-max-line-length=80
+max-line-length = 100
 indent-string = '    '
 
 [BASIC]
