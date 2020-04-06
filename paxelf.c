@@ -276,6 +276,7 @@ static pairtype elf_emtypes[] = {
 	QUERY(EM_MICROBLAZE),
 	QUERY(EM_TILEGX),
 	QUERY(EM_ALPHA),
+	QUERY(EM_RISCV),
 	{ 0, 0 }
 };
 
