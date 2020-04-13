@@ -102,6 +102,7 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(lstat64),
 		SCMP_SYS(stat),
 		SCMP_SYS(stat64),
+		SCMP_SYS(statx),
 
 		/* Then the fd close func.  */
 		SCMP_SYS(close),
