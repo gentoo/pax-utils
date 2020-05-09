@@ -1553,7 +1553,7 @@ static int scanelf_elfobj(elfobj *elf)
 		xchrcat(&out_buffer, ' ', &out_len);
 		xstrcat(&out_buffer, elf->filename, &out_len);
 	}
-	if (!be_quiet || (be_quiet && FOUND_SOMETHING())) {
+	if (found_file || !be_quiet || (be_quiet && FOUND_SOMETHING())) {
 		puts(out_buffer);
 		fflush(stdout);
 	}
