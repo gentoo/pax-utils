@@ -118,7 +118,7 @@ find_elf() {
 			check_paths "${elf}" "${c_ldso_paths[@]}" && return 0
 		fi
 
-		check_paths "${elf}" ${lib_paths_ldso:-${lib_paths_fallback}} && return 0
+		check_paths "${elf}" ${lib_paths_fallback} && return 0
 	fi
 	return 1
 }
@@ -153,13 +153,6 @@ show_elf() {
 			[[ -n ${interp} ]] && echo "${interp}"
 		else
 			printf " (interpreter => ${interp:-none})"
-		fi
-		if [[ -r ${interp} ]] ; then
-			# Extract the default lib paths out of the ldso.
-			lib_paths_ldso=$(
-				strings "${interp}" | \
-				sed -nr -e "/^\/.*lib/{s|^/?|${ROOT}|;s|/$||;s|/?:/?|\n${ROOT}|g;p}"
-			)
 		fi
 		full_interp=${interp}
 		interp=${interp##*/}
@@ -235,7 +228,6 @@ ${SET_X} && set -x
 
 ret=0
 for elf ; do
-	unset lib_paths_ldso
 	unset c_last_needed_by
 	if ${AUTO_ROOT} && [[ ${elf} == /* ]] ; then
 		elf="${ROOT}${elf#/}"
