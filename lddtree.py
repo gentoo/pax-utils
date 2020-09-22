@@ -176,6 +176,7 @@ def GenerateLdsoWrapper(
 
     replacements = {
         "interp": os.path.join(os.path.relpath(interp_dir, basedir), interp_name),
+        "interp_rel": os.path.relpath(path, interp_dir),
         "libpaths": ":".join(
             "${basedir}/" + os.path.relpath(p, basedir) for p in libpaths
         ),
@@ -186,6 +187,10 @@ def GenerateLdsoWrapper(
     # Keep path relativeness of argv0 (in ${base}.elf). This allows tools to
     # remove absolute paths from build outputs and enables directory independent
     # cache sharing in distributed build systems.
+    #
+    # NB: LD_ARGV0_REL below is unrelated & non-standard.  It's to let tools see
+    # the original path if they need it and when they know they'll be wrapped up
+    # by this script.
     wrapper = """#!/bin/sh
 if base=$(readlink "$0" 2>/dev/null); then
   # If $0 is an abspath symlink, fully resolve the target.
@@ -200,6 +205,7 @@ else
   esac
 fi
 basedir=${base%%/*}
+LD_ARGV0_REL="%(interp_rel)s" \\
 exec \\
   "${basedir}/%(interp)s" \\
   %(argv0_arg)s \\
