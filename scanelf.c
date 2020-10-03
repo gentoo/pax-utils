@@ -1832,6 +1832,7 @@ static void scanelf_envpath(void)
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
+	{"ldcache",    a_argument, NULL, 130},
 	{"use-ldpath",no_argument, NULL, 129},
 	{"root",       a_argument, NULL, 128},
 	{"recursive", no_argument, NULL, 'R'},
@@ -1877,6 +1878,7 @@ static struct option const long_opts[] = {
 static const char * const opts_help[] = {
 	"Scan all directories in PATH environment",
 	"Scan all directories in /etc/ld.so.conf",
+	"Use alternate ld.so.cache specified in <arg>",
 	"Use ld.so.conf to show full path (use with -r/-n)",
 	"Root directory (use with -l or -p)",
 	"Scan directories recursively",
@@ -2120,6 +2122,7 @@ static int parseargs(int argc, char *argv[])
 				err("Could not open root: %s", optarg);
 			break;
 		case 129: load_cache_config = use_ldpath = 1; break;
+		case 130: ldcache_path = optarg; break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':

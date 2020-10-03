@@ -66,4 +66,7 @@ extern void paxldso_cleanup(void);
 # define paxldso_cleanup()
 #endif
 
+/* Path to ld.so.cache. Usually overridden for tests. */
+extern const char * ldcache_path;
+
 #endif

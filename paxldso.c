@@ -156,7 +156,7 @@ char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 
 	if (ldcache == NULL) {
 		int fd;
-		const char *cachefile = root_rel_path("/etc/ld.so.cache");
+		const char *cachefile = root_rel_path(ldcache_path);
 		struct stat st;
 
 		if (fstatat(root_fd, cachefile, &st, 0))
@@ -369,3 +369,5 @@ void paxldso_cleanup(void)
 	ldso_config_cleanup();
 }
 #endif
+
+const char * ldcache_path = "/etc/ld.so.cache";

@@ -214,6 +214,13 @@
     listing ELFs.
    </para></listitem>
   </varlistentry>
+  <varlistentry>
+   <term><option>--ldcache</option> <replaceable>PATH</replaceable></term>
+   <listitem><para>
+    Use specified path instead of /etc/ld.so.cache. Generally paired with
+    options like -L or -n.
+   </para></listitem>
+  </varlistentry>
  </variablelist>
 </refsect1>
 
