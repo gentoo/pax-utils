@@ -9,7 +9,7 @@
 """Read the ELF dependency tree and show it
 
 This does not work like `ldd` in that we do not execute/load code (only read
-files on disk), and we should the ELFs as a tree rather than a flat list.
+files on disk), and we show the ELFs as a tree rather than a flat list.
 
 Paths may be globs that lddtree will take care of expanding.
 Useful when you want to glob a path under the ROOT path.
