@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2012 Gentoo Foundation
+ * Copyright 2008-2021 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  */
 
@@ -128,6 +128,7 @@ struct mach_header_64
 /* cputype */
 #define CPU_TYPE_POWERPC64  (CPU_TYPE_POWERPC | CPU_ARCH_ABI64)
 #define CPU_TYPE_X86_64     (CPU_TYPE_I386 | CPU_ARCH_ABI64)
+#define CPU_TYPE_ARM64      (CPU_TYPE_ARM | CPU_ARCH_ABI64)
 
 struct load_command
 {

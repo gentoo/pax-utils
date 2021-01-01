@@ -1,10 +1,10 @@
 /*
- * Copyright 2003-2012 Gentoo Foundation
+ * Copyright 2003-2021 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
- *           2008-2012 Fabian Groffen  - <grobian@gentoo.org>
+ *           2008-2021 Fabian Groffen  - <grobian@gentoo.org>
  */
 
 #include "paxinc.h"
@@ -17,6 +17,7 @@ static const char STR_PPC64[]   = "ppc64";
 static const char STR_I386[]    = "i386";
 static const char STR_X86_64[]  = "x86_64";
 static const char STR_ARM[]     = "arm"; /* iPhone */
+static const char STR_ARM64[]   = "arm64"; /* Apple M1 */
 static const char STR_UNKNOWN[] = "unknown";
 
 #define QUERY(n) { #n, n }
@@ -95,6 +96,7 @@ static pairtype macho_cputype[] = {
 	QUERY(CPU_TYPE_ARM),
 	QUERY(CPU_TYPE_POWERPC64),
 	QUERY(CPU_TYPE_X86_64),
+	QUERY(CPU_TYPE_ARM64),
 	{ 0, 0 }
 };
 const char *get_machocputype(fatobj *fobj)
@@ -383,6 +385,7 @@ const char *get_machomtype(fatobj *fobj)
 		case CPU_TYPE_ARM:       return STR_ARM;
 		case CPU_TYPE_POWERPC64: return STR_PPC64;
 		case CPU_TYPE_X86_64:    return STR_X86_64;
+		case CPU_TYPE_ARM64:     return STR_ARM64;
 		default:                 return STR_UNKNOWN;
 	}
 }
