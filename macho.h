@@ -258,6 +258,12 @@ struct rpath_command {
     union lc_str path;
 };
 
+struct uuid_command {
+    uint32_t cmd;
+    uint32_t cmdsize;
+    uint8_t uuid[16];
+};
+
 struct fat_header
 {
 	uint32_t magic;

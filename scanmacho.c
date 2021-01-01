@@ -1,12 +1,12 @@
 /*
- * Copyright 2008-2012 Gentoo Foundation
+ * Copyright 2008-2021 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
  * based on scanelf by:
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  * for Darwin specific fun:
- *           2008-2013 Fabian Groffen  - <grobian@gentoo.org>
+ *           2008-2021 Fabian Groffen  - <grobian@gentoo.org>
  */
 
 const char argv0[] = "scanmacho";
@@ -37,6 +37,7 @@ static char show_rpath = 0;
 static char show_needed = 0;
 static char show_interp = 0;
 static char show_bind = 0;
+static char show_uuid = 0;
 static char show_soname = 0;
 static char show_banner = 1;
 static char show_endian = 0;
@@ -181,18 +182,54 @@ static char *macho_file_soname(fatobj *fobj, char *found_soname)
 	return NULL;
 }
 
+static char *macho_file_uuid(fatobj *fobj, char *found_uuid)
+{
+	loadcmd *lcmd;
+	uint32_t lc_uuid;
+	static char uuid_buf[32 + 4 + 1];
+
+	if (!show_uuid)
+		return NULL;
+
+	lcmd = firstloadcmd(fobj);
+	lc_uuid = MGET(fobj->swapped, LC_UUID);
+
+	do {
+		if (lcmd->lcmd->cmd == lc_uuid) {
+			struct uuid_command *ucmd = lcmd->data;
+			unsigned char *uuid;
+			uuid = (unsigned char *)(ucmd->uuid);
+			*found_uuid = 1;
+			free(lcmd);
+			if (be_wewy_wewy_quiet)
+				return NULL;
+			snprintf(uuid_buf, sizeof(uuid_buf),
+					"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+					"%02x%02x%02x%02x%02x%02x",
+					uuid[0], uuid[1], uuid[2], uuid[3],
+					uuid[4], uuid[5],
+					uuid[6], uuid[7],
+					uuid[8], uuid[9],
+					uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+			return uuid_buf;
+		}
+	} while (nextloadcmd(lcmd));
+
+	return NULL;
+}
+
 /* scan a macho file and show all the fun stuff */
 #define prints(str) ({ ssize_t ret = write(fileno(stdout), str, strlen(str)); ret; })
 static int scanmacho_fatobj(fatobj *fobj)
 {
 	unsigned long i;
 	char found_rpath, found_needed, found_interp, found_soname,
-		 found_lib, found_file;
+		 found_lib, found_file, found_uuid;
 	static char *out_buffer = NULL;
 	static size_t out_len;
 
 	found_rpath = found_needed = found_interp = found_soname = \
-	found_lib = found_file = 0;
+	found_lib = found_file = found_uuid = 0;
 
 	if (be_verbose > 2)
 		printf("%s: scanning file {%s,%s}\n", fobj->filename,
@@ -228,6 +265,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 			case 'b': prints("FLAGS "); break;
 			case 'Z': prints("SIZE "); break;
 			case 'S': prints("INSTALLNAME "); break;
+			case 'U': prints("UUID "); break;
 			case 'N': prints("LIB "); break;
 			case 'a': prints("ARCH "); break;
 			case 'O': prints("PERM "); break;
@@ -293,6 +331,7 @@ static int scanmacho_fatobj(fatobj *fobj)
 		case 'i': out = macho_file_interp(fobj, &found_interp); break;
 		case 'b': get_machomhflags(fobj, &out_buffer, &out_len); break;
 		case 'S': out = macho_file_soname(fobj, &found_soname); break;
+		case 'U': out = macho_file_uuid(fobj, &found_uuid); break;
 		case 'a': out = get_machomtype(fobj); break;
 		case 'Z': snprintf(ubuf, sizeof(ubuf), "%llu", (unsigned long long int)fobj->len); out = ubuf; break;;
 		default: warnf("'%c' has no scan code?", out_format[i]);
@@ -532,8 +571,8 @@ static void scanmacho_envpath(void)
 	free(path);
 }
 
-/* usage / invocation handling functions */ /* Free Flags: c d e j k l s t u w x z G H I J K L P Q T U W X Y */
-#define PARSE_FLAGS "pRmyArnibSN:gE:M:DO:ZaqvF:f:o:CBhV"
+/* usage / invocation handling functions */ /* Free Flags: c d e j k l s t u w x z G H I J K L P Q T W X Y */
+#define PARSE_FLAGS "pRmyArnibSUN:gE:M:DO:ZaqvF:f:o:CBhV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -546,6 +585,7 @@ static struct option const long_opts[] = {
 	{"interp",    no_argument, NULL, 'i'},
 	{"bind",      no_argument, NULL, 'b'},
 	{"soname",    no_argument, NULL, 'S'},
+	{"uuid",      no_argument, NULL, 'U'},
 	{"lib",        a_argument, NULL, 'N'},
 	{"gmatch",    no_argument, NULL, 'g'},
 	{"etype",      a_argument, NULL, 'E'},
@@ -577,6 +617,7 @@ static const char * const opts_help[] = {
 	"Print LC_LOAD_DYLINKER information (ELF: INTERP)",
 	"Print flags from mach_header (ELF: BIND)",
 	"Print LC_ID_DYLIB information (ELF: SONAME)",
+	"Print LC_UUID information",
 	"Find a specified library",
 	"Use strncmp to match libraries. (use with -N)",
 	"Print only Mach-O files matching mach_header\n"
@@ -678,6 +719,7 @@ static int parseargs(int argc, char *argv[])
 		case 'i': show_interp = 1; break;
 		case 'b': show_bind = 1; break;
 		case 'S': show_soname = 1; break;
+		case 'U': show_uuid = 1; break;
 		case 'q': be_quiet = 1; break;
 		case 'v': be_verbose = (be_verbose % 20) + 1; break;
 		case 'a': show_perms = show_endian = show_bind = 1; break;
@@ -717,6 +759,7 @@ static int parseargs(int argc, char *argv[])
 			case 'i': show_interp = 1; break;
 			case 'b': show_bind = 1; break;
 			case 'S': show_soname = 1; break;
+			case 'U': show_uuid = 1; break;
 			default:
 				err("Invalid format specifier '%c' (byte %i)",
 				    out_format[i], i+1);
@@ -738,6 +781,7 @@ static int parseargs(int argc, char *argv[])
 		if (show_interp)   xstrcat(&out_format, "%i ", &fmt_len);
 		if (show_bind)     xstrcat(&out_format, "%b ", &fmt_len);
 		if (show_soname)   xstrcat(&out_format, "%S ", &fmt_len);
+		if (show_uuid)     xstrcat(&out_format, "%U ", &fmt_len);
 		if (find_lib)      xstrcat(&out_format, "%N ", &fmt_len);
 		if (!be_quiet)     xstrcat(&out_format, "%F ", &fmt_len);
 	}
