@@ -156,6 +156,11 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(readlink),
 		SCMP_SYS(readlinkat),
 		SCMP_SYS(getcwd),
+		#ifndef __SNR_faccessat2
+		/* faccessat2 is not yet defiled in latest libseccomp-2.5.1 */
+		#    define __SNR_faccessat2 __NR_faccessat2
+		#endif
+		SCMP_SYS(faccessat2),
 
 		/* Syscalls listed because of fakeroot.  */
 		SCMP_SYS(msgget),
