@@ -156,7 +156,6 @@ static void pax_seccomp_init(bool allow_forking)
 		SCMP_SYS(readlink),
 		SCMP_SYS(readlinkat),
 		SCMP_SYS(getcwd),
-		SCMP_SYS(faccessat2),
 
 		/* Syscalls listed because of fakeroot.  */
 		SCMP_SYS(msgget),
