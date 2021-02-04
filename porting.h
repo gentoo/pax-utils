@@ -61,7 +61,7 @@
 # include <machine/endian.h>
 #endif
 
-#if defined(__GLIBC__) || defined(__UCLIBC__)
+#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 # include <glob.h>
 #endif
 
