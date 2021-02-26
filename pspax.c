@@ -413,7 +413,7 @@ static void pspax(const char *find_name)
 
 		/* this is a non-POSIX function */
 		caps = NULL;
-		WRAP_SYSCAP(capgetp(pfd, cap_d));
+		WRAP_SYSCAP(cap_d = cap_get_pid(pid));
 		WRAP_SYSCAP(caps = cap_to_text(cap_d, &length));
 
 		if (pwd && strlen(pwd->pw_name) >= 8)
