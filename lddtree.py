@@ -40,6 +40,7 @@ they need will be placed into /foo/lib/ only.
 """
 
 import argparse
+import functools
 import glob
 import errno
 import os
@@ -87,6 +88,7 @@ def normpath(path):
     return os.path.normpath(path).replace('//', '/')
 
 
+@functools.lru_cache(maxsize=None)
 def readlink(path, root, prefixed=False):
     """Like os.readlink(), but relative to a |root|
 
@@ -167,6 +169,7 @@ exec \
     os.chmod(wrappath, 0o0755)
 
 
+@functools.lru_cache(maxsize=None)
 def ParseLdPaths(str_ldpaths, root='', path=None):
     """Parse the colon-delimited list of paths and apply ldso rules to each
 
