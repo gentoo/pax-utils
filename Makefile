@@ -67,19 +67,26 @@ endif
 override CPPFLAGS  += -DVCSID='"$(VCSID)"'
 
 ####################################################################
-ELF_TARGETS  = scanelf dumpelf $(shell echo | $(CC) -dM -E - | grep -q __svr4__ || echo pspax)
+ELF_TARGETS  = scanelf dumpelf $(shell $(CC) -dM -E - </dev/null | grep -q __svr4__ || echo pspax)
 ELF_OBJS     = paxelf.o paxldso.o
 MACH_TARGETS = scanmacho
 MACH_OBJS    = paxmacho.o
 COMMON_OBJS  = paxinc.o security.o xfuncs.o
 TARGETS      = $(ELF_TARGETS) $(MACH_TARGETS)
+TARGETS_OBJS = $(TARGETS:%=%.o)
 SCRIPTS_SH   = lddtree symtree
 SCRIPTS_PY   = lddtree
-OBJS         = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS) $(TARGETS:%=%.o)
+_OBJS        = $(ELF_OBJS) $(MACH_OBJS) $(COMMON_OBJS)
+OBJS         = $(_OBJS) $(TARGETS_OBJS)
+# Not all objects support this hack.  Otherwise we'd use $(_OBJS:%.o=%)
+OBJS_TARGETS = paxldso
 MPAGES       = $(TARGETS:%=man/%.1)
 SOURCES      = $(OBJS:%.o=%.c)
 
-all: $(OBJS) $(TARGETS)
+all: $(TARGETS)
+	@:
+
+all-dev: all $(OBJS_TARGETS)
 	@:
 
 DEBUG_FLAGS = \
@@ -88,7 +95,7 @@ DEBUG_FLAGS = \
 	-fsanitize=leak \
 	-fsanitize=undefined
 debug: clean
-	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_compiler_many,$(DEBUG_FLAGS))" all
+	$(MAKE) CFLAGS="$(CFLAGS) -g3 -ggdb $(call check_compiler_many,$(DEBUG_FLAGS))" all-dev
 	@-chpax  -permsx $(ELF_TARGETS)
 	@-paxctl -permsx $(ELF_TARGETS)
 
@@ -120,6 +127,9 @@ $(ELF_TARGETS): %: $(ELF_OBJS) $(COMMON_OBJS) %.o
 $(MACH_TARGETS): %: $(MACH_OBJS) $(COMMON_OBJS) %.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS) $(LIBS-$@)
 
+$(OBJS_TARGETS): %: $(_OBJS) %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -DMAIN $(LDFLAGS) $(filter-out $@.o,$^) -o $@ $(LIBS) $(LIBS-$@)
+
 %.so: %.c
 	$(CC) -shared -fPIC -o $@ $<
 
@@ -127,7 +137,7 @@ depend:
 	$(CC) $(CFLAGS) -MM $(SOURCES) > .depend
 
 clean:
-	-rm -f $(OBJS) $(TARGETS)
+	-rm -f $(OBJS) $(TARGETS) $(OBJS_TARGETS)
 
 distclean: clean
 	-rm -f *~ core *.o

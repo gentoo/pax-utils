@@ -371,3 +371,21 @@ void paxldso_cleanup(void)
 #endif
 
 const char * ldcache_path = "/etc/ld.so.cache";
+
+#ifdef MAIN
+
+const char argv0[] = "paxldso";
+
+int main(int argc, char *argv[])
+{
+	elfobj *elf = readelf(argv[0]);
+	for (int i = 1; i < argc; ++i) {
+		const char *search = argv[i];
+		const char *lib = ldso_cache_lookup_lib(elf, search);
+		printf("%s -> %s\n", search, lib);
+	}
+	unreadelf(elf);
+	paxldso_cleanup();
+}
+
+#endif

@@ -36,6 +36,9 @@ stamp-h1
 
 /dumpelf
 /lddtree
+/paxelf
+/paxldso
+/paxmacho
 /pspax
 /scanelf
 /scanmacho
