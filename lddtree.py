@@ -277,13 +277,14 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
     return paths
 
 
-def LoadLdpaths(root='/', prefix='', debug=False):
+def LoadLdpaths(root='/', cwd=None, prefix='', debug=False):
     """Load linker paths from common locations
 
     This parses the ld.so.conf and LD_LIBRARY_PATH env var.
 
     Args:
       root: The root tree to prepend to paths
+      cwd: The path to resolve relative paths against
       prefix: The path under |root| to search
       debug: Enable debug output
 
@@ -305,7 +306,7 @@ def LoadLdpaths(root='/', prefix='', debug=False):
         else:
             # XXX: If this contains $ORIGIN, we probably have to parse this
             # on a per-ELF basis so it can get turned into the right thing.
-            ldpaths['env'] = ParseLdPaths(env_ldpath, path='')
+            ldpaths['env'] = ParseLdPaths(env_ldpath, cwd=cwd, path='')
 
     # Load up /etc/ld.so.conf.
     ldpaths['conf'] = ParseLdSoConf(root + prefix + '/etc/ld.so.conf', root=root,
@@ -374,7 +375,8 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
 
 # We abuse the _all_libs state.  We probably shouldn't, but we do currently.
 # pylint: disable=dangerous-default-value
-def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[]},
+def ParseELF(path, root='/', cwd=None, prefix='',
+             ldpaths={'conf':[], 'env':[], 'interp':[]},
              display=None, debug=False, _first=True, _all_libs={}):
     """Parse the ELF dependency tree of the specified file
 
@@ -382,6 +384,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
       path: The ELF to scan
       root: The root tree to prepend to paths; this applies to interp and rpaths
           only as |path| and |ldpaths| are expected to be prefixed already
+      cwd: The path to resolve relative paths against.
       prefix: The path under |root| to search
       ldpaths: dict containing library paths to search; should have the keys:
           conf, env, interp
@@ -467,9 +470,9 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
 
             for t in segment.iter_tags():
                 if t.entry.d_tag == 'DT_RPATH':
-                    rpaths = ParseLdPaths(bstr(t.rpath), root=root, path=path)
+                    rpaths = ParseLdPaths(bstr(t.rpath), root=root, cwd=cwd, path=path)
                 elif t.entry.d_tag == 'DT_RUNPATH':
-                    runpaths = ParseLdPaths(bstr(t.runpath), root=root, path=path)
+                    runpaths = ParseLdPaths(bstr(t.runpath), root=root, cwd=cwd, path=path)
                 elif t.entry.d_tag == 'DT_NEEDED':
                     libs.append(bstr(t.needed))
             if runpaths:
@@ -511,7 +514,7 @@ def ParseELF(path, root='/', prefix='', ldpaths={'conf':[], 'env':[], 'interp':[
             }
             if fullpath:
                 try:
-                    lret = ParseELF(realpath, root, prefix, ldpaths, display=fullpath,
+                    lret = ParseELF(realpath, root, cwd, prefix, ldpaths, display=fullpath,
                                     debug=debug, _first=False, _all_libs=_all_libs)
                 except exceptions.ELFError as e:
                     warn('%s: %s' % (realpath, e))
@@ -681,18 +684,6 @@ def GetParser():
     parser.add_argument('-a', '--all',
                         action='store_true', default=False,
                         help='Show all duplicated dependencies')
-    parser.add_argument('-R', '--root',
-                        default=os.environ.get('ROOT', ''), type=str,
-                        action=_NormalizePathAction,
-                        help='Search for all files/dependencies in ROOT')
-    parser.add_argument('-P', '--prefix',
-                        default=os.environ.get(
-                            'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type=str,
-                        action=_NormalizePathAction,
-                        help='Specify EPREFIX for binaries (for Gentoo Prefix)')
-    parser.add_argument('--no-auto-root',
-                        dest='auto_root', action='store_false', default=True,
-                        help='Do not automatically prefix input ELFs with ROOT')
     parser.add_argument('-l', '--list',
                         action='store_true', default=False,
                         help='Display output in a simple list (easy for copying)')
@@ -710,6 +701,23 @@ def GetParser():
                         version='lddtree by Mike Frysinger <vapier@gentoo.org>',
                         help='Show version information')
     parser.add_argument('path', nargs='+')
+
+    group = parser.add_argument_group('Path options')
+    group.add_argument('-R', '--root',
+                       default=os.environ.get('ROOT', ''), type=str,
+                       action=_NormalizePathAction,
+                       help='Search for all files/dependencies in ROOT')
+    group.add_argument('--no-auto-root',
+                       dest='auto_root', action='store_false', default=True,
+                       help='Do not automatically prefix input ELFs with ROOT')
+    group.add_argument('-C', '--cwd',
+                       default=os.getcwd(), type=str, action=_NormalizePathAction,
+                       help='Path to resolve relative paths against')
+    group.add_argument('-P', '--prefix',
+                       default=os.environ.get(
+                           'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type=str,
+                       action=_NormalizePathAction,
+                       help='Specify EPREFIX for binaries (for Gentoo Prefix)')
 
     group = parser.add_argument_group('Copying options')
     group.add_argument('--copy-to-tree',
@@ -754,12 +762,14 @@ def main(argv):
         parser.error('pick one handler for non-ELFs: skip or copy')
 
     dbg(options.debug, 'root =', options.root)
+    dbg(options.debug, 'cwd =', options.cwd)
     if options.dest:
         dbg(options.debug, 'dest =', options.dest)
     if not paths:
         err('missing ELF files to scan')
 
-    ldpaths = LoadLdpaths(options.root, options.prefix, debug=options.debug)
+    ldpaths = LoadLdpaths(options.root, cwd=options.cwd, prefix=options.prefix,
+                          debug=options.debug)
     dbg(options.debug, 'ldpaths[conf] =', ldpaths['conf'])
     dbg(options.debug, 'ldpaths[env]  =', ldpaths['env'])
 
@@ -794,7 +804,7 @@ def main(argv):
 
             matched = True
             try:
-                elf = ParseELF(realpath, options.root, options.prefix, ldpaths,
+                elf = ParseELF(realpath, options.root, options.cwd, options.prefix, ldpaths,
                                display=p, debug=options.debug)
             except exceptions.ELFError as e:
                 if options.skip_non_elfs:
