@@ -460,7 +460,7 @@ void paxldso_cleanup(void)
 }
 #endif
 
-const char * ldcache_path = "/etc/ld.so.cache";
+const char *ldcache_path = "/etc/ld.so.cache";
 
 #ifdef MAIN
 
