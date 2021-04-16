@@ -589,8 +589,14 @@ def _ActionCopy(options, elf):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         try:
             shutil.copy2(realsrc, dst)
+        except FileNotFoundError as e:
+            warn(f'{elf["path"]}: {e}')
+            return
         except IOError:
-            os.unlink(dst)
+            try:
+                os.unlink(dst)
+            except FileNotFoundError:
+                pass
             shutil.copy2(realsrc, dst)
 
         if wrapit:
