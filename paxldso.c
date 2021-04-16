@@ -14,8 +14,13 @@
 
 #if PAX_LDSO_CACHE
 
-static void *ldcache = NULL;
+/* Memory region containing a specific cache. Will be a subset of the mmap. */
+static const void *ldcache = NULL;
 static size_t ldcache_size = 0;
+
+/* Entire memory mapped cache file. */
+static void *ldcache_mmap_base = NULL;
+static size_t ldcache_mmap_size = 0;
 
 static char *ldso_cache_buf = NULL;
 static size_t ldso_cache_buf_size = 0;
@@ -23,10 +28,14 @@ static size_t ldso_cache_buf_size = 0;
 #if defined(__GLIBC__) || defined(__UCLIBC__)
 
 /* Defines can be seen in glibc's sysdeps/generic/ldconfig.h */
-#define LDSO_CACHE_MAGIC             "ld.so-"
-#define LDSO_CACHE_MAGIC_LEN         (sizeof LDSO_CACHE_MAGIC -1)
-#define LDSO_CACHE_VER               "1.7.0"
-#define LDSO_CACHE_VER_LEN           (sizeof LDSO_CACHE_VER -1)
+#define LDSO_CACHE_MAGIC_OLD         "ld.so-"
+#define LDSO_CACHE_MAGIC_OLD_LEN     (sizeof LDSO_CACHE_MAGIC_OLD - 1)
+#define LDSO_CACHE_VER_OLD           "1.7.0"
+#define LDSO_CACHE_VER_OLD_LEN       (sizeof LDSO_CACHE_VER_OLD - 1)
+#define LDSO_CACHE_MAGIC_NEW         "glibc-ld.so.cache"
+#define LDSO_CACHE_MAGIC_NEW_LEN     (sizeof LDSO_CACHE_MAGIC_NEW - 1)
+#define LDSO_CACHE_VER_NEW           "1.1"
+#define LDSO_CACHE_VER_NEW_LEN       (sizeof LDSO_CACHE_VER_NEW - 1)
 #define FLAG_ANY                     -1
 #define FLAG_TYPE_MASK               0x00ff
 #define FLAG_LIBC4                   0x0000
@@ -48,14 +57,45 @@ static size_t ldso_cache_buf_size = 0;
 #define FLAG_MIPS_LIB32_NAN2008      0x0c00
 #define FLAG_MIPS64_LIBN32_NAN2008   0x0d00
 #define FLAG_MIPS64_LIBN64_NAN2008   0x0e00
+#define FLAG_RISCV_FLOAT_ABI_SOFT    0x0f00
+#define FLAG_RISCV_FLOAT_ABI_DOUBLE  0x1000
 
 typedef struct {
 	int flags;
 	unsigned int sooffset;
 	unsigned int liboffset;
-} libentry_t;
+} libentry_old_t;
 
-static bool is_compatible(elfobj *elf, libentry_t *libent)
+typedef struct {
+	const char magic[LDSO_CACHE_MAGIC_OLD_LEN];
+	const char version[LDSO_CACHE_VER_OLD_LEN];
+	unsigned int nlibs;
+	libentry_old_t libs[0];
+} header_old_t;
+
+typedef struct {
+	int32_t flags;
+	uint32_t sooffset;
+	uint32_t liboffset;
+	uint32_t osversion;
+	uint64_t hwcap;
+} libentry_new_t;
+
+typedef struct {
+	const char magic[LDSO_CACHE_MAGIC_NEW_LEN];
+	const char version[LDSO_CACHE_VER_NEW_LEN];
+	uint32_t nlibs;
+	uint32_t len_strings;
+	uint8_t flags;
+	uint8_t _pad_flags[3];
+	uint32_t extension_offset;
+	uint32_t _pad_ext[3];
+	libentry_new_t libs[0];
+} header_new_t;
+
+static bool ldcache_is_new;
+
+static bool is_compatible(elfobj *elf, const libentry_old_t *libent)
 {
 	int flags = libent->flags & FLAG_REQUIRED_MASK;
 
@@ -136,74 +176,124 @@ static bool is_compatible(elfobj *elf, libentry_t *libent)
 	return false;
 }
 
+static void ldso_cache_load(void)
+{
+	int fd;
+	const char *cachefile;
+	struct stat st;
+	const header_old_t *header_old;
+	const header_new_t *header_new;
+
+	if (ldcache_mmap_base != NULL)
+		return;
+
+	cachefile = root_rel_path(ldcache_path);
+
+	if (fstatat(root_fd, cachefile, &st, 0))
+		return;
+
+	fd = openat(root_fd, cachefile, O_RDONLY);
+	if (fd == -1)
+		return;
+
+	/* cache these values so we only map/unmap the cache file once */
+	ldcache_mmap_size = st.st_size;
+	ldcache_mmap_base = mmap(0, ldcache_mmap_size, PROT_READ, MAP_SHARED, fd, 0);
+	close(fd);
+
+	if (ldcache_mmap_base == MAP_FAILED) {
+		ldcache_mmap_base = NULL;
+		return;
+	}
+
+	ldcache_size = ldcache_mmap_size;
+	ldcache = ldcache_mmap_base;
+	header_old = ldcache;
+	header_new = ldcache;
+#define memeq(mem1, mem2) (memcmp(mem1, mem2, sizeof(mem2) - 1) == 0)
+	if (memeq(header_new->magic, LDSO_CACHE_MAGIC_NEW) &&
+	    memeq(header_new->version, LDSO_CACHE_VER_NEW)) {
+		ldcache_is_new = true;
+	} else if (memeq(header_old->magic, LDSO_CACHE_MAGIC_OLD) &&
+	           memeq(header_old->version, LDSO_CACHE_VER_OLD)) {
+		/* See if the new cache format is appended after the old cache. */
+		uintptr_t end =
+			(uintptr_t)ldcache + sizeof(header_old_t) +
+			(header_old->nlibs * sizeof(libentry_old_t));
+		header_new = (const void *)ALIGN_UP(end, __alignof__(header_new_t));
+		if (memeq(header_new->magic, LDSO_CACHE_MAGIC_NEW) &&
+		    memeq(header_new->version, LDSO_CACHE_VER_NEW)) {
+			ldcache_is_new = true;
+			ldcache_size -= ((uintptr_t)header_new - (uintptr_t)ldcache);
+			ldcache = header_new;
+		} else {
+			ldcache_is_new = false;
+		}
+	} else {
+		munmap(ldcache_mmap_base, ldcache_mmap_size);
+		ldcache_mmap_base = NULL;
+		return;
+	}
+#undef memq
+
+	ldso_cache_buf_size = 4096;
+	ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size);
+}
+
 char *ldso_cache_lookup_lib(elfobj *elf, const char *fname)
 {
-	unsigned int nlib;
+	unsigned int nlib, nlibs;
 	char *ret = NULL;
-	char *strs;
-
-	typedef struct {
-		char magic[LDSO_CACHE_MAGIC_LEN];
-		char version[LDSO_CACHE_VER_LEN];
-		unsigned int nlibs;
-	} header_t;
-	header_t *header;
-
-	libentry_t *libent;
+	const char *strs;
+	const libentry_old_t *libent_old;
+	const libentry_new_t *libent_new;
 
 	if (fname == NULL)
 		return NULL;
 
-	if (ldcache == NULL) {
-		int fd;
-		const char *cachefile = root_rel_path(ldcache_path);
-		struct stat st;
+	ldso_cache_load();
+	if (ldcache == NULL)
+		return NULL;
 
-		if (fstatat(root_fd, cachefile, &st, 0))
-			return NULL;
+	if (ldcache_is_new) {
+		const header_new_t *header = ldcache;
+		libent_old = NULL;
+		libent_new = &header->libs[0];
+		strs = (const char *)header;
+		nlibs = header->nlibs;
+	} else {
+		const header_old_t *header = ldcache;
+		libent_old = &header->libs[0];
+		libent_new = NULL;
+		strs = (const char *)&libent_old[header->nlibs];
+		nlibs = header->nlibs;
+	}
 
-		fd = openat(root_fd, cachefile, O_RDONLY);
-		if (fd == -1)
-			return NULL;
-
-		/* cache these values so we only map/unmap the cache file once */
-		ldcache_size = st.st_size;
-		header = ldcache = mmap(0, ldcache_size, PROT_READ, MAP_SHARED, fd, 0);
-		close(fd);
-
-		if (ldcache == MAP_FAILED) {
-			ldcache = NULL;
-			return NULL;
-		}
-
-		if (memcmp(header->magic, LDSO_CACHE_MAGIC, LDSO_CACHE_MAGIC_LEN) ||
-		    memcmp(header->version, LDSO_CACHE_VER, LDSO_CACHE_VER_LEN))
-		{
-			munmap(ldcache, ldcache_size);
-			ldcache = NULL;
-			return NULL;
-		}
-
-		ldso_cache_buf_size = 4096;
-		ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size);
-	} else
-		header = ldcache;
-
-	libent = ldcache + sizeof(header_t);
-	strs = (char *) &libent[header->nlibs];
-
-	for (nlib = 0; nlib < header->nlibs; ++nlib) {
+	/*
+	 * TODO: Should add memory range checking in case cache file is corrupt.
+	 * TODO: We search the cache from start to finish, but since we know the cache
+	 * is sorted, we really should be doing a binary search to speed it up.
+	 */
+	for (nlib = 0; nlib < nlibs; ++nlib) {
 		const char *lib;
 		size_t lib_len;
 
-		if (!is_compatible(elf, &libent[nlib]))
+		/* The first few fields are the same between new/old formats. */
+		const libentry_old_t *libent;
+		if (ldcache_is_new) {
+			libent = (void *)&libent_new[nlib];
+		} else {
+			libent = &libent_old[nlib];
+		}
+
+		if (!is_compatible(elf, libent))
 			continue;
 
-		if (strcmp(fname, strs + libent[nlib].sooffset) != 0)
+		if (strcmp(fname, strs + libent->sooffset) != 0)
 			continue;
 
 		/* Return first hit because that is how the ldso rolls */
-		lib = strs + libent[nlib].liboffset;
+		lib = strs + libent->liboffset;
 		lib_len = strlen(lib) + 1;
 		if (lib_len > ldso_cache_buf_size) {
 			ldso_cache_buf = xrealloc(ldso_cache_buf, ldso_cache_buf_size + 4096);
@@ -223,8 +313,8 @@ static void ldso_cache_cleanup(void)
 {
 	free(ldso_cache_buf);
 
-	if (ldcache != NULL)
-		munmap(ldcache, ldcache_size);
+	if (ldcache_mmap_base != NULL)
+		munmap(ldcache_mmap_base, ldcache_mmap_size);
 }
 
 #else
@@ -379,12 +469,45 @@ const char argv0[] = "paxldso";
 int main(int argc, char *argv[])
 {
 	elfobj *elf = readelf(argv[0]);
+	ldso_cache_load();
+	printf("cache file memory base is %p\n", ldcache_mmap_base);
+	printf("cache memory base is %p\n", ldcache);
 	for (int i = 1; i < argc; ++i) {
 		const char *search = argv[i];
 		const char *lib = ldso_cache_lookup_lib(elf, search);
 		printf("%s -> %s\n", search, lib);
 	}
 	unreadelf(elf);
+
+	if (ldcache) {
+		unsigned int nlib;
+		const char *strs, *s;
+
+		if (ldcache_is_new) {
+			const header_new_t *header = ldcache;
+			const libentry_new_t *libents = &header->libs[0];
+			strs = (const char *)header;
+			printf("dumping new cache format\n");
+
+			for (nlib = 0; nlib < header->nlibs; ++nlib) {
+				const libentry_new_t *libent = &libents[nlib];
+				s = strs + libent->sooffset;
+				printf("%p: %s\n", libent, s);
+			}
+		} else {
+			const header_old_t *header = ldcache;
+			const libentry_old_t *libents = &header->libs[0];
+			strs = (const char *)&libents[header->nlibs];
+			printf("dumping old cache format\n");
+
+			for (nlib = 0; nlib < header->nlibs; ++nlib) {
+				const libentry_old_t *libent = &libents[nlib];
+				s = strs + libent->sooffset;
+				printf("%p: %s\n", libent, s);
+			}
+		}
+	}
+
 	paxldso_cleanup();
 }
 
