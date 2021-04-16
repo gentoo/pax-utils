@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright 2012-2014 Gentoo Foundation
 # Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
 # Copyright 2012-2014 The Chromium OS Authors
@@ -40,14 +39,14 @@ This will place bash, lspci, and lsof into /foo/bin/.  All the libraries
 they need will be placed into /foo/lib/ only.
 """
 
-from __future__ import print_function
-
 import argparse
 import glob
 import errno
 import os
 import shutil
 import sys
+
+assert sys.version_info >= (3, 6), f'Python 3.6+ required, but found {sys.version}'
 
 from elftools.elf.elffile import ELFFile
 from elftools.common import exceptions
@@ -114,15 +113,6 @@ def readlink(path, root, prefixed=False):
         path = os.path.join(os.path.dirname(path), os.readlink(root + path))
 
     return normpath((root + path) if prefixed else path)
-
-
-def makedirs(path):
-    """Like os.makedirs(), but ignore EEXIST errors"""
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
 
 
 def dedupe(items):
@@ -596,7 +586,7 @@ def _ActionCopy(options, elf):
         if options.verbose:
             print('%s -> %s' % (src, dst))
 
-        makedirs(os.path.dirname(dst))
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         try:
             shutil.copy2(realsrc, dst)
         except IOError:
