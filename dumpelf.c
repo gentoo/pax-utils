@@ -11,17 +11,15 @@ const char argv0[] = "dumpelf";
 #include "paxinc.h"
 
 /* prototypes */
-static void dump_ehdr(elfobj *elf, const void *ehdr);
-static void dump_phdr(elfobj *elf, const void *phdr, size_t phdr_cnt);
-static void dump_shdr(elfobj *elf, const void *shdr, size_t shdr_cnt, const char *section_name);
-static void dump_dyn(elfobj *elf, const void *dyn, size_t dyn_cnt);
+static void dump_ehdr(const elfobj *elf, const void *ehdr);
+static void dump_phdr(const elfobj *elf, const void *phdr, size_t phdr_cnt);
+static void dump_shdr(const elfobj *elf, const void *shdr, size_t shdr_cnt, const char *section_name);
+static void dump_dyn(const elfobj *elf, const void *dyn, size_t dyn_cnt);
 #if 0
-static void dump_sym(elfobj *elf, const void *sym);
-static void dump_rel(elfobj *elf, const void *rel);
-static void dump_rela(elfobj *elf, const void *rela);
+static void dump_sym(const elfobj *elf, const void *sym);
+static void dump_rel(const elfobj *elf, const void *rel);
+static void dump_rela(const elfobj *elf, const void *rela);
 #endif
-static void usage(int status);
-static void parseargs(int argc, char *argv[]);
 
 /* variables to control behavior */
 static char be_verbose = 0;
@@ -30,7 +28,7 @@ static char be_verbose = 0;
 static const void *phdr_dynamic_void;
 
 /* dump all internal elf info */
-static void dumpelf(elfobj *elf, size_t file_cnt)
+static void dumpelf(const elfobj *elf, size_t file_cnt)
 {
 	size_t i, b;
 
@@ -158,7 +156,7 @@ static void dumpelf_file(const char *filename, size_t file_cnt)
 	unreadelf(elf);
 }
 
-static void dump_ehdr(elfobj *elf, const void *ehdr_void)
+static void dump_ehdr(const elfobj *elf, const void *ehdr_void)
 {
 #define DUMP_EHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -208,7 +206,7 @@ static void dump_ehdr(elfobj *elf, const void *ehdr_void)
 	DUMP_EHDR(64)
 }
 
-static void dump_notes(elfobj *elf, size_t B, const void *memory, const void *memory_end)
+static void dump_notes(const elfobj *elf, size_t B, const void *memory, const void *memory_end)
 {
 	/* While normally we'd worry about Elf32_Nhdr vs Elf64_Nhdr, in the ELF
 	 * world, the two structs are exactly the same.  So avoid ugly CPP.
@@ -299,7 +297,7 @@ static const char *dump_p_flags(uint32_t type, uint32_t flags)
 
 	return buf + 3;
 }
-static void dump_phdr(elfobj *elf, const void *phdr_void, size_t phdr_cnt)
+static void dump_phdr(const elfobj *elf, const void *phdr_void, size_t phdr_cnt)
 {
 #define DUMP_PHDR(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
@@ -356,7 +354,7 @@ static const char *timestamp(uint64_t stamp)
 	return buf;
 }
 
-static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *section_name)
+static void dump_shdr(const elfobj *elf, const void *shdr_void, size_t shdr_cnt, const char *section_name)
 {
 	size_t i;
 
@@ -488,7 +486,7 @@ static void dump_shdr(elfobj *elf, const void *shdr_void, size_t shdr_cnt, const
 	DUMP_SHDR(64)
 }
 
-static void dump_dyn(elfobj *elf, const void *dyn_void, size_t dyn_cnt)
+static void dump_dyn(const elfobj *elf, const void *dyn_void, size_t dyn_cnt)
 {
 #define DUMP_DYN(B) \
 	if (elf->elf_class == ELFCLASS ## B) { \
