@@ -73,7 +73,7 @@ find_elf() {
 		if [[ ${c_last_needed_by} != ${needed_by} ]] ; then
 			c_last_needed_by=${needed_by}
 			c_last_needed_by_rpaths=$(scanelf -qF '#F%r' "${needed_by}" | \
-				sed -e 's|:| |g' -e "s:[$]ORIGIN:${needed_by%/*}:")
+				sed -E -e 's|:| |g' -e "s:[$](ORIGIN|\{ORIGIN\}):${needed_by%/*}:")
 		fi
 		check_paths "${elf}" ${c_last_needed_by_rpaths} && return 0
 

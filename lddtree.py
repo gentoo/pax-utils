@@ -207,6 +207,8 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
             ldpath = os.getcwd()
         elif '$ORIGIN' in ldpath:
             ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
+        elif '${ORIGIN}' in ldpath:
+            ldpath = ldpath.replace('${ORIGIN}', os.path.dirname(path))
         else:
             ldpath = root + ldpath
         ldpaths.append(normpath(ldpath))
