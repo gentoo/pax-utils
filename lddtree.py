@@ -43,6 +43,7 @@ import argparse
 import functools
 import glob
 import errno
+import mmap
 import os
 import shutil
 import sys
@@ -123,6 +124,17 @@ def dedupe(items):
     return [seen.setdefault(x, x) for x in items if x not in seen]
 
 
+@functools.lru_cache(maxsize=None)
+def interp_supports_argv0(interp) -> bool:
+    """See whether |interp| supports the --argv0 option.
+
+    Starting with glibc-2.33, the ldso supports --argv0 to override argv[0].
+    """
+    with open(interp, 'rb') as fp:
+        with mmap.mmap(fp.fileno(), 0, prot=mmap.PROT_READ) as mm:
+            return mm.find(b'--argv0') >= 0
+
+
 def GenerateLdsoWrapper(root, path, interp, libpaths=()):
     """Generate a shell script wrapper which uses local ldso to run the ELF
 
@@ -145,6 +157,7 @@ def GenerateLdsoWrapper(root, path, interp, libpaths=()):
                                interp_name),
         'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
                               for p in libpaths]),
+        'argv0_arg': '--argv0 "$0"' if interp_supports_argv0(interp) else '',
     }
     wrapper = """#!/bin/sh
 if ! base=$(realpath "$0" 2>/dev/null); then
@@ -154,12 +167,13 @@ if ! base=$(realpath "$0" 2>/dev/null); then
   esac
 fi
 basedir=${base%%/*}
-exec \
-  "${basedir}/%(interp)s" \
-  --library-path "%(libpaths)s" \
-  --inhibit-cache \
-  --inhibit-rpath '' \
-  "${base}.elf" \
+exec \\
+  "${basedir}/%(interp)s" \\
+  %(argv0_arg)s \\
+  --library-path "%(libpaths)s" \\
+  --inhibit-cache \\
+  --inhibit-rpath '' \\
+  "${base}.elf" \\
   "$@"
 """
     wrappath = root + path
