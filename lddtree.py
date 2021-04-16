@@ -184,7 +184,7 @@ exec \\
 
 
 @functools.lru_cache(maxsize=None)
-def ParseLdPaths(str_ldpaths, root='', path=None):
+def ParseLdPaths(str_ldpaths, root='', cwd=None, path=None):
     """Parse the colon-delimited list of paths and apply ldso rules to each
 
     Note the special handling as dictated by the ldso:
@@ -195,23 +195,34 @@ def ParseLdPaths(str_ldpaths, root='', path=None):
     Args:
       str_ldpaths: A colon-delimited string of paths
       root: The path to prepend to all paths found
+      cwd: The path to resolve relative paths against (defaults to getcwd()).
       path: The object actively being parsed (used for $ORIGIN)
 
     Returns:
       list of processed paths
     """
+    if cwd is None:
+        cwd = os.getcwd()
+
     ldpaths = []
     for ldpath in str_ldpaths.split(':'):
-        if not ldpath:
-            # The ldso treats "" paths as $PWD.
-            ldpath = os.getcwd()
-        elif '$ORIGIN' in ldpath:
+        # Expand placeholders first.
+        if '$ORIGIN' in ldpath:
             ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
         elif '${ORIGIN}' in ldpath:
             ldpath = ldpath.replace('${ORIGIN}', os.path.dirname(path))
+
+        # Expand relative paths if needed.  These don't make sense in general,
+        # but that doesn't stop people from using them.  As such, root prefix
+        # doesn't make sense with it either.
+        if not ldpath.startswith('/'):
+            # NB: The ldso treats "" paths as cwd too.
+            ldpath = os.path.join(cwd, ldpath)
         else:
             ldpath = root + ldpath
+
         ldpaths.append(normpath(ldpath))
+
     return dedupe(ldpaths)
 
 
