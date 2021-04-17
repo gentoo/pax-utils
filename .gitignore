@@ -20,19 +20,20 @@ core
 .gdb_history
 .gdbinit
 
-aclocal.m4
-autom4te.cache
-build
-config.cache
-config.h
-config.h.in
-config.log
-config.status
-configure
-autotools
-libtool
-Makefile.in
-stamp-h1
+/aclocal.m4
+/autom4te.cache
+/autotools
+/build
+/config.cache
+/config.h
+/config.h.in
+/config.log
+/config.status
+/configure
+/INSTALL
+/libtool
+/Makefile.in
+/stamp-h1
 
 /dumpelf
 /lddtree
