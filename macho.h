@@ -9,7 +9,8 @@
 #include <stdint.h>
 
 /*
- * http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/Reference/reference.html
+ * https://nicolascormier.com/documentation/macosx-programming/MachORuntime.pdf
+ * https://web.archive.org/web/20090404123504/http://developer.apple.com/DOCUMENTATION/DeveloperTools/Conceptual/MachORuntime/Reference/reference.html
  */
 
 #define CPU_ARCH_ABI64  0x01000000      /* 64 bit */

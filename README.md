@@ -33,7 +33,7 @@ You don't need PaX to use the pax-utils. Infact the only thing they
 really have in common is that pax-utils was initially written to aid in
 deploying PaX systems so it includes support for PT_PAX_FLAGS and the
 deprecated but still in use EI_PAX flags. For more information about PaX
-see the homepage at http://pax.grsecurity.net/
+see the homepage at https://pax.grsecurity.net/
 
 ## Links
 
@@ -49,25 +49,25 @@ If you include pax-utils in your distro, feel free to send an update for this.
  * Maintainer: ludwig.nussel@suse.de
 
 ##### Ubuntu
- * http://packages.ubuntu.com/edgy/devel/pax-utils
+ * https://packages.ubuntu.com/hirsute/pax-utils
  * Maintainer: john.r.moser@gmail.com
 
 ##### Debian
- * http://packages.debian.org/unstable/misc/pax-utils
- * http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=388200
+ * https://packages.debian.org/unstable/misc/pax-utils
+ * https://bugs.debian.org/388200
  * Maintainer: rdenis@simphalempin.com
 
 ##### FreeBSD
- * http://portsmon.freebsd.org/portoverview.py?category=sysutils&portname=pax-utils
- * http://www.freshports.org/sysutils/pax-utils/
+ * https://portsmon.freebsd.org/portoverview.py?category=sysutils&portname=pax-utils
+ * https://www.freshports.org/sysutils/pax-utils/
  * http://archive.netbsd.se/?ml=freebsd-cvs-all&a=2006-08&m=2311441
  * Maintainer: sbz@FreeBSD.org
 
 ##### OpenEmedded
- * http://www.openembedded.org/filebrowser/org.openembedded.dev/packages/pax-utils
+ * https://www.openembedded.org/filebrowser/org.openembedded.dev/packages/pax-utils
 
 ##### Crux
- * http://magog.se/crux/pax-utils/Pkgfile
+ * https://magog.se/crux/pax-utils/Pkgfile
  * Maintainer: mattias@hedenskog.se
 
 ##### Fedora
