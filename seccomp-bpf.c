@@ -105,6 +105,9 @@ int main(void)
 	int base_syscalls[] = {
 		/* We write the most w/scanelf.  */
 		SCMP_SYS(write),
+		SCMP_SYS(writev),
+		SCMP_SYS(pwrite64),
+		SCMP_SYS(pwritev),
 
 		/* Then the stat family of functions.  */
 		SCMP_SYS(newfstatat),
@@ -136,6 +139,8 @@ int main(void)
 		/* Then the file reading functions.  */
 		SCMP_SYS(pread64),
 		SCMP_SYS(read),
+		SCMP_SYS(readv),
+		SCMP_SYS(preadv),
 
 		/* Then the fd manipulation functions.  */
 		SCMP_SYS(fcntl),
@@ -146,6 +151,9 @@ int main(void)
 		SCMP_SYS(brk),
 		SCMP_SYS(capget),
 		SCMP_SYS(chdir),
+		SCMP_SYS(dup),
+		SCMP_SYS(dup2),
+		SCMP_SYS(dup3),
 		SCMP_SYS(exit),
 		SCMP_SYS(exit_group),
 		SCMP_SYS(faccessat),
@@ -162,8 +170,13 @@ int main(void)
 		SCMP_SYS(_llseek),
 		SCMP_SYS(mprotect),
 
+		/* Syscalls listed because of compiler settings.  */
+		SCMP_SYS(futex),
+
 		/* Syscalls listed because of sandbox.  */
 		SCMP_SYS(readlink),
+		SCMP_SYS(readlinkat),
+		SCMP_SYS(getcwd),
 
 		/* Syscalls listed because of fakeroot.  */
 		SCMP_SYS(msgget),
