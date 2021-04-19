@@ -157,7 +157,7 @@ def GenerateLdsoWrapper(root, path, interp, libpaths=()):
                                interp_name),
         'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
                               for p in libpaths]),
-        'argv0_arg': '--argv0 "$0"' if interp_supports_argv0(interp) else '',
+        'argv0_arg': '--argv0 "$0"' if interp_supports_argv0(root + interp) else '',
     }
     wrapper = """#!/bin/sh
 if ! base=$(realpath "$0" 2>/dev/null); then
