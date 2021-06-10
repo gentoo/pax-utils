@@ -1,6 +1,7 @@
 /* AUTO GENERATED FILE. To regenerate run:
-/*   $ make seccomp-bpf.h
-/* See seccomp-bpf.c for details. */
+ *   $ $EDITOR seccomp-bpf.c
+ *   $ make seccomp-bpf.h
+ * See seccomp-bpf.c for details. */
 #undef SECCOMP_BPF_AVAILABLE
 
 #if defined(__aarch64__)

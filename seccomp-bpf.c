@@ -211,8 +211,9 @@ int main(void)
 		err(1, "seccomp_init failed");
 
 	printf("/* AUTO GENERATED FILE. To regenerate run:\n");
-	printf("/*   $ make seccomp-bpf.h\n");
-	printf("/* See seccomp-bpf.c for details. */\n");
+	printf(" *   $ $EDITOR seccomp-bpf.c\n");
+	printf(" *   $ make seccomp-bpf.h\n");
+	printf(" * See seccomp-bpf.c for details. */\n");
 	printf("#undef SECCOMP_BPF_AVAILABLE\n");
 
 	if (seccomp_arch_remove(ctx, seccomp_arch_native()) < 0)
