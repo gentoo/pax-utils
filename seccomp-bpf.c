@@ -28,12 +28,12 @@ static const struct {
 #define A(arch, ifdef) { #arch, SCMP_ARCH_##arch, ifdef }
 	A(AARCH64,     "defined(__aarch64__)"),
 	A(ARM,         "defined(__arm__)"),
-	A(MIPS,        "defined(__mips__) && defined(__MIPSEB__) && defined(_ABIO32)"),
-	A(MIPS64,      "defined(__mips__) && defined(__MIPSEB__) && defined(_ABI64)"),
-	A(MIPS64N32,   "defined(__mips__) && defined(__MIPSEB__) && defined(_ABIN32)"),
-	A(MIPSEL,      "defined(__mips__) && defined(__MIPSEL__) && defined(_ABIO32)"),
-	A(MIPSEL64,    "defined(__mips__) && defined(__MIPSEL__) && defined(_ABI64)"),
-	A(MIPSEL64N32, "defined(__mips__) && defined(__MIPSEL__) && defined(_ABIN32)"),
+	A(MIPS,        "defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABIO32)"),
+	A(MIPS64,      "defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABI64)"),
+	A(MIPS64N32,   "defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABIN32)"),
+	A(MIPSEL,      "defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABIO32)"),
+	A(MIPSEL64,    "defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABI64)"),
+	A(MIPSEL64N32, "defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABIN32)"),
 	A(PARISC,      "defined(__hppa__) && !defined(__hppa64__)"),
 	A(PARISC64,    "defined(__hppa__) &&  defined(__hppa64__)"),
 	A(PPC,         "defined(__powerpc__) && !defined(__powerpc64__) &&  defined(__BIG_ENDIAN__)"),
@@ -210,7 +210,9 @@ int main(void)
 	if (!ctx)
 		err(1, "seccomp_init failed");
 
-	printf("/* AUTO GENERATED; see seccomp-bpf.c for details. */\n");
+	printf("/* AUTO GENERATED FILE. To regenerate run:\n");
+	printf("/*   $ make seccomp-bpf.h\n");
+	printf("/* See seccomp-bpf.c for details. */\n");
 	printf("#undef SECCOMP_BPF_AVAILABLE\n");
 
 	if (seccomp_arch_remove(ctx, seccomp_arch_native()) < 0)

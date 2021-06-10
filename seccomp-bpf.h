@@ -1,4 +1,6 @@
-/* AUTO GENERATED; see seccomp-bpf.c for details. */
+/* AUTO GENERATED FILE. To regenerate run:
+/*   $ make seccomp-bpf.h
+/* See seccomp-bpf.c for details. */
 #undef SECCOMP_BPF_AVAILABLE
 
 #if defined(__aarch64__)
@@ -23,7 +25,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEB__) && defined(_ABIO32)
+#if defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABIO32)
 /* MIPS */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
@@ -34,7 +36,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEB__) && defined(_ABI64)
+#if defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABI64)
 /* MIPS64 */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
@@ -45,7 +47,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEB__) && defined(_ABIN32)
+#if defined(__mips__) && defined(__MIPSEB__) && (_MIPS_SIM == _ABIN32)
 /* MIPS64N32 */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
@@ -56,7 +58,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEL__) && defined(_ABIO32)
+#if defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABIO32)
 /* MIPSEL */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
@@ -67,7 +69,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEL__) && defined(_ABI64)
+#if defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABI64)
 /* MIPSEL64 */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
@@ -78,7 +80,7 @@ static const unsigned char seccomp_bpf_blks_fork[] = {
 };
 #endif
 
-#if defined(__mips__) && defined(__MIPSEL__) && defined(_ABIN32)
+#if defined(__mips__) && defined(__MIPSEL__) && (_MIPS_SIM == _ABIN32)
 /* MIPSEL64N32 */
 #define SECCOMP_BPF_AVAILABLE
 static const unsigned char seccomp_bpf_blks_base[] = {
