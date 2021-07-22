@@ -190,6 +190,9 @@ int main(void)
 		 * as ipc() subcalls.  #675378
 		 */
 		SCMP_SYS(ipc),
+
+		/* glibc-2.34+ uses it as part of mem alloc functions. */
+		SCMP_SYS(getrandom),
 	};
 	int fork_syscalls[] = {
 		SCMP_SYS(clone),
