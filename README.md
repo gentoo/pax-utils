@@ -42,7 +42,7 @@ If you include pax-utils in your distro, feel free to send an update for this.
 ##### Gentoo
  * https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities
  * https://gitweb.gentoo.org/proj/pax-utils.git/
- * Maintainer: Mike Frysinger <vapier@gentoo.org>, Ned Ludd <solar@gentoo.org>
+ * Maintainer: Mike Frysinger <vapier@gentoo.org>, Toolchain Project <toolchain@gentoo.org>
 
 ##### openSUSE
  * https://build.opensuse.org/package/show?package=pax-utils&project=openSUSE%3AFactory
