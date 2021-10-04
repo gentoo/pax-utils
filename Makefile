@@ -184,7 +184,7 @@ endif
 PN = pax-utils
 P = $(PN)-$(PV)
 dist:
-	./make-tarball.sh $(DISTCHECK) $(PV)
+	./make-tarball.sh $(SHELL_TRACE) $(DISTCHECK) $(PV)
 distcheck:
 	$(MAKE) dist DISTCHECK=--check
 
@@ -200,7 +200,7 @@ check test:
 #
 GEN_MARK_START = \# @@@ GEN START @@@ \#
 GEN_MARK_END   = \# @@@ GEN END @@@ \#
-EXTRA_DIST     = $(shell git ls-files | grep -v ^travis/)
+EXTRA_DIST     = $(shell git ls-files | grep -v -E '^(\.github|travis)/')
 autotools-update:
 	$(MAKE) -C man -j
 	sed -i.tmp '/^$(GEN_MARK_START)$$/,/^$(GEN_MARK_END)$$/d' Makefile.am
@@ -219,6 +219,6 @@ autotools:
 ifeq ($(SKIP_AUTOTOOLS_UPDATE),)
 	$(MAKE) autotools-update
 endif
-	./autogen.sh --from=make
+	./autogen.sh $(SHELL_TRACE) --from=make
 
 .PHONY: autotools autotools-update _autotools-update

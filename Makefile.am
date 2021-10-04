@@ -54,7 +54,6 @@ EXTRA_DIST += \
 	.depend \
 	.gitignore \
 	.pylintrc \
-	.travis.yml \
 	BUGS \
 	COPYING \
 	Makefile \

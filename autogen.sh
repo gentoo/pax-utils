@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-. "${0%/*}"/travis/lib.sh
-
 # NB: This script is normally run in a GNU environment (e.g. Linux), but we also run it on other
 # systems (e.g. macOS) as part of our automated CI.  So a little care must be taken.
 
@@ -26,13 +24,13 @@ if [[ $# -ne 0 ]] ; then
 	exit 1
 fi
 
-v rm -rf autotools
+rm -rf autotools
 if [[ ${FROM_TOOL} != "make" ]] ; then
-	v ${MAKE} autotools-update
+	${MAKE} autotools-update
 fi
 
 # reload the gnulib code if possible
-PATH=/usr/local/src/gnu/gnulib:${PATH}
+PATH="${PWD}/gnulib:${PWD}/../gnulib:/usr/local/src/gnu/gnulib:${PATH}"
 mods="
 	alloca
 	euidaccess
@@ -57,13 +55,13 @@ mods="
 	utimensat
 	vasprintf-posix
 "
-v --fold="gnulib-tool" gnulib-tool \
+gnulib-tool \
 	--source-base=autotools/gnulib --m4-base=autotools/m4 \
 	--import \
 	${mods}
 
 # not everyone has sys-devel/autoconf-archive installed
-v tar xf travis/autotools.tar.xz
+tar xf travis/autotools.tar.xz
 has() { [[ " ${*:2} " == *" $1 "* ]] ; }
 import_ax() {
 	local macro content m4 lm4s=()
@@ -89,7 +87,7 @@ while [[ ${curr} -ne ${new} ]] ; do
 done
 
 export AUTOMAKE="automake --foreign"
-v autoreconf -i -f
+autoreconf -i -f
 
 if [[ -x ./test.sh ]] ; then
 	exec ./test.sh "$@"

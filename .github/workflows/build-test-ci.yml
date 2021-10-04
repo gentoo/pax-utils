@@ -1,0 +1,85 @@
+# GitHub actions workflow.
+# https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
+
+name: Build+Test CI
+
+on:
+  push:
+    branches: [master, gh-actions]
+    tags: [v*]
+  pull_request:
+    types: [opened]
+    branches: [master]
+
+jobs:
+  make:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cc: [gcc, clang]
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+    - name: Install dependencies
+      run: sudo apt-get install -y python3-pyelftools
+    - uses: actions/checkout@v2
+    # Hack up the man pages as installing xmlto is very expensive.
+    # We'll test this in the autotools builder instead.
+    - name: Hack man pages
+      run: echo man/*.docbook | sed s:docbook:1:g | xargs touch
+    - run: make
+    - run: make check
+    - run: make install DESTDIR="${PWD}/root/"
+    - run: make debug
+    - run: make check
+
+  autotools-distcheck-linux:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        cc: [gcc, clang]
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+    - name: Install dependencies
+      run: sudo apt-get install -y python3-pyelftools xmlto
+    - name: Checkout gnulib
+      uses: actions/checkout@v2
+      with:
+        repository: coreutils/gnulib
+        path: gnulib
+    - run: mv gnulib ..
+    - uses: actions/checkout@v2
+    - run: make distcheck SHELL_TRACE=-x PV=git PATH="${PWD}/../gnulib:${PATH}"
+
+  autotools-build-macos:
+    strategy:
+      matrix:
+        os: [macos-latest]
+        cc: [clang]
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+    - name: Install dependencies
+      run: brew install autoconf automake docbook libtool xmlto xz
+    - name: Checkout gnulib
+      uses: actions/checkout@v2
+      with:
+        repository: coreutils/gnulib
+        path: gnulib
+    - run: mv gnulib ..
+    - uses: actions/checkout@v2
+    # We don't run the whole distcheck flow because we don't want or need to
+    # rebuild the tarball, and that flow also runs the basic Linux+make which
+    # blows up wonderfully everywhere else.
+    - run: make autotools SHELL_TRACE=-x
+    - run: ./configure
+    - run: make
+    # The unittests generally assume a Linux ELF host, so don't bother making
+    # sure they pass on macOS.  Run them out of morbid curiosity I guess.
+    - run: |
+        make -k check || :
+    - run: make install DESTDIR="${PWD}/root/"
