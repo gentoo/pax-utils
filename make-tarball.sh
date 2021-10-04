@@ -5,12 +5,9 @@
 
 set -e
 
-if ! . /etc/init.d/functions.sh 2>/dev/null ; then
-	einfo() { printf ' * %b\n' "$*"; }
-	eerror() { einfo "$@" 1>&2; }
-fi
+einfo() { printf ' * %b\n' "$*"; }
+eerror() { einfo "$@" 1>&2; }
 die() { eerror "$@"; exit 1; }
-
 v() { printf '\t%s\n' "$*"; "$@"; }
 
 : ${MAKE:=make}

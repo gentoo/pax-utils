@@ -9,7 +9,9 @@ else
 	top_builddir=${abs_top_builddir}
 fi
 
-[ -e /etc/init.d/functions.sh ] && source /etc/init.d/functions.sh
+GOOD=$'\e[32;1m'
+BAD=$'\e[31;1m'
+NORMAL=$'\e[m'
 
 PATH="${top_srcdir}:${top_builddir}:${PATH}"
 unset ROOT # who knows!
