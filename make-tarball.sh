@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# NB: This script is expected to be run in a GNU environment (e.g. Linux).
+# So it is not written to be completely POSIX compliant.
+
 set -e
 
 if ! . /etc/init.d/functions.sh 2>/dev/null ; then
@@ -13,10 +16,14 @@ v() { printf '\t%s\n' "$*"; "$@"; }
 : ${MAKE:=make}
 
 CHECK=false
-if [[ $1 == "--check" ]] ; then
-	CHECK=true
+while [[ $# -gt 0 ]] ;do
+	case $1 in
+	--check) CHECK=true;;
+	-x|--debug) set -x;;
+	*) break;;
+	esac
 	shift
-fi
+done
 
 if [[ $# -ne 1 ]] ; then
 	die "Usage: $0 <ver>"

@@ -2,11 +2,33 @@
 
 . "${0%/*}"/travis/lib.sh
 
+# NB: This script is normally run in a GNU environment (e.g. Linux), but we also run it on other
+# systems (e.g. macOS) as part of our automated CI.  So a little care must be taken.
+
+cd "${0%/*}" || exit 1
+
 m4dir="autotools/m4"
 
+: ${MAKE:=make}
+
+FROM_TOOL=
+while [[ $# -gt 0 ]] ;do
+	case $1 in
+	--from=*) FROM_TOOL=${1#*=};;
+	-x|--debug) set -x;;
+	*) break;;
+	esac
+	shift
+done
+
+if [[ $# -ne 0 ]] ; then
+	echo "Usage: $0" >&2
+	exit 1
+fi
+
 v rm -rf autotools
-if [[ $1 != "--from=make" ]] ; then
-	v ${MAKE:-make} autotools-update
+if [[ ${FROM_TOOL} != "make" ]] ; then
+	v ${MAKE} autotools-update
 fi
 
 # reload the gnulib code if possible
