@@ -59,6 +59,7 @@ rm -rf autom4te.cache
 popd >/dev/null
 
 einfo "Generating tarball ..."
+# The archive is small enough that -6 & -9 produce the same size.
 tar cf - "${p}" | xz > "${p}".tar.xz
 rm -r "${p}"
 
