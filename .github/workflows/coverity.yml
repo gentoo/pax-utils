@@ -19,7 +19,7 @@ jobs:
       CC: ${{ matrix.cc }}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/unofficial-coverity-scan@v0
+    - uses: vapier/coverity-scan-action@v0
       with:
         project: gentoo%2Fpax-utils
         email: vapier@gentoo.org
