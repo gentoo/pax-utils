@@ -49,7 +49,7 @@ static const struct {
 };
 
 /* Simple helper to add all of the syscalls in an array. */
-static int gen_seccomp_rules_add(scmp_filter_ctx ctx, int syscalls[], size_t num)
+static int gen_seccomp_rules_add(scmp_filter_ctx ctx, const int syscalls[], size_t num)
 {
 	static uint8_t prio;
 	size_t i;
@@ -102,7 +102,7 @@ static void gen_seccomp_program(const char *name)
 int main(void)
 {
 	/* Order determines priority (first == lowest prio).  */
-	int base_syscalls[] = {
+	static const int base_syscalls[] = {
 		/* We write the most w/scanelf.  */
 		SCMP_SYS(write),
 		SCMP_SYS(writev),
@@ -194,7 +194,7 @@ int main(void)
 		/* glibc-2.34+ uses it as part of mem alloc functions. */
 		SCMP_SYS(getrandom),
 	};
-	int fork_syscalls[] = {
+	static const int fork_syscalls[] = {
 		SCMP_SYS(clone),
 		SCMP_SYS(execve),
 		SCMP_SYS(fork),
