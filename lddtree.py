@@ -432,7 +432,11 @@ def ParseELF(path, root='/', cwd=None, prefix='',
     dbg(debug, 'ParseELF(%s)' % path)
 
     with open(path, 'rb') as f:
-        elf = ELFFile(f)
+        try:
+            elf = ELFFile(f)
+        except exceptions.ELFParseError:
+            warn("ELFParser failed to parse", path)
+            raise
 
         # If this is the first ELF, extract the interpreter.
         if _first:
