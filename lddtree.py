@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 # Copyright 2012-2014 Gentoo Foundation
 # Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
 # Copyright 2012-2014 The Chromium OS Authors
@@ -49,6 +50,11 @@ import shutil
 import sys
 
 assert sys.version_info >= (3, 6), f'Python 3.6+ required, but found {sys.version}'
+
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
 
 from elftools.elf.elffile import ELFFile
 from elftools.common import exceptions
@@ -739,6 +745,8 @@ def GetParser():
                        action='store_true', default=False,
                        help='Copy over plain (non-ELF) files instead of warn+ignore')
 
+    if argcomplete is not None:
+        argcomplete.autocomplete(parser)
     return parser
 
 
