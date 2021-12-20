@@ -268,7 +268,8 @@ typedef struct
 #define EM_MICROBLAZE	189		/* Xilinx MicroBlaze */
 #define EM_TILEGX	191		/* Tilera TILE-Gx */
 #define EM_RISCV	243		/* RISC-V */
-#define EM_NUM		244
+#define EM_LOONGARCH	258		/* LoongArch */
+#define EM_NUM		259
 
 /* If it is necessary to assign new unofficial EM_* values, please
    pick large random numbers (0x8523, 0xa7f2, etc.) to minimize the
