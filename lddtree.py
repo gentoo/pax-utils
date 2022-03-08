@@ -702,6 +702,9 @@ def GetParser():
     parser.add_argument('--skip-non-elfs',
                         action='store_true', default=False,
                         help='Skip plain (non-ELF) files instead of warning')
+    parser.add_argument('--skip-missing',
+                        action='store_true', default=False,
+                        help='Skip missing files instead of failing')
     parser.add_argument('-V', '--version',
                         action='version',
                         version='lddtree by Mike Frysinger <vapier@gentoo.org>',
@@ -844,7 +847,8 @@ def main(argv):
                 _ActionCopy(options, elf)
 
         if not matched:
-            ret = 1
+            if not options.skip_missing:
+                ret = 1
             warn('%s: did not match any paths' % (path,))
 
     return ret
