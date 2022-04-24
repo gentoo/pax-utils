@@ -193,6 +193,9 @@ int main(void)
 
 		/* glibc-2.34+ uses it as part of mem alloc functions. */
 		SCMP_SYS(getrandom),
+
+		/* glibc-2.35+ uses it when GLIBC_TUNABLES=glibc.malloc.hugetlb=1. */
+		SCMP_SYS(madvise),
 	};
 	static const int fork_syscalls[] = {
 		SCMP_SYS(clone),
