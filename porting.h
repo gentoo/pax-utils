@@ -11,9 +11,7 @@
 #ifndef _PORTING_H
 #define _PORTING_H
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "probes.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(*arr))
 
@@ -41,36 +39,36 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "elf.h"
-#if !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
+#if HAS_ALLOCA_H
 # include <alloca.h>
 #endif
-#if defined(__linux__)
+#if HAS_SYS_PRCTL_H
 # include <sys/prctl.h>
-# if !defined(HAVE_CONFIG_H) || defined(HAVE_LINUX_SECCOMP_H)
+# if HAS_LINUX_SECCOMP_H
 #  include <linux/seccomp.h>
 # endif
-# if !defined(HAVE_CONFIG_H) || defined(HAVE_LINUX_SECUREBITS_H)
+# if HAS_LINUX_SECUREBITS_H
 #  include <linux/securebits.h>
 # endif
 #endif
-#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__ANDROID__)
+#if HAS_ENDIAN_H && HAS_BYTESWAP_H
 # include <byteswap.h>
 # include <endian.h>
-#elif defined(__FreeBSD__)
+#elif HAS_SYS_ENDIAN_H
 # include <sys/endian.h>
-#elif defined(__sun__)
+#elif HAS_ISA_DEFS_H
 # include <sys/isa_defs.h>
-#elif defined(__MACH__)
+#elif HAS_MACHINE_ENDIAN_H
 # include <machine/endian.h>
 #endif
 
-#if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
+#ifdef HAS_GLOB_H
 # include <glob.h>
 #endif
 
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG "/etc/ld.so.conf"
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#elif HAS_ELF_HINTS_H
 # include <elf-hints.h>
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG _PATH_ELF_HINTS
 #else
@@ -168,7 +166,6 @@
 # define __PAX_UTILS_PATH_MAX PATH_MAX
 #endif
 
-/* fall back case for non-Linux hosts ... so lame */
 #if !defined(ELF_DATA)
 # if defined(BYTE_ORDER)
 #  if BYTE_ORDER == LITTLE_ENDIAN
