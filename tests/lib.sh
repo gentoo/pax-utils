@@ -1,19 +1,8 @@
-if [[ -z ${abs_top_builddir} ]] ; then
-	srcdir=$(cd "${0%/*}" && pwd)
-	top_srcdir=$(cd "${srcdir}/../.." && pwd)
-	builddir=${srcdir}
-	top_builddir=${top_srcdir}
-else
-	mkdir -p "${builddir}"
-	top_srcdir=${abs_top_srcdir}
-	top_builddir=${abs_top_builddir}
-fi
-
 GOOD=$'\e[32;1m'
 BAD=$'\e[31;1m'
 NORMAL=$'\e[m'
 
-PATH="${top_srcdir}:${top_builddir}:${PATH}"
+PATH="$(realpath "${srcdir}" "${builddir}" | tr '\n' ':'):${PATH}"
 unset ROOT # who knows!
 
 ret=0

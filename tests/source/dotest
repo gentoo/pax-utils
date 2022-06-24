@@ -9,35 +9,6 @@ findfiles() {
 }
 
 #
-# check for misc common typos
-#
-find "${top_srcdir}" \
-	'(' -type d -a '(' -name .git -o -name tests ')' -prune ')' \
-	-o '(' -type f -a -print0 ')' | xargs -0 \
-	grep -n -I \
-		-e '\<compatability\>' \
-		-e '\<compatable\>' \
-		-e '\<fordeground\>' \
-		-e '\<depency\>' \
-		-e '\<defalt\>' \
-		-e '\<remaing\>' \
-		-e '\<queuing\>' \
-		-e '\<detatch\>' \
-		-e '\<sempahore\>' \
-		-e '\<reprenstative\>' \
-		-e '\<overriden\>' \
-		-e '\<readed\>' \
-		-e '\<formated\>' \
-		-e '\<algorithic\>' \
-		-e '\<deamon\>' \
-		-e '\<derefernce\>' \
-		-e '\<lenght\>' \
-		| sed -e "s:^\.\./\.\./::g" > "${builddir}"/src.typos
-testit src.typos
-
-
-
-#
 # don't allow obsolete functions
 #
 findfiles | xargs -0 \

@@ -5,9 +5,9 @@
 #
 # simple scanelf symbol checks
 #
-scanelf -qsmain -F'%s %f' "${top_builddir}"/scanelf \
-	> "${builddir}"/scanelf.simple
-testit scanelf.simple{,.good}
+${MESON_EXE_WRAPPER} "${builddir}/scanelf" -qsmain -F'%s %f' \
+	"${builddir}"/scanelf > "${builddir}"/scanelf.simple
+testit scanelf.simple tests/scanelf/scanelf.simple.good
 
 
 

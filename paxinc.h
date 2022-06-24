@@ -18,6 +18,9 @@
 #ifndef VERSION
 # define VERSION "git"
 #endif
+#ifdef INCLUDE_GENERATE_VERSION_H
+# include "pax_utils_version.h"
+#endif
 #ifndef VCSID
 # define VCSID "<unknown>"
 #endif
