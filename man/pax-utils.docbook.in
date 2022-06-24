@@ -2,16 +2,14 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V4.4//EN"
 	"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
 
-	<!ENTITY date SYSTEM "fragment/date">
-	<!ENTITY version SYSTEM "fragment/version">
-	<!ENTITY reftail SYSTEM "fragment/reftail">
+	<!ENTITY reftail SYSTEM "@man_dir@/fragment/reftail">
 
 	<!ENTITY project "pax-utils">
 
-	<!ENTITY dumpelf   SYSTEM   "dumpelf.docbook">
-	<!ENTITY pspax     SYSTEM     "pspax.docbook">
-	<!ENTITY scanelf   SYSTEM   "scanelf.docbook">
-	<!ENTITY scanmacho SYSTEM "scanmacho.docbook">
+	<!ENTITY dumpelf   SYSTEM   "@man_dir@/dumpelf.docbook">
+	<!ENTITY pspax     SYSTEM     "@man_dir@/pspax.docbook">
+	<!ENTITY scanelf   SYSTEM   "@man_dir@/scanelf.docbook">
+	<!ENTITY scanmacho SYSTEM "@man_dir@/scanmacho.docbook">
 ]>
 
 <book id="pax-utils" lang="en">
@@ -40,8 +38,7 @@
   </author>
  </authorgroup>
 
- &version;
- &date;
+ <releaseinfo>@version@</releaseinfo>
 </bookinfo>
 
 &dumpelf;
