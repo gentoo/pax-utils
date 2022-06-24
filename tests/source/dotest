@@ -5,7 +5,7 @@
 findfiles() {
 	find "${top_srcdir}" \
 		'(' -type d -a '(' -name .git -o -name autotools ')' -prune ')' \
-		-o '(' '(' -name '*.[ch]' -a ! -name 'config.h' ')' -print0 ')'
+		-o '(' '(' -name '*.[ch]' -a ! -name 'probes.h' ')' -print0 ')'
 }
 
 #
