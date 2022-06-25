@@ -18,16 +18,9 @@ Originally focused only on [PaX](https://pax.grsecurity.net/), it has been
 expanded to be generally security focused.  It still has a good number of
 PaX helpers for people interested in that.
 
-## Building
-
-Just run `make`.  This should work on any recent POSIX compliant system.
-
-Note: To rebuild the man-pages, you will need xmlto and the docbook-xml-dtd
-      packages installed on your system.
-
-## Installation
-
-`make install`
+## Building and installing
+pax-utils uses a bog-standard meson-based build system. See `meson_options.txt`
+for configuration options.
 
 You don't need PaX to use the pax-utils. Infact the only thing they
 really have in common is that pax-utils was initially written to aid in
