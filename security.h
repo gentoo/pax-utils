@@ -22,7 +22,7 @@ void security_init(bool allow_forking);
 /* Disable forking; usable only when allow_forking above was true. */
 void security_init_pid(void);
 #else
-static inline void security_init(bool allow_forking) {}
+static inline void security_init(bool allow_forking) { (void) allow_forking; }
 static inline void security_init_pid(void) {}
 #endif
 

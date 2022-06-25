@@ -94,6 +94,7 @@ void security_init_pid(void)
 
 void security_init(bool allow_forking)
 {
+	(void) allow_forking;
 	int flags;
 
 	if (!ALLOW_PIDNS)
