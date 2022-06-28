@@ -4,14 +4,14 @@ option('lddtree_implementation', type : 'combo',
 option('use_libcap', type : 'feature', value : 'auto',
   description : 'Enable listing capabilities in pspax output (requires libcap)'
 )
-option('use_seccomp', type : 'boolean', value : 'true',
+option('use_seccomp', type : 'boolean', value : true,
   description : 'Enable seccomp filters at runtime (does *not* require libseccomp, but does require kernel support)'
 )
 option('build_manpages', type : 'feature', value : 'auto',
   description : 'Build manuals via DocBook (requires xmlto)')
-option('tests', type : 'boolean', value : 'true'
+option('tests', type : 'boolean', value : true,
   description : 'Enable testing (not guaranteed to work)'
 )
-option('use_fuzzing', type : 'boolean', value : 'true',
+option('use_fuzzing', type : 'boolean', value : true,
   description : 'Also build LibFuzzer fuzzers as tests'
 )
