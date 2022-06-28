@@ -17,26 +17,46 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         cc: [gcc, clang]
+        bb: [meson, muon]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.cc }}
+      BB: ${{ matrix.bb }}
     steps:
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pyelftools python3-pip \
-                                libcap-dev libseccomp-dev ninja-build
-        sudo pip3 install meson
+                                libcap-dev libseccomp-dev ninja-build \
+                                pkg-config
+        case "$BB" in
+          meson)
+            sudo pip3 install meson
+            ;;
+          muon)
+            wget https://muon.build/releases/muon-amd64-linux-static -O muon
+            chmod +x muon
+            sudo install -Dm755 muon /usr/local/bin/muon
+            ;;
+        esac
     - uses: actions/checkout@v2
     - run: |
-        meson -Duse_libcap=enabled \
-              -Duse_seccomp=true \
-              -Dbuild_manpages=disabled \
-              -Dtests=true \
-              -Duse_fuzzing=true \
-              build
+        export PKG_CONFIG_PATH="/usr/lib/$(uname -m)-linux-gnu/pkgconfig/"
+        case "$BB" in
+          muon)
+            alias ninja="muon samu"
+            ;;
+        esac
+
+        "$BB" setup -Duse_libcap=enabled \
+                    -Duse_seccomp=true \
+                    -Dbuild_manpages=disabled \
+                    -Dtests=true \
+                    -Duse_fuzzing=true \
+                    build
         ninja -C build
-        ninja -C build test
+        ( cd build && "$BB" test; )
 
   build-macos:
     strategy:
