@@ -25,8 +25,8 @@ endforeach
 
 custom_target('docbook_to_man',
   command : [
-    xmlto, 'man', '-x', files('custom.xsl'), '--skip-validation', book,
-    '-o', meson.current_build_dir()
+    xmlto, '-x', files('custom.xsl'), '--skip-validation',
+    '-o', meson.current_build_dir(), 'man', book
   ],
   input : [
     'pax-utils.docbook.in', 'custom.xsl', 'fragment/reftail',
