@@ -41,9 +41,9 @@ they need will be placed into /foo/lib/ only.
 """
 
 import argparse
+import errno
 import functools
 import glob
-import errno
 import mmap
 import os
 import shutil
@@ -56,8 +56,8 @@ try:
 except ImportError:
     argcomplete = None
 
-from elftools.elf.elffile import ELFFile
 from elftools.common import exceptions
+from elftools.elf.elffile import ELFFile
 
 
 def warn(msg, prefix='warning'):
