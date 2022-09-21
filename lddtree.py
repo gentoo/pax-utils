@@ -184,7 +184,7 @@ exec \\
 """
     wrappath = root + path
     os.rename(wrappath, wrappath + '.elf')
-    with open(wrappath, 'w') as f:
+    with open(wrappath, 'w', encoding='utf-8') as f:
         f.write(wrapper % replacements)
     os.chmod(wrappath, 0o0755)
 
@@ -251,7 +251,7 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
     dbg_pfx = '' if _first else '  '
     try:
         dbg(debug, '%sParseLdSoConf(%s)' % (dbg_pfx, ldso_conf))
-        with open(ldso_conf) as f:
+        with open(ldso_conf, encoding='utf-8') as f:
             for line in f.readlines():
                 line = line.split('#', 1)[0].strip()
                 if not line:
