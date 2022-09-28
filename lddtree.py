@@ -46,6 +46,7 @@ import functools
 import glob
 import mmap
 import os
+import re
 import shutil
 import sys
 from typing import Any, Iterable, Optional, Union
@@ -147,6 +148,7 @@ def GenerateLdsoWrapper(
     path: str,
     interp: str,
     libpaths: Iterable[str] = (),
+    preload: Optional[str] = None,
 ) -> None:
     """Generate a shell script wrapper which uses local ldso to run the ELF
 
@@ -164,12 +166,21 @@ def GenerateLdsoWrapper(
     interp_dir, interp_name = os.path.split(interp)
     # Add ldso interpreter dir to end of libpaths as a fallback library path.
     libpaths = dedupe(list(libpaths) + [interp_dir])
+    if preload:
+        # If preload is an absolute path, calculate it from basedir.
+        preload_prefix = f'${{basedir}}/{os.path.relpath("/", basedir)}'
+        preload = ":".join(
+            f"{preload_prefix}{x}" if os.path.isabs(x) else x
+            for x in re.split(r"[ :]", preload)
+        )
+
     replacements = {
         "interp": os.path.join(os.path.relpath(interp_dir, basedir), interp_name),
         "libpaths": ":".join(
             "${basedir}/" + os.path.relpath(p, basedir) for p in libpaths
         ),
         "argv0_arg": '--argv0 "$0"' if interp_supports_argv0(root + interp) else "",
+        "preload_arg": f'--preload "{preload}"' if preload else "",
     }
     wrapper = """#!/bin/sh
 if ! base=$(realpath "$0" 2>/dev/null); then
@@ -182,6 +193,7 @@ basedir=${base%%/*}
 exec \\
   "${basedir}/%(interp)s" \\
   %(argv0_arg)s \\
+  %(preload_arg)s \\
   --library-path "%(libpaths)s" \\
   --inhibit-cache \\
   --inhibit-rpath '' \\
@@ -658,7 +670,15 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
     def _StripRoot(path: str) -> str:
         return path[len(options.root) - 1 :]
 
-    def _copy(realsrc, src, striproot=True, wrapit=False, libpaths=(), outdir=None):
+    def _copy(
+        realsrc,
+        src,
+        striproot=True,
+        wrapit=False,
+        libpaths=(),
+        outdir=None,
+        preload=None,
+    ):
         if realsrc is None:
             return
 
@@ -712,7 +732,7 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
                 interp = os.path.join(options.libdir, os.path.basename(elf["interp"]))
             else:
                 interp = _StripRoot(elf["interp"])
-            GenerateLdsoWrapper(options.dest, subdst, interp, libpaths)
+            GenerateLdsoWrapper(options.dest, subdst, interp, libpaths, preload)
 
     # XXX: We should automatically import libgcc_s.so whenever libpthread.so
     # is copied over (since we know it can be dlopen-ed by NPTL at runtime).
@@ -750,6 +770,7 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
         wrapit=options.generate_wrappers,
         libpaths=libpaths,
         outdir=options.bindir,
+        preload=options.wrapper_preload,
     )
 
 
@@ -866,6 +887,12 @@ def GetParser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Copy over plain (non-ELF) files instead of warn+ignore",
+    )
+    group.add_argument(
+        "--wrapper-preload",
+        default=None,
+        type=str,
+        help="Have wrapper add --preload to the ldso invocation",
     )
 
     if argcomplete is not None:
