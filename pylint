@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 """Run pylint with the right settings."""
-
-from __future__ import print_function
 
 import os
 import sys
@@ -17,10 +14,10 @@ def find_all_modules(source_root):
 
     for root, _dirs, files in os.walk(source_root, topdown=False):
         # Add all of the .py modules in the tree.
-        ret += [os.path.join(root, x) for x in files if x.endswith('.py')]
+        ret += [os.path.join(root, x) for x in files if x.endswith(".py")]
 
     # Add the main scripts that don't end in .py.
-    ret += [os.path.join(source_root, x) for x in ('pylint',)]
+    ret += [os.path.join(source_root, x) for x in ("pylint",)]
 
     return ret
 
@@ -33,17 +30,17 @@ def main(argv):
         argv = find_all_modules(source_root)
 
     pympath = source_root
-    pythonpath = os.environ.get('PYTHONPATH')
+    pythonpath = os.environ.get("PYTHONPATH")
     if pythonpath is None:
         pythonpath = pympath
     else:
-        pythonpath = pympath + ':' + pythonpath
-    os.environ['PYTHONPATH'] = pythonpath
+        pythonpath = pympath + ":" + pythonpath
+    os.environ["PYTHONPATH"] = pythonpath
 
-    pylintrc = os.path.join(source_root, '.pylintrc')
-    cmd = ['pylint', '--rcfile', pylintrc]
+    pylintrc = os.path.join(source_root, ".pylintrc")
+    cmd = ["pylint", "--rcfile", pylintrc]
     os.execvp(cmd[0], cmd + argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
