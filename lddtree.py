@@ -48,6 +48,7 @@ import mmap
 import os
 import shutil
 import sys
+from typing import Any, Iterable, Optional, Union
 
 assert sys.version_info >= (3, 6), f'Python 3.6+ required, but found {sys.version}'
 
@@ -60,31 +61,31 @@ from elftools.common import exceptions
 from elftools.elf.elffile import ELFFile
 
 
-def warn(msg, prefix='warning'):
+def warn(msg: Any, prefix: Optional[str] = "warning") -> None:
     """Write |msg| to stderr with a |prefix| before it"""
     print('%s: %s: %s' % (os.path.basename(sys.argv[0]), prefix, msg), file=sys.stderr)
 
 
-def err(msg, status=1):
+def err(msg: Any, status: Optional[int] = 1) -> None:
     """Write |msg| to stderr and exit with |status|"""
     warn(msg, prefix='error')
     sys.exit(status)
 
 
-def dbg(debug, *args, **kwargs):
+def dbg(debug: bool, *args, **kwargs) -> None:
     """Pass |args| and |kwargs| to print() when |debug| is True"""
     if debug:
         print(*args, **kwargs)
 
 
-def bstr(buf):
+def bstr(buf: Union[bytes, str]) -> str:
     """Decode the byte string into a string"""
     if isinstance(buf, str):
         return buf
     return buf.decode('utf-8')
 
 
-def normpath(path):
+def normpath(path: str) -> str:
     """Normalize a path
 
     Python's os.path.normpath() doesn't handle some cases:
@@ -96,7 +97,7 @@ def normpath(path):
 
 
 @functools.lru_cache(maxsize=None)
-def readlink(path, root, prefixed=False):
+def readlink(path: str, root: str, prefixed: Optional[bool] = False) -> str:
     """Like os.readlink(), but relative to a |root|
 
     This does not currently handle the pathological case:
@@ -124,14 +125,14 @@ def readlink(path, root, prefixed=False):
     return normpath((root + path) if prefixed else path)
 
 
-def dedupe(items):
+def dedupe(items: list[str]) -> list[str]:
     """Remove all duplicates from |items| (keeping order)"""
-    seen = {}
+    seen: dict[str, str] = {}
     return [seen.setdefault(x, x) for x in items if x not in seen]
 
 
 @functools.lru_cache(maxsize=None)
-def interp_supports_argv0(interp) -> bool:
+def interp_supports_argv0(interp: str) -> bool:
     """See whether |interp| supports the --argv0 option.
 
     Starting with glibc-2.33, the ldso supports --argv0 to override argv[0].
@@ -141,7 +142,12 @@ def interp_supports_argv0(interp) -> bool:
             return mm.find(b'--argv0') >= 0
 
 
-def GenerateLdsoWrapper(root, path, interp, libpaths=()):
+def GenerateLdsoWrapper(
+    root: str,
+    path: str,
+    interp: str,
+    libpaths: Iterable[str] = (),
+) -> None:
     """Generate a shell script wrapper which uses local ldso to run the ELF
 
     Since we cannot rely on the host glibc (or other libraries), we need to
@@ -190,7 +196,12 @@ exec \\
 
 
 @functools.lru_cache(maxsize=None)
-def ParseLdPaths(str_ldpaths, root='', cwd=None, path=None):
+def ParseLdPaths(
+    str_ldpaths: str,
+    root: str = "",
+    cwd: Optional[str] = None,
+    path: str = "",
+) -> list[str]:
     """Parse the colon-delimited list of paths and apply ldso rules to each
 
     Note the special handling as dictated by the ldso:
@@ -232,7 +243,12 @@ def ParseLdPaths(str_ldpaths, root='', cwd=None, path=None):
     return dedupe(ldpaths)
 
 
-def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
+def ParseLdSoConf(
+    ldso_conf: str,
+    root: str = "/",
+    debug: bool = False,
+    _first: bool = True,
+) -> list[str]:
     """Load all the paths from a given ldso config file
 
     This should handle comments, whitespace, and "include" statements.
@@ -283,7 +299,12 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
     return paths
 
 
-def LoadLdpaths(root='/', cwd=None, prefix='', debug=False):
+def LoadLdpaths(
+    root: str = "/",
+    cwd: Optional[str] = None,
+    prefix: str = "",
+    debug: bool = False,
+) -> dict[str, list[str]]:
     """Load linker paths from common locations
 
     This parses the ld.so.conf and LD_LIBRARY_PATH env var.
@@ -297,7 +318,7 @@ def LoadLdpaths(root='/', cwd=None, prefix='', debug=False):
     Returns:
       dict containing library paths to search
     """
-    ldpaths = {
+    ldpaths: dict[str, list[str]] = {
         'conf': [],
         'env': [],
         'interp': [],
@@ -321,7 +342,7 @@ def LoadLdpaths(root='/', cwd=None, prefix='', debug=False):
     return ldpaths
 
 
-def CompatibleELFs(elf1, elf2):
+def CompatibleELFs(elf1: ELFFile, elf2: ELFFile) -> bool:
     """See if two ELFs are compatible
 
     This compares the aspects of the ELF to see if they're compatible:
@@ -344,7 +365,13 @@ def CompatibleELFs(elf1, elf2):
             elf1.header['e_machine'] == elf2.header['e_machine'])
 
 
-def FindLib(elf, lib, ldpaths, root='/', debug=False):
+def FindLib(
+    elf: ELFFile,
+    lib: str,
+    ldpaths: list[str],
+    root: str = "/",
+    debug: bool = False,
+) -> tuple[Optional[str], Optional[str]]:
     """Try to locate a |lib| that is compatible to |elf| in the given |ldpaths|
 
     Args:
@@ -381,9 +408,17 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
 
 # We abuse the _all_libs state.  We probably shouldn't, but we do currently.
 # pylint: disable=dangerous-default-value
-def ParseELF(path, root='/', cwd=None, prefix='',
-             ldpaths={'conf':[], 'env':[], 'interp':[]},
-             display=None, debug=False, _first=True, _all_libs={}):
+def ParseELF(
+    path: str,
+    root: str = "/",
+    cwd: Optional[str] = None,
+    prefix: str = "",
+    ldpaths={"conf": [], "env": [], "interp": []},
+    display: Optional[str] = None,
+    debug: bool = False,
+    _first: bool = True,
+    _all_libs={},
+) -> dict[str, Any]:
     """Parse the ELF dependency tree of the specified file
 
     Args:
@@ -522,7 +557,7 @@ def ParseELF(path, root='/', cwd=None, prefix='',
                 'path': fullpath,
                 'needed': [],
             }
-            if fullpath:
+            if realpath is not None:
                 try:
                     lret = ParseELF(realpath, root, cwd, prefix, ldpaths, display=fullpath,
                                     debug=debug, _first=False, _all_libs=_all_libs)
@@ -541,7 +576,7 @@ class _NormalizePathAction(argparse.Action):
         setattr(namespace, self.dest, normpath(values))
 
 
-def _ActionShow(options, elf):
+def _ActionShow(options: argparse.Namespace, elf: dict):
     """Show the dependency tree for this ELF"""
     def _show(lib, depth):
         chain_libs.append(lib)
@@ -568,7 +603,7 @@ def _ActionShow(options, elf):
 
     shown_libs = set(elf['needed'])
     new_libs = elf['needed'][:]
-    chain_libs = []
+    chain_libs: list[str] = []
     interp = elf['interp']
     if interp:
         lib = os.path.basename(interp)
@@ -590,9 +625,9 @@ def _ActionShow(options, elf):
         _show(lib, 1)
 
 
-def _ActionCopy(options, elf):
+def _ActionCopy(options: argparse.Namespace, elf: dict):
     """Copy the ELF and its dependencies to a destination tree"""
-    def _StripRoot(path):
+    def _StripRoot(path: str) -> str:
         return path[len(options.root) - 1:]
 
     def _copy(realsrc, src, striproot=True, wrapit=False, libpaths=(),
@@ -687,7 +722,7 @@ def _ActionCopy(options, elf):
           outdir=options.bindir)
 
 
-def GetParser():
+def GetParser() -> argparse.ArgumentParser:
     """Get a CLI parser."""
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -758,7 +793,7 @@ def GetParser():
     return parser
 
 
-def main(argv):
+def main(argv: list[str]) -> Optional[int]:
     """The main entry point!"""
     parser = GetParser()
     options = parser.parse_args(argv)
