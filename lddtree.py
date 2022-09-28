@@ -589,17 +589,17 @@ def _ActionShow(options: argparse.Namespace, elf: dict):
             print(f"{indent}{lib}", "=>", fullpath)
 
         new_libs = []
-        for lib in elf['libs'][lib]['needed']:
-            if lib in chain_libs:
+        for nlib in elf["libs"][lib]["needed"]:
+            if nlib in chain_libs:
                 if not options.list:
-                    print(f"{indent}{lib} => !!! circular loop !!!")
+                    print(f"{indent}{nlib} => !!! circular loop !!!")
                 continue
-            if options.all or not lib in shown_libs:
-                shown_libs.add(lib)
-                new_libs.append(lib)
+            if options.all or not nlib in shown_libs:
+                shown_libs.add(nlib)
+                new_libs.append(nlib)
 
-        for lib in new_libs:
-            _show(lib, depth + 1)
+        for nlib in new_libs:
+            _show(nlib, depth + 1)
         chain_libs.pop()
 
     shown_libs = set(elf['needed'])
