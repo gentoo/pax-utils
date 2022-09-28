@@ -167,8 +167,9 @@ def GenerateLdsoWrapper(
     replacements = {
         'interp': os.path.join(os.path.relpath(interp_dir, basedir),
                                interp_name),
-        'libpaths': ':'.join(['${basedir}/' + os.path.relpath(p, basedir)
-                              for p in libpaths]),
+        "libpaths": ":".join(
+            "${basedir}/" + os.path.relpath(p, basedir) for p in libpaths
+        ),
         'argv0_arg': '--argv0 "$0"' if interp_supports_argv0(root + interp) else '',
     }
     wrapper = """#!/bin/sh
