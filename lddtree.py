@@ -250,7 +250,7 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
 
     dbg_pfx = '' if _first else '  '
     try:
-        dbg(debug, '%sParseLdSoConf(%s)' % (dbg_pfx, ldso_conf))
+        dbg(debug, f"{dbg_pfx}ParseLdSoConf({ldso_conf})")
         with open(ldso_conf, encoding='utf-8') as f:
             for line in f.readlines():
                 line = line.split('#', 1)[0].strip()
@@ -262,7 +262,7 @@ def ParseLdSoConf(ldso_conf, root='/', debug=False, _first=True):
                         line = root + line.lstrip('/')
                     else:
                         line = os.path.dirname(ldso_conf) + '/' + line
-                    dbg(debug, '%s  glob: %s' % (dbg_pfx, line))
+                    dbg(debug, dbg_pfx, "glob:", line)
                     # ldconfig in glibc uses glob() which returns entries sorted according
                     # to LC_COLLATE.  Further, ldconfig does not reset that but respects
                     # the active env settings (which might be a mistake).  Python does not
@@ -336,7 +336,7 @@ def CompatibleELFs(elf1, elf2):
     """
     osabis = frozenset([e.header['e_ident']['EI_OSABI'] for e in (elf1, elf2)])
     compat_sets = (
-        frozenset('ELFOSABI_%s' % x for x in ('NONE', 'SYSV', 'GNU', 'LINUX',)),
+        frozenset(f"ELFOSABI_{x}" for x in ("NONE", "SYSV", "GNU", "LINUX")),
     )
     return ((len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets)) and
             elf1.elfclass == elf2.elfclass and
@@ -357,13 +357,13 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
     Returns:
       Tuple of the full path to the desired library and the real path to it
     """
-    dbg(debug, '  FindLib(%s)' % lib)
+    dbg(debug, f"  FindLib({lib})")
 
     for ldpath in ldpaths:
         path = os.path.join(ldpath, lib)
         target = readlink(path, root, prefixed=True)
         if path != target:
-            dbg(debug, '    checking: %s -> %s' % (path, target))
+            dbg(debug, "    checking:", path, "->", target)
         else:
             dbg(debug, '    checking:', path)
 
@@ -374,7 +374,7 @@ def FindLib(elf, lib, ldpaths, root='/', debug=False):
                     if CompatibleELFs(elf, libelf):
                         return (target, path)
                 except exceptions.ELFError as e:
-                    warn('%s: %s' % (target, e))
+                    warn(f"{target}: {e}")
 
     return (None, None)
 
@@ -429,7 +429,7 @@ def ParseELF(path, root='/', cwd=None, prefix='',
         'libs': _all_libs,
     }
 
-    dbg(debug, 'ParseELF(%s)' % path)
+    dbg(debug, f"ParseELF({path})")
 
     with open(path, 'rb') as f:
         try:
@@ -527,7 +527,7 @@ def ParseELF(path, root='/', cwd=None, prefix='',
                     lret = ParseELF(realpath, root, cwd, prefix, ldpaths, display=fullpath,
                                     debug=debug, _first=False, _all_libs=_all_libs)
                 except exceptions.ELFError as e:
-                    warn('%s: %s' % (realpath, e))
+                    warn(f"{realpath}: {e}")
                 _all_libs[lib]['needed'] = lret['needed']
 
         del elf
@@ -549,13 +549,14 @@ def _ActionShow(options, elf):
         if options.list:
             print(fullpath or lib)
         else:
-            print('%s%s => %s' % ('    ' * depth, lib, fullpath))
+            indent = "    " * depth
+            print(f"{indent}{lib}", "=>", fullpath)
 
         new_libs = []
         for lib in elf['libs'][lib]['needed']:
             if lib in chain_libs:
                 if not options.list:
-                    print('%s%s => !!! circular loop !!!' % ('    ' * depth, lib))
+                    print(f"{indent}{lib} => !!! circular loop !!!")
                 continue
             if options.all or not lib in shown_libs:
                 shown_libs.add(lib)
@@ -584,7 +585,7 @@ def _ActionShow(options, elf):
         if not interp is None:
             print(interp)
     else:
-        print('%s (interpreter => %s)' % (elf['path'], interp))
+        print(elf["path"], f"(interpreter => {interp})")
     for lib in new_libs:
         _show(lib, 1)
 
@@ -627,7 +628,7 @@ def _ActionCopy(options, elf):
                 raise
 
         if options.verbose:
-            print('%s -> %s' % (src, dst))
+            print(src, "->", dst)
 
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         try:
@@ -644,7 +645,7 @@ def _ActionCopy(options, elf):
 
         if wrapit:
             if options.verbose:
-                print('generate wrapper %s' % (dst,))
+                print("generate wrapper", dst)
 
             if options.libdir:
                 interp = os.path.join(options.libdir, os.path.basename(elf['interp']))
@@ -662,7 +663,7 @@ def _ActionCopy(options, elf):
         libdata = elf['libs'][lib]
         path = libdata['realpath']
         if path is None:
-            warn('could not locate library: %s' % lib)
+            warn("could not locate library:", lib)
             continue
         if not options.libdir:
             uniq_libpaths.add(_StripRoot(os.path.dirname(path)))
@@ -838,11 +839,11 @@ def main(argv):
                         _ActionCopy(options, elf)
                         continue
                 ret = 1
-                warn('%s: %s' % (p, e))
+                warn(f"{p}: {e}")
                 continue
             except IOError as e:
                 ret = 1
-                warn('%s: %s' % (p, e))
+                warn(f"{p}: {e}")
                 continue
 
             if options.dest is None:
@@ -853,7 +854,7 @@ def main(argv):
         if not matched:
             if not options.skip_missing:
                 ret = 1
-            warn('%s: did not match any paths' % (path,))
+            warn(f"{path}: did not match any paths")
 
     return ret
 
