@@ -50,7 +50,7 @@ import shutil
 import sys
 from typing import Any, Iterable, Optional, Union
 
-assert sys.version_info >= (3, 6), f'Python 3.6+ required, but found {sys.version}'
+assert sys.version_info >= (3, 6), f"Python 3.6+ required, but found {sys.version}"
 
 try:
     import argcomplete
@@ -63,12 +63,12 @@ from elftools.elf.elffile import ELFFile
 
 def warn(msg: Any, prefix: Optional[str] = "warning") -> None:
     """Write |msg| to stderr with a |prefix| before it"""
-    print('%s: %s: %s' % (os.path.basename(sys.argv[0]), prefix, msg), file=sys.stderr)
+    print("%s: %s: %s" % (os.path.basename(sys.argv[0]), prefix, msg), file=sys.stderr)
 
 
 def err(msg: Any, status: Optional[int] = 1) -> None:
     """Write |msg| to stderr and exit with |status|"""
-    warn(msg, prefix='error')
+    warn(msg, prefix="error")
     sys.exit(status)
 
 
@@ -82,7 +82,7 @@ def bstr(buf: Union[bytes, str]) -> str:
     """Decode the byte string into a string"""
     if isinstance(buf, str):
         return buf
-    return buf.decode('utf-8')
+    return buf.decode("utf-8")
 
 
 def normpath(path: str) -> str:
@@ -93,7 +93,7 @@ def normpath(path: str) -> str:
       //..// -> //
       //..//..// -> ///
     """
-    return os.path.normpath(path).replace('//', '/')
+    return os.path.normpath(path).replace("//", "/")
 
 
 @functools.lru_cache(maxsize=None)
@@ -115,9 +115,9 @@ def readlink(path: str, root: str, prefixed: Optional[bool] = False) -> str:
     Returns:
       A fully resolved symlink path
     """
-    root = root.rstrip('/')
+    root = root.rstrip("/")
     if prefixed:
-        path = path[len(root):]
+        path = path[len(root) :]
 
     while os.path.islink(root + path):
         path = os.path.join(os.path.dirname(path), os.readlink(root + path))
@@ -137,9 +137,9 @@ def interp_supports_argv0(interp: str) -> bool:
 
     Starting with glibc-2.33, the ldso supports --argv0 to override argv[0].
     """
-    with open(interp, 'rb') as fp:
+    with open(interp, "rb") as fp:
         with mmap.mmap(fp.fileno(), 0, prot=mmap.PROT_READ) as mm:
-            return mm.find(b'--argv0') >= 0
+            return mm.find(b"--argv0") >= 0
 
 
 def GenerateLdsoWrapper(
@@ -165,12 +165,11 @@ def GenerateLdsoWrapper(
     # Add ldso interpreter dir to end of libpaths as a fallback library path.
     libpaths = dedupe(list(libpaths) + [interp_dir])
     replacements = {
-        'interp': os.path.join(os.path.relpath(interp_dir, basedir),
-                               interp_name),
+        "interp": os.path.join(os.path.relpath(interp_dir, basedir), interp_name),
         "libpaths": ":".join(
             "${basedir}/" + os.path.relpath(p, basedir) for p in libpaths
         ),
-        'argv0_arg': '--argv0 "$0"' if interp_supports_argv0(root + interp) else '',
+        "argv0_arg": '--argv0 "$0"' if interp_supports_argv0(root + interp) else "",
     }
     wrapper = """#!/bin/sh
 if ! base=$(realpath "$0" 2>/dev/null); then
@@ -190,8 +189,8 @@ exec \\
   "$@"
 """
     wrappath = root + path
-    os.rename(wrappath, wrappath + '.elf')
-    with open(wrappath, 'w', encoding='utf-8') as f:
+    os.rename(wrappath, wrappath + ".elf")
+    with open(wrappath, "w", encoding="utf-8") as f:
         f.write(wrapper % replacements)
     os.chmod(wrappath, 0o0755)
 
@@ -223,17 +222,17 @@ def ParseLdPaths(
         cwd = os.getcwd()
 
     ldpaths = []
-    for ldpath in str_ldpaths.split(':'):
+    for ldpath in str_ldpaths.split(":"):
         # Expand placeholders first.
-        if '$ORIGIN' in ldpath:
-            ldpath = ldpath.replace('$ORIGIN', os.path.dirname(path))
-        elif '${ORIGIN}' in ldpath:
-            ldpath = ldpath.replace('${ORIGIN}', os.path.dirname(path))
+        if "$ORIGIN" in ldpath:
+            ldpath = ldpath.replace("$ORIGIN", os.path.dirname(path))
+        elif "${ORIGIN}" in ldpath:
+            ldpath = ldpath.replace("${ORIGIN}", os.path.dirname(path))
 
         # Expand relative paths if needed.  These don't make sense in general,
         # but that doesn't stop people from using them.  As such, root prefix
         # doesn't make sense with it either.
-        if not ldpath.startswith('/'):
+        if not ldpath.startswith("/"):
             # NB: The ldso treats "" paths as cwd too.
             ldpath = os.path.join(cwd, ldpath)
         else:
@@ -265,27 +264,29 @@ def ParseLdSoConf(
     """
     paths = []
 
-    dbg_pfx = '' if _first else '  '
+    dbg_pfx = "" if _first else "  "
     try:
         dbg(debug, f"{dbg_pfx}ParseLdSoConf({ldso_conf})")
-        with open(ldso_conf, encoding='utf-8') as f:
+        with open(ldso_conf, encoding="utf-8") as f:
             for line in f.readlines():
-                line = line.split('#', 1)[0].strip()
+                line = line.split("#", 1)[0].strip()
                 if not line:
                     continue
-                if line.startswith('include '):
+                if line.startswith("include "):
                     line = line[8:]
-                    if line[0] == '/':
-                        line = root + line.lstrip('/')
+                    if line[0] == "/":
+                        line = root + line.lstrip("/")
                     else:
-                        line = os.path.dirname(ldso_conf) + '/' + line
+                        line = os.path.dirname(ldso_conf) + "/" + line
                     dbg(debug, dbg_pfx, "glob:", line)
                     # ldconfig in glibc uses glob() which returns entries sorted according
                     # to LC_COLLATE.  Further, ldconfig does not reset that but respects
                     # the active env settings (which might be a mistake).  Python does not
                     # sort its results by default though, so do it ourselves.
                     for path in sorted(glob.glob(line)):
-                        paths += ParseLdSoConf(path, root=root, debug=debug, _first=False)
+                        paths += ParseLdSoConf(
+                            path, root=root, debug=debug, _first=False
+                        )
                 else:
                     paths += [normpath(root + line)]
     except IOError as e:
@@ -320,25 +321,26 @@ def LoadLdpaths(
       dict containing library paths to search
     """
     ldpaths: dict[str, list[str]] = {
-        'conf': [],
-        'env': [],
-        'interp': [],
+        "conf": [],
+        "env": [],
+        "interp": [],
     }
 
     # Load up $LD_LIBRARY_PATH.
-    ldpaths['env'] = []
-    env_ldpath = os.environ.get('LD_LIBRARY_PATH')
+    ldpaths["env"] = []
+    env_ldpath = os.environ.get("LD_LIBRARY_PATH")
     if not env_ldpath is None:
-        if root != '/':
-            warn('ignoring LD_LIBRARY_PATH due to ROOT usage')
+        if root != "/":
+            warn("ignoring LD_LIBRARY_PATH due to ROOT usage")
         else:
             # XXX: If this contains $ORIGIN, we probably have to parse this
             # on a per-ELF basis so it can get turned into the right thing.
-            ldpaths['env'] = ParseLdPaths(env_ldpath, cwd=cwd, path='')
+            ldpaths["env"] = ParseLdPaths(env_ldpath, cwd=cwd, path="")
 
     # Load up /etc/ld.so.conf.
-    ldpaths['conf'] = ParseLdSoConf(root + prefix + '/etc/ld.so.conf', root=root,
-                                    debug=debug)
+    ldpaths["conf"] = ParseLdSoConf(
+        root + prefix + "/etc/ld.so.conf", root=root, debug=debug
+    )
 
     return ldpaths
 
@@ -356,14 +358,16 @@ def CompatibleELFs(elf1: ELFFile, elf2: ELFFile) -> bool:
     Returns:
       True if compatible, False otherwise
     """
-    osabis = frozenset([e.header['e_ident']['EI_OSABI'] for e in (elf1, elf2)])
+    osabis = frozenset([e.header["e_ident"]["EI_OSABI"] for e in (elf1, elf2)])
     compat_sets = (
         frozenset(f"ELFOSABI_{x}" for x in ("NONE", "SYSV", "GNU", "LINUX")),
     )
-    return ((len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets)) and
-            elf1.elfclass == elf2.elfclass and
-            elf1.little_endian == elf2.little_endian and
-            elf1.header['e_machine'] == elf2.header['e_machine'])
+    return (
+        (len(osabis) == 1 or any(osabis.issubset(x) for x in compat_sets))
+        and elf1.elfclass == elf2.elfclass
+        and elf1.little_endian == elf2.little_endian
+        and elf1.header["e_machine"] == elf2.header["e_machine"]
+    )
 
 
 def FindLib(
@@ -393,10 +397,10 @@ def FindLib(
         if path != target:
             dbg(debug, "    checking:", path, "->", target)
         else:
-            dbg(debug, '    checking:', path)
+            dbg(debug, "    checking:", path)
 
         if os.path.exists(target):
-            with open(target, 'rb') as f:
+            with open(target, "rb") as f:
                 try:
                     libelf = ELFFile(f)
                     if CompatibleELFs(elf, libelf):
@@ -456,18 +460,18 @@ def ParseELF(
         _all_libs = {}
         ldpaths = ldpaths.copy()
     ret = {
-        'interp': None,
-        'path': path if display is None else display,
-        'realpath': path,
-        'needed': [],
-        'rpath': [],
-        'runpath': [],
-        'libs': _all_libs,
+        "interp": None,
+        "path": path if display is None else display,
+        "realpath": path,
+        "needed": [],
+        "rpath": [],
+        "runpath": [],
+        "libs": _all_libs,
     }
 
     dbg(debug, f"ParseELF({path})")
 
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         try:
             elf = ELFFile(f)
         except exceptions.ELFParseError:
@@ -477,17 +481,17 @@ def ParseELF(
         # If this is the first ELF, extract the interpreter.
         if _first:
             for segment in elf.iter_segments():
-                if segment.header.p_type != 'PT_INTERP':
+                if segment.header.p_type != "PT_INTERP":
                     continue
 
                 interp = bstr(segment.get_interp_name())
-                dbg(debug, '  interp           =', interp)
-                ret['interp'] = normpath(root + interp)
-                real_interp = readlink(ret['interp'], root, prefixed=True)
-                ret['libs'][os.path.basename(interp)] = {
-                    'path': ret['interp'],
-                    'realpath': real_interp,
-                    'needed': [],
+                dbg(debug, "  interp           =", interp)
+                ret["interp"] = normpath(root + interp)
+                real_interp = readlink(ret["interp"], root, prefixed=True)
+                ret["libs"][os.path.basename(interp)] = {
+                    "path": ret["interp"],
+                    "realpath": real_interp,
+                    "needed": [],
                 }
                 # XXX: Could read it and scan for /lib paths.
                 # If the interp is a symlink, lets follow it on the assumption that it
@@ -498,12 +502,16 @@ def ParseELF(
                 # ld64.so.1 is really a symlink to ../lib64/ld64.so.1.  In the multiarch
                 # setup, it'll be /lib/ld64.so.1 -> /lib/s390x-linux-gnu/ld64.so.1.
                 # That is why we use |real_interp| here instead of |interp|.
-                ldpaths['interp'] = [
+                ldpaths["interp"] = [
                     os.path.dirname(real_interp),
-                    normpath(root + prefix + '/usr/' + os.path.dirname(
-                        real_interp)[len(root) + len(prefix):]),
+                    normpath(
+                        root
+                        + prefix
+                        + "/usr/"
+                        + os.path.dirname(real_interp)[len(root) + len(prefix) :]
+                    ),
                 ]
-                dbg(debug, '  ldpaths[interp]  =', ldpaths['interp'])
+                dbg(debug, "  ldpaths[interp]  =", ldpaths["interp"])
                 break
 
         # Parse the ELF's dynamic tags.
@@ -511,15 +519,17 @@ def ParseELF(
         rpaths = []
         runpaths = []
         for segment in elf.iter_segments():
-            if segment.header.p_type != 'PT_DYNAMIC':
+            if segment.header.p_type != "PT_DYNAMIC":
                 continue
 
             for t in segment.iter_tags():
-                if t.entry.d_tag == 'DT_RPATH':
+                if t.entry.d_tag == "DT_RPATH":
                     rpaths = ParseLdPaths(bstr(t.rpath), root=root, cwd=cwd, path=path)
-                elif t.entry.d_tag == 'DT_RUNPATH':
-                    runpaths = ParseLdPaths(bstr(t.runpath), root=root, cwd=cwd, path=path)
-                elif t.entry.d_tag == 'DT_NEEDED':
+                elif t.entry.d_tag == "DT_RUNPATH":
+                    runpaths = ParseLdPaths(
+                        bstr(t.runpath), root=root, cwd=cwd, path=path
+                    )
+                elif t.entry.d_tag == "DT_NEEDED":
                     libs.append(bstr(t.needed))
             if runpaths:
                 # If both RPATH and RUNPATH are set, only the latter is used.
@@ -531,13 +541,13 @@ def ParseELF(
         if _first:
             # Propagate the rpaths used by the main ELF since those will be
             # used at runtime to locate things.
-            ldpaths['rpath'] = rpaths
-            ldpaths['runpath'] = runpaths
-            dbg(debug, '  ldpaths[rpath]   =', rpaths)
-            dbg(debug, '  ldpaths[runpath] =', runpaths)
-        ret['rpath'] = rpaths
-        ret['runpath'] = runpaths
-        ret['needed'] = libs
+            ldpaths["rpath"] = rpaths
+            ldpaths["runpath"] = runpaths
+            dbg(debug, "  ldpaths[rpath]   =", rpaths)
+            dbg(debug, "  ldpaths[runpath] =", runpaths)
+        ret["rpath"] = rpaths
+        ret["runpath"] = runpaths
+        ret["needed"] = libs
 
         # Search for the libs this ELF uses.
         all_ldpaths = None
@@ -546,29 +556,42 @@ def ParseELF(
                 continue
             if all_ldpaths is None:
                 all_ldpaths = (
-                    rpaths + ldpaths['rpath'] +
-                    ldpaths['env'] +
-                    runpaths + ldpaths['runpath'] +
-                    ldpaths['conf'] +
-                    ldpaths['interp']
+                    rpaths
+                    + ldpaths["rpath"]
+                    + ldpaths["env"]
+                    + runpaths
+                    + ldpaths["runpath"]
+                    + ldpaths["conf"]
+                    + ldpaths["interp"]
                 )
             realpath, fullpath = FindLib(elf, lib, all_ldpaths, root, debug=debug)
             _all_libs[lib] = {
-                'realpath': realpath,
-                'path': fullpath,
-                'needed': [],
+                "realpath": realpath,
+                "path": fullpath,
+                "needed": [],
             }
             if realpath is not None:
                 try:
-                    lret = ParseELF(realpath, root, cwd, prefix, ldpaths, display=fullpath,
-                                    debug=debug, _first=False, _all_libs=_all_libs)
+                    lret = ParseELF(
+                        realpath,
+                        root,
+                        cwd,
+                        prefix,
+                        ldpaths,
+                        display=fullpath,
+                        debug=debug,
+                        _first=False,
+                        _all_libs=_all_libs,
+                    )
                 except exceptions.ELFError as e:
                     warn(f"{realpath}: {e}")
-                _all_libs[lib]['needed'] = lret['needed']
+                _all_libs[lib]["needed"] = lret["needed"]
 
         del elf
 
     return ret
+
+
 # pylint: enable=dangerous-default-value
 
 
@@ -579,9 +602,10 @@ class _NormalizePathAction(argparse.Action):
 
 def _ActionShow(options: argparse.Namespace, elf: dict):
     """Show the dependency tree for this ELF"""
+
     def _show(lib, depth):
         chain_libs.append(lib)
-        fullpath = elf['libs'][lib]['path']
+        fullpath = elf["libs"][lib]["path"]
         if options.list:
             print(fullpath or lib)
         else:
@@ -602,10 +626,10 @@ def _ActionShow(options: argparse.Namespace, elf: dict):
             _show(nlib, depth + 1)
         chain_libs.pop()
 
-    shown_libs = set(elf['needed'])
-    new_libs = elf['needed'][:]
+    shown_libs = set(elf["needed"])
+    new_libs = elf["needed"][:]
     chain_libs: list[str] = []
-    interp = elf['interp']
+    interp = elf["interp"]
     if interp:
         lib = os.path.basename(interp)
         shown_libs.add(lib)
@@ -617,7 +641,7 @@ def _ActionShow(options: argparse.Namespace, elf: dict):
         if not options.all and options.list and lib in new_libs:
             new_libs.remove(lib)
     if options.list:
-        print(elf['path'])
+        print(elf["path"])
         if not interp is None:
             print(interp)
     else:
@@ -628,17 +652,17 @@ def _ActionShow(options: argparse.Namespace, elf: dict):
 
 def _ActionCopy(options: argparse.Namespace, elf: dict):
     """Copy the ELF and its dependencies to a destination tree"""
-    def _StripRoot(path: str) -> str:
-        return path[len(options.root) - 1:]
 
-    def _copy(realsrc, src, striproot=True, wrapit=False, libpaths=(),
-              outdir=None):
+    def _StripRoot(path: str) -> str:
+        return path[len(options.root) - 1 :]
+
+    def _copy(realsrc, src, striproot=True, wrapit=False, libpaths=(), outdir=None):
         if realsrc is None:
             return
 
         if wrapit:
             # Static ELFs don't need to be wrapped.
-            if not elf['interp']:
+            if not elf["interp"]:
                 wrapit = False
 
         striproot = _StripRoot if striproot else lambda x: x
@@ -651,11 +675,10 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
 
         try:
             # See if they're the same file.
-            nstat = os.stat(dst + ('.elf' if wrapit else ''))
+            nstat = os.stat(dst + (".elf" if wrapit else ""))
             ostat = os.stat(realsrc)
-            for field in ('mode', 'mtime', 'size'):
-                if getattr(ostat, 'st_' + field) != \
-                   getattr(nstat, 'st_' + field):
+            for field in ("mode", "mtime", "size"):
+                if getattr(ostat, "st_" + field) != getattr(nstat, "st_" + field):
                     break
             else:
                 return
@@ -684,9 +707,9 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
                 print("generate wrapper", dst)
 
             if options.libdir:
-                interp = os.path.join(options.libdir, os.path.basename(elf['interp']))
+                interp = os.path.join(options.libdir, os.path.basename(elf["interp"]))
             else:
-                interp = _StripRoot(elf['interp'])
+                interp = _StripRoot(elf["interp"])
             GenerateLdsoWrapper(options.dest, subdst, interp, libpaths)
 
     # XXX: We should automatically import libgcc_s.so whenever libpthread.so
@@ -695,99 +718,153 @@ def _ActionCopy(options: argparse.Namespace, elf: dict):
     # the libnsl.so and libnss_*.so libraries, as well as an open ended list
     # for known libs that get loaded (e.g. curl will dlopen(libresolv)).
     uniq_libpaths = set()
-    for lib in elf['libs']:
-        libdata = elf['libs'][lib]
-        path = libdata['realpath']
+    for lib in elf["libs"]:
+        libdata = elf["libs"][lib]
+        path = libdata["realpath"]
         if path is None:
             warn("could not locate library:", lib)
             continue
         if not options.libdir:
             uniq_libpaths.add(_StripRoot(os.path.dirname(path)))
-        _copy(path, libdata['path'], outdir=options.libdir)
+        _copy(path, libdata["path"], outdir=options.libdir)
 
     if not options.libdir:
         libpaths = list(uniq_libpaths)
-        if elf['runpath']:
-            libpaths = elf['runpath'] + libpaths
+        if elf["runpath"]:
+            libpaths = elf["runpath"] + libpaths
         else:
-            libpaths = elf['rpath'] + libpaths
+            libpaths = elf["rpath"] + libpaths
     else:
         uniq_libpaths.add(options.libdir)
         libpaths = list(uniq_libpaths)
 
     # We don't bother to copy this as ParseElf adds the interp to the 'libs',
     # so it was already copied in the libs loop above.
-    #_copy(elf['interp'], outdir=options.libdir)
-    _copy(elf['realpath'], elf['path'], striproot=options.auto_root,
-          wrapit=options.generate_wrappers, libpaths=libpaths,
-          outdir=options.bindir)
+    # _copy(elf['interp'], outdir=options.libdir)
+    _copy(
+        elf["realpath"],
+        elf["path"],
+        striproot=options.auto_root,
+        wrapit=options.generate_wrappers,
+        libpaths=libpaths,
+        outdir=options.bindir,
+    )
 
 
 def GetParser() -> argparse.ArgumentParser:
     """Get a CLI parser."""
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-a', '--all',
-                        action='store_true', default=False,
-                        help='Show all duplicated dependencies')
-    parser.add_argument('-l', '--list',
-                        action='store_true', default=False,
-                        help='Display output in a simple list (easy for copying)')
-    parser.add_argument('-x', '--debug',
-                        action='store_true', default=False,
-                        help='Run with debugging')
-    parser.add_argument('-v', '--verbose',
-                        action='store_true', default=False,
-                        help='Be verbose')
-    parser.add_argument('--skip-non-elfs',
-                        action='store_true', default=False,
-                        help='Skip plain (non-ELF) files instead of warning')
-    parser.add_argument('--skip-missing',
-                        action='store_true', default=False,
-                        help='Skip missing files instead of failing')
-    parser.add_argument('-V', '--version',
-                        action='version',
-                        version='lddtree by Mike Frysinger <vapier@gentoo.org>',
-                        help='Show version information')
-    parser.add_argument('path', nargs='+')
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        default=False,
+        help="Show all duplicated dependencies",
+    )
+    parser.add_argument(
+        "-l",
+        "--list",
+        action="store_true",
+        default=False,
+        help="Display output in a simple list (easy for copying)",
+    )
+    parser.add_argument(
+        "-x", "--debug", action="store_true", default=False, help="Run with debugging"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", default=False, help="Be verbose"
+    )
+    parser.add_argument(
+        "--skip-non-elfs",
+        action="store_true",
+        default=False,
+        help="Skip plain (non-ELF) files instead of warning",
+    )
+    parser.add_argument(
+        "--skip-missing",
+        action="store_true",
+        default=False,
+        help="Skip missing files instead of failing",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version="lddtree by Mike Frysinger <vapier@gentoo.org>",
+        help="Show version information",
+    )
+    parser.add_argument("path", nargs="+")
 
-    group = parser.add_argument_group('Path options')
-    group.add_argument('-R', '--root',
-                       default=os.environ.get('ROOT', ''), type=str,
-                       action=_NormalizePathAction,
-                       help='Search for all files/dependencies in ROOT')
-    group.add_argument('--no-auto-root',
-                       dest='auto_root', action='store_false', default=True,
-                       help='Do not automatically prefix input ELFs with ROOT')
-    group.add_argument('-C', '--cwd',
-                       default=os.getcwd(), type=str, action=_NormalizePathAction,
-                       help='Path to resolve relative paths against')
-    group.add_argument('-P', '--prefix',
-                       default=os.environ.get(
-                           'EPREFIX', '@GENTOO_PORTAGE_EPREFIX@'), type=str,
-                       action=_NormalizePathAction,
-                       help='Specify EPREFIX for binaries (for Gentoo Prefix)')
+    group = parser.add_argument_group("Path options")
+    group.add_argument(
+        "-R",
+        "--root",
+        default=os.environ.get("ROOT", ""),
+        type=str,
+        action=_NormalizePathAction,
+        help="Search for all files/dependencies in ROOT",
+    )
+    group.add_argument(
+        "--no-auto-root",
+        dest="auto_root",
+        action="store_false",
+        default=True,
+        help="Do not automatically prefix input ELFs with ROOT",
+    )
+    group.add_argument(
+        "-C",
+        "--cwd",
+        default=os.getcwd(),
+        type=str,
+        action=_NormalizePathAction,
+        help="Path to resolve relative paths against",
+    )
+    group.add_argument(
+        "-P",
+        "--prefix",
+        default=os.environ.get("EPREFIX", "@GENTOO_PORTAGE_EPREFIX@"),
+        type=str,
+        action=_NormalizePathAction,
+        help="Specify EPREFIX for binaries (for Gentoo Prefix)",
+    )
 
-    group = parser.add_argument_group('Copying options')
-    group.add_argument('--copy-to-tree',
-                       dest='dest', default=None, type=str,
-                       action=_NormalizePathAction,
-                       help='Copy all files to the specified tree')
-    group.add_argument('--bindir',
-                       default=None, type=str,
-                       action=_NormalizePathAction,
-                       help='Dir to store all ELFs specified on the command line')
-    group.add_argument('--libdir',
-                       default=None, type=str,
-                       action=_NormalizePathAction,
-                       help='Dir to store all ELF libs')
-    group.add_argument('--generate-wrappers',
-                       action='store_true', default=False,
-                       help='Wrap executable ELFs with scripts for local ldso')
-    group.add_argument('--copy-non-elfs',
-                       action='store_true', default=False,
-                       help='Copy over plain (non-ELF) files instead of warn+ignore')
+    group = parser.add_argument_group("Copying options")
+    group.add_argument(
+        "--copy-to-tree",
+        dest="dest",
+        default=None,
+        type=str,
+        action=_NormalizePathAction,
+        help="Copy all files to the specified tree",
+    )
+    group.add_argument(
+        "--bindir",
+        default=None,
+        type=str,
+        action=_NormalizePathAction,
+        help="Dir to store all ELFs specified on the command line",
+    )
+    group.add_argument(
+        "--libdir",
+        default=None,
+        type=str,
+        action=_NormalizePathAction,
+        help="Dir to store all ELF libs",
+    )
+    group.add_argument(
+        "--generate-wrappers",
+        action="store_true",
+        default=False,
+        help="Wrap executable ELFs with scripts for local ldso",
+    )
+    group.add_argument(
+        "--copy-non-elfs",
+        action="store_true",
+        default=False,
+        help="Copy over plain (non-ELF) files instead of warn+ignore",
+    )
 
     if argcomplete is not None:
         argcomplete.autocomplete(parser)
@@ -800,41 +877,42 @@ def main(argv: list[str]) -> Optional[int]:
     options = parser.parse_args(argv)
     paths = options.path
 
-    if options.root != '/':
-        options.root += '/'
-    if options.prefix == '@''GENTOO_PORTAGE_EPREFIX''@':
-        options.prefix = ''
+    if options.root != "/":
+        options.root += "/"
+    if options.prefix == "@" "GENTOO_PORTAGE_EPREFIX" "@":
+        options.prefix = ""
 
-    if options.bindir and options.bindir[0] != '/':
-        parser.error('--bindir accepts absolute paths only')
-    if options.libdir and options.libdir[0] != '/':
-        parser.error('--libdir accepts absolute paths only')
+    if options.bindir and options.bindir[0] != "/":
+        parser.error("--bindir accepts absolute paths only")
+    if options.libdir and options.libdir[0] != "/":
+        parser.error("--libdir accepts absolute paths only")
 
     if options.skip_non_elfs and options.copy_non_elfs:
-        parser.error('pick one handler for non-ELFs: skip or copy')
+        parser.error("pick one handler for non-ELFs: skip or copy")
 
-    dbg(options.debug, 'root =', options.root)
-    dbg(options.debug, 'cwd =', options.cwd)
+    dbg(options.debug, "root =", options.root)
+    dbg(options.debug, "cwd =", options.cwd)
     if options.dest:
-        dbg(options.debug, 'dest =', options.dest)
+        dbg(options.debug, "dest =", options.dest)
     if not paths:
-        err('missing ELF files to scan')
+        err("missing ELF files to scan")
 
-    ldpaths = LoadLdpaths(options.root, cwd=options.cwd, prefix=options.prefix,
-                          debug=options.debug)
-    dbg(options.debug, 'ldpaths[conf] =', ldpaths['conf'])
-    dbg(options.debug, 'ldpaths[env]  =', ldpaths['env'])
+    ldpaths = LoadLdpaths(
+        options.root, cwd=options.cwd, prefix=options.prefix, debug=options.debug
+    )
+    dbg(options.debug, "ldpaths[conf] =", ldpaths["conf"])
+    dbg(options.debug, "ldpaths[env]  =", ldpaths["env"])
 
     # Process all the files specified.
     ret = 0
     for path in paths:
-        dbg(options.debug, 'argv[x]       =', path)
+        dbg(options.debug, "argv[x]       =", path)
         # Only auto-prefix the path if the ELF is absolute.
         # If it's a relative path, the user most likely wants
         # the local path.
-        if options.auto_root and path.startswith('/'):
-            path = options.root + path.lstrip('/')
-            dbg(options.debug, '  +auto-root  =', path)
+        if options.auto_root and path.startswith("/"):
+            path = options.root + path.lstrip("/")
+            dbg(options.debug, "  +auto-root  =", path)
 
         matched = False
         for p in glob.iglob(path):
@@ -844,20 +922,27 @@ def main(argv: list[str]) -> Optional[int]:
             #   $ lddtree --root $PWD/root /bin/sh
             # First we'd turn /bin/sh into $PWD/root/bin/sh, then we want to resolve
             # the symlink to $PWD/root/bin/bash rather than a plain /bin/bash.
-            dbg(options.debug, '  globbed     =', p)
-            if not path.startswith('/'):
+            dbg(options.debug, "  globbed     =", p)
+            if not path.startswith("/"):
                 realpath = os.path.realpath(path)
             elif options.auto_root:
                 realpath = readlink(p, options.root, prefixed=True)
             else:
                 realpath = path
             if path != realpath:
-                dbg(options.debug, '  resolved    =', realpath)
+                dbg(options.debug, "  resolved    =", realpath)
 
             matched = True
             try:
-                elf = ParseELF(realpath, options.root, options.cwd, options.prefix, ldpaths,
-                               display=p, debug=options.debug)
+                elf = ParseELF(
+                    realpath,
+                    options.root,
+                    options.cwd,
+                    options.prefix,
+                    ldpaths,
+                    display=p,
+                    debug=options.debug,
+                )
             except exceptions.ELFError as e:
                 if options.skip_non_elfs:
                     continue
@@ -865,12 +950,12 @@ def main(argv: list[str]) -> Optional[int]:
                 if options.dest is not None and options.copy_non_elfs:
                     if os.path.exists(p):
                         elf = {
-                            'interp': None,
-                            'libs': [],
-                            'runpath': [],
-                            'rpath': [],
-                            'path': p,
-                            'realpath': realpath,
+                            "interp": None,
+                            "libs": [],
+                            "runpath": [],
+                            "rpath": [],
+                            "path": p,
+                            "realpath": realpath,
                         }
                         _ActionCopy(options, elf)
                         continue
@@ -895,5 +980,5 @@ def main(argv: list[str]) -> Optional[int]:
     return ret
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
