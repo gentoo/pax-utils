@@ -43,6 +43,14 @@ typedef struct {
 #define DYN64(ptr) ((Elf64_Dyn *)(ptr))
 #define SYM32(ptr) ((Elf32_Sym *)(ptr))
 #define SYM64(ptr) ((Elf64_Sym *)(ptr))
+#define VERDEF32(ptr) ((Elf32_Verdef *)(ptr))
+#define VERDEF64(ptr) ((Elf64_Verdef *)(ptr))
+#define VERDAUX32(ptr) ((Elf32_Verdaux *)(ptr))
+#define VERDAUX64(ptr) ((Elf64_Verdaux *)(ptr))
+#define VERNEED32(ptr) ((Elf32_Verneed *)(ptr))
+#define VERNEED64(ptr) ((Elf64_Verneed *)(ptr))
+#define VERNAUX32(ptr) ((Elf32_Vernaux *)(ptr))
+#define VERNAUX64(ptr) ((Elf64_Vernaux *)(ptr))
 
 #define VALID_RANGE(elf, offset, size) \
 	((uint64_t)(size) <= (uint64_t)elf->len && \
