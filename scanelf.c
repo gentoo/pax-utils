@@ -55,6 +55,12 @@ static char fix_elf = 0;
 static char g_match = 0;
 static char use_ldcache = 0;
 static char use_ldpath = 0;
+enum {
+	how_unversioned = 0,
+	how_versioned,
+	how_symtab
+};
+static char symbols_how = how_unversioned;
 
 static char **qa_textrels = NULL;
 static char **qa_execstack = NULL;
@@ -198,9 +204,11 @@ static const void *scanelf_file_get_pt_dynamic(elfobj *elf)
 	while ((void *)++dyn < elf->data_end - sizeof(*dyn) && EGET(dyn->d_tag) != DT_NULL)
 
 /* sub-funcs for scanelf_fileat() */
-static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void **str)
+static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void **str,
+	const void **version, const void **verdef, const void **verneed)
 {
-	/* find the best SHT_DYNSYM and SHT_STRTAB sections */
+	/* find the best SHT_DYNSYM and SHT_STRTAB sections
+	 * also look for the associated version information */
 
 	/* debug sections */
 	const void *symtab = elf_findsecbyname(elf, ".symtab");
@@ -208,6 +216,10 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
 	/* runtime sections */
 	const void *dynsym = elf_findsecbyname(elf, ".dynsym");
 	const void *dynstr = elf_findsecbyname(elf, ".dynstr");
+	/* runtime version sections */
+	const void *gnu_version = elf_findsecbyname(elf, ".gnu.version");
+	const void *gnu_verdefs = elf_findsecbyname(elf, ".gnu.version_d");
+	const void *gnu_verneed = elf_findsecbyname(elf, ".gnu.version_r");
 
 	/*
 	 * If the sections are marked NOBITS, then they don't exist, so we just
@@ -223,6 +235,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
 	const Elf ## B ## _Shdr *estrtab = strtab; \
 	const Elf ## B ## _Shdr *edynsym = dynsym; \
 	const Elf ## B ## _Shdr *edynstr = dynstr; \
+	const Elf ## B ## _Shdr *egnu_version = gnu_version; \
+	const Elf ## B ## _Shdr *egnu_verdefs = gnu_verdefs; \
+	const Elf ## B ## _Shdr *egnu_verneed = gnu_verneed; \
 	\
 	if (!VALID_SHDR(elf, esymtab)) \
 		symtab = NULL; \
@@ -232,10 +247,16 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
 		strtab = NULL; \
 	if (!VALID_SHDR(elf, edynstr)) \
 		dynstr = NULL; \
+	if (!VALID_SHDR(elf, egnu_version)) \
+		gnu_version = NULL; \
+	if (!VALID_SHDR(elf, egnu_verdefs)) \
+		gnu_verdefs = NULL; \
+	if (!VALID_SHDR(elf, egnu_verneed)) \
+		gnu_verneed = NULL; \
 	\
 	/* Use the set with more symbols if both exist. */ \
 	if (symtab && dynsym && strtab && dynstr) { \
-		if (EGET(esymtab->sh_size) > EGET(edynsym->sh_size)) \
+		if (symbols_how == how_symtab) \
 			goto debug##B; \
 		else \
 			goto runtime##B; \
@@ -243,14 +264,23 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
  debug##B: \
 		*sym = symtab; \
 		*str = strtab; \
+		if (version) *version = NULL; \
+		if (verdef) *verdef = NULL; \
+		if (verneed) *verneed = NULL; \
 		return; \
 	} else if (dynsym && dynstr) { \
  runtime##B: \
 		*sym = dynsym; \
 		*str = dynstr; \
+		if (version) *version = gnu_version; \
+		if (verdef) *verdef = gnu_verdefs; \
+		if (verneed) *verneed = gnu_verneed; \
 		return; \
 	} else { \
 		*sym = *str = NULL; \
+		if (version) *version = NULL; \
+		if (verdef) *verdef = NULL; \
+		if (verneed) *verneed = NULL; \
 	}
 	SCANELF_ELF_SIZED(GET_SYMTABS);
 
@@ -569,7 +599,7 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 	if (!*found_textrel) scanelf_file_textrel(elf, found_textrel);
 	if (!*found_textrel) return NULL;
 
-	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void, NULL, NULL, NULL);
 
 #define SHOW_TEXTRELS(B) \
 	size_t i; \
@@ -1302,15 +1332,122 @@ scanelf_match_symname(elfobj *elf, char *found_sym, char **ret, size_t *ret_len,
 	*found_sym = 1;
 }
 
+static char *scanelf_make_versioned(elfobj *elf, const void *sym_void,
+	const void *symtab_void, const void *strtab_void,
+	const void *version_void, const void *verdef_void, const void *verneed_void)
+{
+
+	char *versioned_name = NULL;
+
+#define VERSIONED_FROM_SYM_VER \
+	versioned_name = xmalloc(strlen(symname) + (version[sym_i] & 0x8000 ? 1 : 2) + strlen(vername) + 1); \
+	strcpy(versioned_name, symname); \
+	versioned_name[strlen(symname)] = '@'; \
+	if (version[sym_i] & 0x8000) { \
+		strcpy(versioned_name + strlen(symname) + 1, vername); \
+		versioned_name[strlen(symname) + strlen(vername) + 1] = 0; \
+	} else { \
+		versioned_name[strlen(symname) + 1] = '@'; \
+		strcpy(versioned_name + strlen(symname) + 2, vername); \
+		versioned_name[strlen(symname) + strlen(vername) + 2] = 0; \
+	}
+
+#define MAKE_VERSIONED(B) \
+	const Elf ## B ## _Shdr *eversion = SHDR ## B (version_void); \
+	const Elf ## B ## _Shdr *everdef = SHDR ## B (verdef_void); \
+	const Elf ## B ## _Shdr *everneed = SHDR ## B (verneed_void); \
+	const Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	\
+	const Elf ## B ## _Sym *syms = SYM ## B (elf->data + symtab->sh_offset); \
+	const Elf ## B ## _Sym *sym = SYM ## B (sym_void); \
+	const char *symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
+	\
+	/* look up which version index we need for this symbol */ \
+	/* every ElfXX_Half of .gnu_version corresponds to one symtab entry */ \
+	const Elf ## B ## _Half *version = (const Elf ## B ## _Half *) (elf->data + eversion->sh_offset); \
+	const Elf ## B ## _Word sym_i = ((const char *)sym - (const char *)syms) / symtab->sh_entsize; \
+	const Elf ## B ## _Half wanted_ver = version[sym_i] & ~0x8000; \
+	\
+	/* find the version in verneed or verdef */ \
+	if (wanted_ver == 0 || wanted_ver == 1) { \
+		versioned_name = xstrdup(symname); \
+		break; \
+	} \
+	\
+	Elf ## B ## _Word vd_offset = 0; \
+	while (verdef_void) { \
+		const Elf ## B ## _Verdef *verdef = VERDEF ## B (elf->data + everdef->sh_offset + vd_offset); \
+		\
+		if (verdef->vd_ndx == wanted_ver) { \
+			const Elf ## B ## _Verdaux *aux = VERDAUX ## B (elf->data + everdef->sh_offset + vd_offset + verdef->vd_aux); \
+			\
+			const char *vername = elf->data + EGET(strtab->sh_offset) + EGET(aux->vda_name); \
+			VERSIONED_FROM_SYM_VER; \
+			break; \
+		} \
+		\
+		if (verdef->vd_next == 0) \
+			break; \
+		else \
+			vd_offset += verdef->vd_next; \
+	} \
+	\
+	if (versioned_name) \
+		break; \
+	\
+	Elf ## B ## _Word vn_offset = 0; \
+	while (verneed_void && !versioned_name) { \
+		const Elf ## B ## _Verneed *verneed = VERNEED ## B (elf->data + everneed->sh_offset + vn_offset); \
+		\
+		Elf ## B ## _Word vna_offset = vn_offset + verneed->vn_aux; \
+		while (true) {\
+			const Elf ## B ## _Vernaux *aux = VERNAUX ## B (elf->data + everneed->sh_offset + vna_offset); \
+			\
+			if (aux->vna_other == wanted_ver) { \
+				const char *vername = elf->data + EGET(strtab->sh_offset) + EGET(aux->vna_name); \
+				VERSIONED_FROM_SYM_VER; \
+				break; \
+			} \
+			if (aux->vna_next == 0) \
+				break; \
+			else \
+				vna_offset += aux->vna_next; \
+		} \
+		\
+		if (verneed->vn_next == 0) \
+			break; \
+		else \
+			vn_offset += verneed->vn_next; \
+	} \
+
+#define MAKE_UNVERSIONED(B) \
+	const Elf ## B ## _Shdr *strtab = SHDR ## B (strtab_void); \
+	const Elf ## B ## _Sym *sym = SYM ## B (sym_void); \
+	const char *symname = elf->data + EGET(strtab->sh_offset) + EGET(sym->st_name); \
+	versioned_name = xstrdup(symname);
+
+	if (version_void && (verdef_void || verneed_void))
+		SCANELF_ELF_SIZED(MAKE_VERSIONED);
+
+	/* if we don't have a name at this point, something went wrong */
+	if (!versioned_name)
+		SCANELF_ELF_SIZED(MAKE_UNVERSIONED);
+
+	return versioned_name;
+}
+
 static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 {
 	char *ret;
 	const void *symtab_void, *strtab_void;
+	const void *version_void = NULL, *verdef_void = NULL, *verneed_void = NULL;
 
 	if (!find_sym) return NULL;
 	ret = NULL;
 
-	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void);
+	scanelf_file_get_symtabs(elf, &symtab_void, &strtab_void,
+	                         &version_void, &verdef_void, &verneed_void);
 
 #define FIND_SYM(B) \
 	const Elf ## B ## _Shdr *symtab = SHDR ## B (symtab_void); \
@@ -1331,6 +1468,15 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 			    EGET(strtab->sh_offset) + EGET(sym->st_name) >= (uint64_t)elf->len || \
 			    !memchr(symname, 0, elf->len - EGET(strtab->sh_offset) + EGET(sym->st_name))) \
 				goto break_out; \
+			\
+			/* compute the versioned name from the dynsym entry */ \
+			char *actual_symname; \
+			if (symbols_how == how_versioned) { \
+				actual_symname = scanelf_make_versioned(elf, sym, symtab, strtab, \
+				                                        version_void, verdef_void, verneed_void); \
+				symname = actual_symname; \
+			} \
+			\
 			scanelf_match_symname(elf, found_sym, \
 			                      &ret, &ret_len, symname, \
 			                      ELF##B##_ST_TYPE(EGET(sym->st_info)), \
@@ -1339,6 +1485,9 @@ static char *scanelf_file_sym(elfobj *elf, char *found_sym)
 			                      EGET(sym->st_shndx), \
 			/* st_size can be 64bit, but no one is really that big, so screw em */ \
 			                      EGET(sym->st_size)); \
+			\
+			if (symbols_how == how_versioned) \
+				free(actual_symname); \
 		} \
 		++sym; \
 	}
@@ -1827,7 +1976,7 @@ static void scanelf_envpath(void)
 }
 
 /* usage / invocation handling functions */ /* Free Flags: c d j u w G H J K P Q U W */
-#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZCBhV"
+#define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZCBH:hV"
 #define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
@@ -1870,6 +2019,7 @@ static struct option const long_opts[] = {
 	{"file",       a_argument, NULL, 'o'},
 	{"nocolor",   no_argument, NULL, 'C'},
 	{"nobanner",  no_argument, NULL, 'B'},
+	{"how",        a_argument, NULL, 'H'},
 	{"help",      no_argument, NULL, 'h'},
 	{"version",   no_argument, NULL, 'V'},
 	{NULL,        no_argument, NULL, 0x0}
@@ -1916,6 +2066,7 @@ static const char * const opts_help[] = {
 	"Write output stream to a filename",
 	"Don't emit color in output",
 	"Don't display the header",
+	"How to look for symbols (unversioned, versioned, symtab)",
 	"Print this help and exit",
 	"Print version and exit",
 	NULL
@@ -2123,6 +2274,14 @@ static int parseargs(int argc, char *argv[])
 			break;
 		case 129: load_cache_config = use_ldpath = 1; break;
 		case 130: ldcache_path = optarg; break;
+		case 'H':
+			if (strcmp(optarg, "unversioned") == 0)
+				symbols_how = how_unversioned;
+			if (strcmp(optarg, "versioned") == 0)
+				symbols_how = how_versioned;
+			if (strcmp(optarg, "symtab") == 0)
+				symbols_how = how_symtab;
+			break;
 		case ':':
 			err("Option '%c' is missing parameter", optopt);
 		case '?':

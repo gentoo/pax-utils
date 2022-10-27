@@ -5,7 +5,7 @@
 #
 # simple scanelf symbol checks
 #
-${MESON_EXE_WRAPPER} "${builddir}/scanelf" -qsmain -F'%s %f' \
+${MESON_EXE_WRAPPER} "${builddir}/scanelf" -qsmain -F'%s %f' -Hsymtab \
 	"${builddir}"/scanelf > "${builddir}"/scanelf.simple
 testit scanelf.simple tests/scanelf/scanelf.simple.good
 
