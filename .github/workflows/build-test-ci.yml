@@ -8,8 +8,7 @@ on:
     branches: [master, gh-actions]
     tags: [v*]
   pull_request:
-    types: [opened]
-    branches: [master]
+    types: [created, opened, edited]
 
 jobs:
   make:
