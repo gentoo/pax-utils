@@ -138,6 +138,8 @@ install_data('symtree.sh',
 
 subdir('man')
 
+meson.add_dist_script('meson-build-dist-man.sh')
+
 do_tests = get_option('tests')
 if do_tests
   subdir('tests/lddtree')
