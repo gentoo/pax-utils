@@ -3,12 +3,7 @@
 
 name: Build+Test CI
 
-on:
-  push:
-    branches: [master, gh-actions]
-    tags: [v*]
-  pull_request:
-    types: [created, opened, edited]
+on: [pull_request, push]
 
 jobs:
   make:
@@ -17,11 +12,13 @@ jobs:
         os: [ubuntu-latest]
         cc: [gcc, clang]
         bb: [meson, muon]
+        sanitizer: [none, address, undefined]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.cc }}
       BB: ${{ matrix.bb }}
+      SANITIZER: ${{ matrix.sanitizer }}
     steps:
     - name: Install dependencies
       run: |
@@ -53,6 +50,7 @@ jobs:
                     -Dbuild_manpages=disabled \
                     -Dtests=true \
                     -Duse_fuzzing=true \
+                    -Db_sanitize="${SANITIZER}" \
                     build
         ninja -C build
         ( cd build && "$BB" test; )
