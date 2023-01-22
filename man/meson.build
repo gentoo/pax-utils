@@ -1,8 +1,4 @@
-xmlto = find_program('xmlto', required : get_option('build_manpages'))
-
-if not xmlto.found()
-  subdir_done()
-endif
+xmlto = find_program('xmlto', required : get_option('build_manpages'), disabler: true)
 
 docbook_conf = configuration_data()
 docbook_conf.set('version', meson.project_version())
