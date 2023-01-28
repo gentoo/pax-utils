@@ -8,7 +8,20 @@
 
 const char argv0[] = "dumpelf";
 
+#include <getopt.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+
 #include "paxinc.h"
+#include "elf.h"
+#include "pax_utils_version.h"
+#include "porting.h"
+#include "security.h"
 
 /* prototypes */
 static void dump_ehdr(const elfobj *elf, const void *ehdr);

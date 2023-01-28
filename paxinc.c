@@ -11,6 +11,13 @@
 #define IN_paxinc
 #include "paxinc.h"
 
+#include <alloca.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include "xfuncs.h"
+
 char do_reverse_endian;
 
 /* some of this ar code was taken from busybox */

@@ -5,8 +5,21 @@
  * Copyright 2015 Mike Frysinger  - <vapier@gentoo.org>
  */
 
+#include <errno.h>
+
+#ifdef WANT_SECCOMP
+#include <linux/seccomp.h>
+#include <linux/securebits.h>
+#endif
+
+#include <sched.h>
+#include <stdbool.h>
+#include <sys/prctl.h>
+#include <unistd.h>
+
 #include "paxinc.h"
 #include "seccomp-bpf.h"
+#include "security.h"
 
 #ifdef __linux__
 

@@ -9,6 +9,8 @@
 #ifndef _PAX_LDSO_H
 #define _PAX_LDSO_H
 
+#include <features.h>
+
 #include "paxelf.h"
 #include "porting.h"
 #include "xfuncs.h"

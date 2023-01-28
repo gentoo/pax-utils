@@ -14,12 +14,31 @@
 
 const char argv0[] = "pspax";
 
-#include "paxinc.h"
 #include <grp.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <pwd.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include "paxinc.h"
+#include "elf.h"
+#include "pax_utils_version.h"
+#include "paxelf.h"
+#include "security.h"
 
 #ifdef WANT_SYSCAP
 # undef _POSIX_SOURCE
 # include <sys/capability.h>
+
 # define WRAP_SYSCAP(x) x
 #else
 # define WRAP_SYSCAP(x)

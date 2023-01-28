@@ -13,6 +13,8 @@
 #define _PAX_MACHO_H
 
 #include <stddef.h>
+#include <byteswap.h>
+#include <stdint.h>
 
 #include "macho.h"
 

@@ -7,7 +7,19 @@
  *           2008-2021 Fabian Groffen  - <grobian@gentoo.org>
  */
 
+#include <byteswap.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "paxinc.h"
+#include "macho.h"
+#include "paxmacho.h"
+#include "xfuncs.h"
 
 /* lil' static string pool */
 static const char STR_BE[]      = "BE";

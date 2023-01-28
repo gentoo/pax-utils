@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "elf.h"
+
 typedef struct {
 	const void *phdr;
 	const void *shdr;

@@ -11,7 +11,26 @@
 
 const char argv0[] = "scanmacho";
 
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "paxinc.h"
+#include "macho.h"
+#include "pax_utils_version.h"
+#include "paxmacho.h"
+#include "porting.h"
+#include "security.h"
+#include "xfuncs.h"
 
 #define IS_MODIFIER(c) (c == '%' || c == '#' || c == '+')
 
