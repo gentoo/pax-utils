@@ -12,6 +12,8 @@
 #ifndef _PAX_MACHO_H
 #define _PAX_MACHO_H
 
+#include <stddef.h>
+
 #include "macho.h"
 
 #define MGET(swapped, value) (swapped ? (__typeof__(value))bswap_32(value) : value)

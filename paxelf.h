@@ -11,6 +11,11 @@
 #ifndef _PAX_ELF_H
 #define _PAX_ELF_H
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+
 typedef struct {
 	const void *phdr;
 	const void *shdr;

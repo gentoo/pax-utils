@@ -9,6 +9,8 @@
 #ifndef __XFUNCS_H__
 #define __XFUNCS_H__
 
+#include <stddef.h>
+
 char *xstrdup(const char *s);
 void *xmalloc(size_t size);
 void *xzalloc(size_t size);
