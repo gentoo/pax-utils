@@ -9,6 +9,7 @@
 /* stick common symbols here that are needed by paxinc.h */
 
 #define IN_paxinc
+#include <alloca.h>
 #include "paxinc.h"
 
 char do_reverse_endian;
