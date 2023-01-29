@@ -6,24 +6,7 @@
  * Copyright 2004-2016 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-#include <ctype.h>
-#include <fcntl.h>
-#include <glob.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include "paxinc.h"
-#include "elf.h"
-#include "paxelf.h"
-#include "paxldso.h"
-#include "xfuncs.h"
 
 /*
  * ld.so.cache logic

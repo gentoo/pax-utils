@@ -9,10 +9,6 @@
 #ifndef _PAX_LDSO_H
 #define _PAX_LDSO_H
 
-#include "paxelf.h"
-#include "porting.h"
-#include "xfuncs.h"
-
 /*
  * ld.so.cache logic
  */

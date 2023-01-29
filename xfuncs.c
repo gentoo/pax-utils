@@ -6,14 +6,7 @@
  * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-#include <errno.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "paxinc.h"
-#include "xfuncs.h"
 
 char *xstrdup(const char *s)
 {

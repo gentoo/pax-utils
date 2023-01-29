@@ -9,8 +9,6 @@
 #ifndef _PAX_SECURITY_H
 #define _PAX_SECURITY_H
 
-#include <stdbool.h>
-
 /* Whether to enable features that significantly impact speed. */
 #ifdef SLOW_SECURITY
 # define USE_SLOW_SECURITY 1

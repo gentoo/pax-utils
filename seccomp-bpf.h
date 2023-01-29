@@ -4,8 +4,6 @@
  * See seccomp-bpf.c for details. */
 #undef SECCOMP_BPF_AVAILABLE
 
-#include <stdint.h>
-
 #if defined(__aarch64__)
 /* AARCH64 */
 #define SECCOMP_BPF_AVAILABLE

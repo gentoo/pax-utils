@@ -11,16 +11,6 @@
 #ifndef _PAX_INC_H
 #define _PAX_INC_H
 
-#include <byteswap.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <stdint.h>
-
 #include "porting.h"
 #include "xfuncs.h"
 #include "security.h"
@@ -45,6 +35,7 @@
 #include "elf.h"
 #include "paxelf.h"
 #include "paxldso.h"
+
 /* Mach-O love */
 #include "macho.h"
 #include "paxmacho.h"

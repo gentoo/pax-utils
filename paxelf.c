@@ -6,21 +6,7 @@
  * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
  */
 
-#include <fcntl.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include "paxinc.h"
-#include "elf.h"
-#include "paxelf.h"
-#include "porting.h"
-#include "xfuncs.h"
 
 /*
  * Setup a bunch of helper functions to translate
