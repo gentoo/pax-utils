@@ -11,6 +11,7 @@ const char argv0[] = "seccomp-bpf";
 
 #include <err.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>

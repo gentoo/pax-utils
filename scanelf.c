@@ -17,6 +17,7 @@ const char argv0[] = "scanelf";
 #include <inttypes.h>
 #include <regex.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

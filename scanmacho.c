@@ -16,6 +16,7 @@ const char argv0[] = "scanmacho";
 #include <fcntl.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

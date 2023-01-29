@@ -21,6 +21,7 @@ const char argv0[] = "pspax";
 #include <getopt.h>
 #include <pwd.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
