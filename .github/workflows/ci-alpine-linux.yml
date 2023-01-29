@@ -1,0 +1,34 @@
+name: ci_alpine_linux
+
+on: [push, pull_request]
+
+jobs:
+
+  alpine:
+    name: Alpine Linux
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - gcc
+          - clang
+    env:
+      CC: ${{ matrix.compiler }}
+    steps:
+      - run: >-
+          apk --no-cache add \
+            build-base \
+            clang \
+            meson \
+            pkgconf \
+            py3-elftools \
+            libcap \
+            libcap-dev \
+            libseccomp \
+            libseccomp-dev
+      - uses: actions/checkout@v2
+      - run: meson setup -Dtests=false -Duse_fuzzing=false builddir/
+      - run: meson compile -C builddir
+      - run: meson test --verbose -C builddir
