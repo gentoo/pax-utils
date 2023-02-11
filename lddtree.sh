@@ -45,7 +45,7 @@ elf_specs() {
 		sed -E 's: (LINUX|GNU)$: NONE:'
 }
 
-lib_paths_fallback="${ROOT}lib* ${ROOT}usr/lib* ${ROOT}usr/local/lib*"
+lib_paths_fallback="${ROOT}lib* ${ROOT}usr/lib* ${ROOT}usr/local/lib* ${ROOT}usr/X11R6/lib*"
 c_ldso_paths_loaded='false'
 find_elf() {
 	_find_elf=''
