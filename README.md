@@ -7,7 +7,7 @@
 | VIEWVCS  | https://gitweb.gentoo.org/proj/pax-utils.git/         |
 | STATUS   | [![Build Status](https://github.com/gentoo/pax-utils/actions/workflows/build-test-ci.yml/badge.svg)](https://github.com/gentoo/pax-utils/actions/workflows/build-test-ci.yml) [![Coverity Status](https://scan.coverity.com/projects/9213/badge.svg)](https://scan.coverity.com/projects/gentoo-pax-utils) |
 
-pax-utils is a small set of utilities for peforming Q/A (mostly security)
+pax-utils is a small set of utilities for performing Q/A (mostly security)
 checks on systems (most notably, `scanelf`).  It is focused on the ELF
 format, but does include a Mach-O helper too for OS X systems.
 
