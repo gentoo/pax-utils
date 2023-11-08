@@ -46,6 +46,10 @@
 # undef WANT_SECCOMP
 #endif
 
+#if PAX_UTILS_LIBFUZZ
+# undef WANT_SECCOMP
+#endif
+
 static int ns_unshare(int flags)
 {
 	int flag, ret = 0;
