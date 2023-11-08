@@ -166,6 +166,12 @@ if do_tests and get_option('use_fuzzing')
       link_args : fuzz_flags,
       install : false
     )
-    test('fuzz-dumpelf', dumpelf_fuzzer)
+    test('fuzz-dumpelf', dumpelf_fuzzer,
+      args : [
+        '-close_fd_mask=3',
+        '-max_total_time=10',
+        '-print_final_stats',
+      ]
+    )
   endif
 endif
