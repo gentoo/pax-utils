@@ -5,7 +5,6 @@ load-plugins=
 	pylint.extensions.bad_builtin,
 	pylint.extensions.check_elif,
 	pylint.extensions.docstyle,
-	pylint.extensions.emptystring,
 	pylint.extensions.overlapping_exceptions,
 	pylint.extensions.redefined_variable_type,
 
@@ -25,8 +24,6 @@ disable=
 	too-many-public-methods,
 	too-many-locals,
 	too-many-arguments,
-	locally-enabled,
-	locally-disabled,
 	fixme,
 	invalid-name,
 
