@@ -64,7 +64,7 @@ from elftools.elf.elffile import ELFFile
 
 def warn(msg: Any, prefix: Optional[str] = "warning") -> None:
     """Write |msg| to stderr with a |prefix| before it"""
-    print("%s: %s: %s" % (os.path.basename(sys.argv[0]), prefix, msg), file=sys.stderr)
+    print(f"{os.path.basename(sys.argv[0])}: {prefix}: {msg}", file=sys.stderr)
 
 
 def err(msg: Any, status: Optional[int] = 1) -> None:
