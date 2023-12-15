@@ -49,14 +49,14 @@ import os
 import re
 import shutil
 import sys
-from typing import Any, Iterable, Optional, Union
+from typing import Any, cast, Iterable, Optional, Union
 
 assert sys.version_info >= (3, 6), f"Python 3.6+ required, but found {sys.version}"
 
 try:
     import argcomplete
 except ImportError:
-    argcomplete = None
+    argcomplete = cast(Any, None)
 
 from elftools.common import exceptions
 from elftools.elf.elffile import ELFFile
