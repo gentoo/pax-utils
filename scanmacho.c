@@ -1,10 +1,10 @@
 /*
- * Copyright 2008-2021 Gentoo Foundation
+ * Copyright 2008-2024 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
  * based on scanelf by:
  * Copyright 2003-2012 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2004-2012 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2004-2024 Mike Frysinger  - <vapier@gentoo.org>
  * for Darwin specific fun:
  *           2008-2021 Fabian Groffen  - <grobian@gentoo.org>
  */

@@ -1,10 +1,10 @@
 /*
  * Generate the bpf rules ahead of time to speed up runtime.
  *
- * Copyright 2015 Gentoo Foundation
+ * Copyright 2015-2024 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
- * Copyright 2015 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2015-2024 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 const char argv0[] = "seccomp-bpf";

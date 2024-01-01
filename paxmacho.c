@@ -1,9 +1,9 @@
 /*
- * Copyright 2003-2021 Gentoo Foundation
+ * Copyright 2003-2024 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
  * Copyright 2005-2012 Ned Ludd        - <solar@gentoo.org>
- * Copyright 2005-2012 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2005-2024 Mike Frysinger  - <vapier@gentoo.org>
  *           2008-2021 Fabian Groffen  - <grobian@gentoo.org>
  */
 

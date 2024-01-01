@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
-# Copyright 2012-2014 Gentoo Foundation
-# Copyright 2012-2014 Mike Frysinger <vapier@gentoo.org>
-# Copyright 2012-2014 The ChromiumOS Authors
+# Copyright 2012-2024 Gentoo Foundation
+# Copyright 2012-2024 Mike Frysinger <vapier@gentoo.org>
+# Copyright 2012-2024 The ChromiumOS Authors
 # Use of this source code is governed by a BSD-style license (BSD-3)
 
 """Read the ELF dependency tree and show it

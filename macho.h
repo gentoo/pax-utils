@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2021 Gentoo Foundation
+ * Copyright 2008-2024 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  */
 

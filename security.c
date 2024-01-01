@@ -1,8 +1,8 @@
 /*
- * Copyright 2015 Gentoo Foundation
+ * Copyright 2015-2024 Gentoo Foundation
  * Distributed under the terms of the GNU General Public License v2
  *
- * Copyright 2015 Mike Frysinger  - <vapier@gentoo.org>
+ * Copyright 2015-2024 Mike Frysinger  - <vapier@gentoo.org>
  */
 
 #include "paxinc.h"
