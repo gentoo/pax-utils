@@ -28,7 +28,7 @@ jobs:
             libcap-dev \
             libseccomp \
             libseccomp-dev
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: meson setup -Dtests=false -Duse_fuzzing=false builddir/
       - run: meson compile -C builddir
       - run: meson test --verbose -C builddir

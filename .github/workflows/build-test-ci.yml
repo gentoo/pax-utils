@@ -36,7 +36,7 @@ jobs:
             sudo install -Dm755 muon /usr/local/bin/muon
             ;;
         esac
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: |
         export PKG_CONFIG_PATH="/usr/lib/$(uname -m)-linux-gnu/pkgconfig/"
         case "$BB" in
@@ -66,7 +66,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: brew install meson ninja
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: |
         meson -Duse_libcap=disabled \
               -Duse_seccomp=false \
