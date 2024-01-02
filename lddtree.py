@@ -49,7 +49,7 @@ import os
 import re
 import shutil
 import sys
-from typing import Any, cast, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 assert sys.version_info >= (3, 6), f"Python 3.6+ required, but found {sys.version}"
 
@@ -126,9 +126,9 @@ def readlink(path: str, root: str, prefixed: Optional[bool] = False) -> str:
     return normpath((root + path) if prefixed else path)
 
 
-def dedupe(items: list[str]) -> list[str]:
+def dedupe(items: List[str]) -> List[str]:
     """Remove all duplicates from |items| (keeping order)"""
-    seen: dict[str, str] = {}
+    seen: Dict[str, str] = {}
     return [seen.setdefault(x, x) for x in items if x not in seen]
 
 
@@ -229,7 +229,7 @@ def ParseLdPaths(
     root: str = "",
     cwd: Optional[str] = None,
     path: str = "",
-) -> list[str]:
+) -> List[str]:
     """Parse the colon-delimited list of paths and apply ldso rules to each
 
     Note the special handling as dictated by the ldso:
@@ -276,7 +276,7 @@ def ParseLdSoConf(
     root: str = "/",
     debug: bool = False,
     _first: bool = True,
-) -> list[str]:
+) -> List[str]:
     """Load all the paths from a given ldso config file
 
     This should handle comments, whitespace, and "include" statements.
@@ -334,7 +334,7 @@ def LoadLdpaths(
     cwd: Optional[str] = None,
     prefix: str = "",
     debug: bool = False,
-) -> dict[str, list[str]]:
+) -> Dict[str, List[str]]:
     """Load linker paths from common locations
 
     This parses the ld.so.conf and LD_LIBRARY_PATH env var.
@@ -348,7 +348,7 @@ def LoadLdpaths(
     Returns:
       dict containing library paths to search
     """
-    ldpaths: dict[str, list[str]] = {
+    ldpaths: Dict[str, List[str]] = {
         "conf": [],
         "env": [],
         "interp": [],
@@ -401,10 +401,10 @@ def CompatibleELFs(elf1: ELFFile, elf2: ELFFile) -> bool:
 def FindLib(
     elf: ELFFile,
     lib: str,
-    ldpaths: list[str],
+    ldpaths: List[str],
     root: str = "/",
     debug: bool = False,
-) -> tuple[Optional[str], Optional[str]]:
+) -> Tuple[Optional[str], Optional[str]]:
     """Try to locate a |lib| that is compatible to |elf| in the given |ldpaths|
 
     Args:
@@ -451,7 +451,7 @@ def ParseELF(
     debug: bool = False,
     _first: bool = True,
     _all_libs={},
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Parse the ELF dependency tree of the specified file
 
     Args:
@@ -658,7 +658,7 @@ def _ActionShow(options: argparse.Namespace, elf: dict):
 
     shown_libs = set(elf["needed"])
     new_libs = elf["needed"][:]
-    chain_libs: list[str] = []
+    chain_libs: List[str] = []
     interp = elf["interp"]
     if interp:
         lib = os.path.basename(interp)
@@ -916,7 +916,7 @@ def GetParser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str]) -> Optional[int]:
+def main(argv: List[str]) -> Optional[int]:
     """The main entry point!"""
     parser = GetParser()
     options = parser.parse_args(argv)
