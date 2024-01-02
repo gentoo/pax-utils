@@ -491,7 +491,7 @@ def ParseELF(
     if _first:
         _all_libs = {}
         ldpaths = ldpaths.copy()
-    ret = {
+    ret: Dict[str, Any] = {
         "interp": None,
         "path": path if display is None else display,
         "realpath": path,
