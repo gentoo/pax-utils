@@ -56,12 +56,12 @@ assert sys.version_info >= (3, 6), f"Python 3.6+ required, but found {sys.versio
 # Disable import errors for all 3rd party modules.
 # pylint: disable=import-error
 try:
-    import argcomplete
+    import argcomplete  # type: ignore
 except ImportError:
     argcomplete = cast(Any, None)
 
-from elftools.common import exceptions
-from elftools.elf.elffile import ELFFile
+from elftools.common import exceptions  # type: ignore
+from elftools.elf.elffile import ELFFile  # type: ignore
 
 # pylint: enable=import-error
 
