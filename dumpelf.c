@@ -40,9 +40,9 @@ static void dumpelf(const elfobj *elf, size_t file_cnt)
 		"\n"
 		"/*\n"
 		" * ELF dump of '%s'\n"
-		" *     %ji (0x%jX) bytes\n"
+		" *     %" PRIi64 " (0x%" PRIX64 ") bytes\n"
 		" */\n\n",
-		elf->filename, elf->len, elf->len);
+		elf->filename, (int64_t)elf->len, (uint64_t)elf->len);
 
 	/* setup the struct to namespace this elf */
 #define MAKE_STRUCT(B) \
