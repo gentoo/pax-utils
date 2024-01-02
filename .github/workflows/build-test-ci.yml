@@ -72,7 +72,7 @@ jobs:
               -Duse_seccomp=false \
               -Dbuild_manpages=disabled \
               -Dtests=true \
-              -Duse_fuzzing=true \
+              -Duse_fuzzing=false \
               build
         ninja -C build
         # The unittests generally assume a Linux ELF host, so don't bother making
