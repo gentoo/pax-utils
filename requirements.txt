@@ -1,0 +1,9 @@
+# Copyright 2024 Gentoo Foundation
+# Copyright 2024 Mike Frysinger <vapier@gentoo.org>
+# Copyright 2024 The ChromiumOS Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# Deps needed to run Python scripts after installed.
+# https://pip.pypa.io/en/stable/reference/requirements-file-format/
+
+pyelftools

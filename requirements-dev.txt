@@ -1,0 +1,12 @@
+# Copyright 2024 Gentoo Foundation
+# Copyright 2024 Mike Frysinger <vapier@gentoo.org>
+# Copyright 2024 The ChromiumOS Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# Deps needed to run tests/linters/etc...
+# https://pip.pypa.io/en/stable/reference/requirements-file-format/
+
+black==23.*
+isort==5.*
+mypy==1.*
+pylint==3.0.*
