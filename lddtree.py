@@ -51,7 +51,7 @@ import shutil
 import sys
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
-assert sys.version_info >= (3, 6), f"Python 3.6+ required, but found {sys.version}"
+assert sys.version_info >= (3, 8), f"Python 3.8+ required, but found {sys.version}"
 
 # Disable import errors for all 3rd party modules.
 # pylint: disable=import-error
