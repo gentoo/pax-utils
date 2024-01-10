@@ -49,7 +49,8 @@ import os
 import re
 import shutil
 import sys
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, cast, Dict, Iterable, List, Optional, Tuple, Union
+
 
 assert sys.version_info >= (3, 8), f"Python 3.8+ required, but found {sys.version}"
 
@@ -62,6 +63,7 @@ except ImportError:
 
 from elftools.common import exceptions  # type: ignore
 from elftools.elf.elffile import ELFFile  # type: ignore
+
 
 # pylint: enable=import-error
 
