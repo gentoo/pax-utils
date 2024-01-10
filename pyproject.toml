@@ -40,3 +40,72 @@ single_line_exclusions = [
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
 python_version = "3.8"
+
+
+# https://pylint.pycqa.org/en/latest/user_guide/usage/run.html
+[tool.pylint."MASTER"]
+py-version = "3.8"
+
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+load-plugins = [
+	"pylint.extensions.bad_builtin",
+	"pylint.extensions.check_elif",
+	"pylint.extensions.docstyle",
+	"pylint.extensions.overlapping_exceptions",
+	"pylint.extensions.redefined_variable_type",
+]
+
+# Run everything in parallel.
+jobs = 0
+
+# https://pylint.pycqa.org/en/latest/user_guide/messages/index.html
+[tool.pylint."MESSAGES CONTROL"]
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifier separated by comma (,) or put this option
+# multiple times (only on the command line, not in the configuration file where
+# it should appear only once).
+disable = [
+	"too-many-lines",
+	"too-many-branches",
+	"too-many-statements",
+	"too-few-public-methods",
+	"too-many-instance-attributes",
+	"too-many-public-methods",
+	"too-many-locals",
+	"too-many-arguments",
+	"fixme",
+	"invalid-name",
+]
+
+[tool.pylint."REPORTS"]
+reports = false
+score = false
+
+[tool.pylint."FORMAT"]
+max-line-length = 100
+indent-string = "    "
+
+[tool.pylint."BASIC"]
+bad-functions = [
+	"exit",
+	"filter",
+	"input",
+	"map",
+	"quit",
+]
+
+[tool.pylint."SIMILARITIES"]
+min-similarity-lines = 20
+
+[tool.pylint."VARIABLES"]
+dummy-variables-rgx = "_"
+
+[tool.pylint."DESIGN"]
+max-parents = 10
+
+[tool.pylint."IMPORTS"]
+deprecated-modules = [
+	"mox",
+	"optparse",
+]

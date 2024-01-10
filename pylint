@@ -37,7 +37,7 @@ def main(argv):
         pythonpath = pympath + ":" + pythonpath
     os.environ["PYTHONPATH"] = pythonpath
 
-    pylintrc = os.path.join(source_root, ".pylintrc")
+    pylintrc = os.path.join(source_root, "pyproject.toml")
     cmd = ["pylint", "--rcfile", pylintrc]
     os.execvp(cmd[0], cmd + argv)
 
