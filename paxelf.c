@@ -584,7 +584,7 @@ free_elf_and_return:
 
 	/* check class and stuff */
 	if (!DO_WE_LIKE_ELF(elf->data)) {
-		warn("we no likey %s: {%s,%s,%s,%s}",
+		warn("unknown ELF settings: %s: {%s,%s,%s,%s}",
 		     filename,
 		     get_elfeitype(EI_CLASS, elf->data[EI_CLASS]),
 		     get_elfeitype(EI_DATA, elf->data[EI_DATA]),

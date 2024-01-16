@@ -491,7 +491,7 @@ static void usage(int status)
 	exit(status);
 }
 
-/* parse command line arguments and preform needed actions */
+/* parse command line arguments and perform needed actions */
 static void parseargs(int argc, char *argv[])
 {
 	int flag;

@@ -22,7 +22,7 @@ PaX helpers for people interested in that.
 pax-utils uses a bog-standard meson-based build system. See `meson_options.txt`
 for configuration options.
 
-You don't need PaX to use the pax-utils. Infact the only thing they
+You don't need PaX to use the pax-utils. In fact the only thing they
 really have in common is that pax-utils was initially written to aid in
 deploying PaX systems so it includes support for PT_PAX_FLAGS and the
 deprecated but still in use EI_PAX flags. For more information about PaX

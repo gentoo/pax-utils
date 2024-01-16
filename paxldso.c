@@ -357,7 +357,7 @@ int ldso_config_load(const char *fname)
 			size_t x;
 			const char *gpath;
 
-			/* re-use existing path buffer ... need to be creative */
+			/* Reuse existing path buffer ... need to be creative. */
 			if (path[8] != '/')
 				gpath = memcpy(path + 3, "/etc/", 5);
 			else

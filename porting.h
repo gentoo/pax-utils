@@ -191,7 +191,7 @@
 #endif
 
 /*
- * propably will never be official added to the toolchain.
+ * Probably will never be officially added to the toolchain.
  * But none the less we should try to get 0x65041580 reserved
  */
 #ifndef PT_PAX_FLAGS

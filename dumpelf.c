@@ -114,7 +114,7 @@ static void dumpelf(const elfobj *elf, size_t file_cnt)
  break_out_shdr:
 	printf("},\n");
 
-	/* finish the namespace struct and start the abitrary ones */
+	/* finish the namespace struct and start the arbitrary ones */
 	printf("\n.dyns = dumpedelf_dyn_%zu,\n", file_cnt);
 	printf("};\n");
 
@@ -538,7 +538,7 @@ static void usage(int status)
 	exit(status);
 }
 
-/* parse command line arguments and preform needed actions */
+/* parse command line arguments and perform needed actions */
 static void parseargs(int argc, char *argv[])
 {
 	int flag;

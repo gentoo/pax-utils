@@ -761,7 +761,7 @@ static const char *scanelf_file_textrels(elfobj *elf, char *found_textrels, char
 	if (symtab_void && elf->phdr)
 		SCANELF_ELF_SIZED(SHOW_TEXTRELS);
 	if (!*found_textrels)
-		warnf("ELF %s has TEXTREL markings but doesnt appear to have any real TEXTREL's !?", elf->filename);
+		warnf("ELF %s has TEXTREL markings but doesn't appear to have any real TEXTREL's !?", elf->filename);
 
 	return NULL;
 }
@@ -1154,7 +1154,7 @@ static const char *scanelf_file_soname(elfobj *elf, char *found_soname)
  *        STV group: STV_DEFAULT:p STV_INTERNAL:i STV_HIDDEN:h STV_PROTECTED:P
  *        SHN group: SHN_UNDEF:u SHN_ABS:a SHN_COMMON:c {defined}:d
  *    The "defined" value in the SHN group does not correspond to a SHN_xxx define.
- * You can search for multiple symbols at once by seperating with a comma (",").
+ * You can search for multiple symbols at once by separating with a comma (",").
  *
  * Some examples:
  *    ELFs with a weak function "foo":
@@ -1963,7 +1963,7 @@ static void usage(int status)
 	exit(status);
 }
 
-/* parse command line arguments and preform needed actions */
+/* parse command line arguments and perform needed actions */
 #define do_pax_state(option, flag) \
 	if (islower(option)) { \
 		flags &= ~PF_##flag; \

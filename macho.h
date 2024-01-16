@@ -73,7 +73,7 @@ struct mach_header
 							   incremental link against a base file and
 							   cannot be link edited again */
 #define MH_DYLDLINK 0x4     /* the object file is input for the dynamic
-							   linker and cannot be staticly link edited
+							   linker and cannot be statically link edited
 							   again */
 #define MH_TWOLEVEL 0x80    /* the image is using two-level namespace
 							   bindings */
@@ -107,7 +107,7 @@ struct mach_header
 											they are not used by other
 											code */
 #define MH_NOMULTIDEFS 0x200 /* this umbrella guarantees there are no
-								multiple defintions of symbols in its
+								multiple definitions of symbols in its
 								subimages, as a result the two-level
 								namespace hints can always be used */
 

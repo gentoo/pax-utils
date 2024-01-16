@@ -12,6 +12,16 @@ line-length = 88
 target-version = ["py38"]
 
 
+# https://github.com/codespell-project/codespell?tab=readme-ov-file#using-a-config-file
+[tool.codespell]
+# eles: We use variable name as short for "elements".
+# Ned: Author's name.
+ignore-words-list = "eles,ned"
+
+# Imported from glibc.
+skip = "elf.h"
+
+
 # https://pycqa.github.io/isort/docs/configuration/options
 [tool.isort]
 py_version = "38"

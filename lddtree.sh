@@ -96,8 +96,8 @@ find_elf() {
 				read_ldso_conf() {
 					local line p
 					for p ; do
-						# if the glob didnt match anything #360041,
-						# or the files arent readable, skip it
+						# If the glob didn't match anything #360041,
+						# or the files aren't readable, skip it.
 						[[ -r ${p} ]] || continue
 						while read line ; do
 							case ${line} in
@@ -179,12 +179,12 @@ show_elf() {
 		# No need for leading comma w/my_allhits as we guarantee it always
 		# starts with one due to the way we append the value above.
 		[[ ${my_allhits}, == *,${lib},* ]] && continue
-		# If the interp is being linked against directly, re-use the existing
+		# If the interp is being linked against directly, reuse the existing
 		# full path rather than perform a search for it.  When systems symlink
 		# the interp to a diff location, we might locate a different path, and
 		# displaying both doesn't make sense as it doesn't match the runtime --
 		# the ldso won't load another copy of ldso into memory from the search
-		# path, it'll re-use the existing copy that was loaded from the full
+		# path, it'll reuse the existing copy that was loaded from the full
 		# hardcoded path.
 		if [[ ${lib} == "${interp}" ]] ; then
 			rlib=${full_interp}
