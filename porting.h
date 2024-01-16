@@ -77,13 +77,6 @@
 #endif
 
 #undef PAX_UTILS_CLEANUP
-/* bounds checking code will fart on free(NULL) even though that
- * is valid usage.  So let's wrap it if need be.
- */
-#ifdef __BOUNDS_CHECKING_ON
-# define free(ptr) do { if (ptr) free(ptr); } while (0)
-# define PAX_UTILS_CLEANUP 1
-#endif
 /* LSAN (Leak Sanitizer) will complain about things we leak. */
 #ifdef __SANITIZE_ADDRESS__
 # define PAX_UTILS_CLEANUP 1

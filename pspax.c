@@ -189,15 +189,6 @@ static int print_executable_mappings(int pfd)
 	return 0;
 }
 
-#ifdef __BOUNDS_CHECKING_ON
-# define NOTE_TO_SELF warn( \
-	"This is bullshit but getpwuid() is leaking memory and I wasted a few hrs 1 day tracking it down in pspax\n" \
-	"Later on I forgot I tracked it down before and saw pspax leaking memory so I tracked it down all over again (silly me)\n" \
-	"Hopefully the getpwuid()/nis/nss/pam or whatever wont suck later on in the future.")
-#else
-# define NOTE_TO_SELF
-#endif
-
 static const struct passwd *get_proc_passwd(int pfd)
 {
 	struct stat st;
@@ -577,6 +568,5 @@ int main(int argc, char *argv[])
 
 	pspax(name);
 
-	NOTE_TO_SELF;
 	return EXIT_SUCCESS;
 }
