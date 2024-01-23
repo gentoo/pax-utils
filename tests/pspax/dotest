@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. "${0%/*}"/../lib.sh
+
+#
+# simple pspax execution check
+#
+${MESON_EXE_WRAPPER} sh -c "${builddir}/pspax" >/dev/null \
+	2> "${builddir}"/pspax.err
+testit pspax.err
+
+exit ${ret}

@@ -140,6 +140,7 @@ meson.add_dist_script('meson-build-dist-man.sh')
 do_tests = get_option('tests')
 if do_tests
   subdir('tests/lddtree')
+  subdir('tests/pspax')
   subdir('tests/scanelf')
   subdir('tests/source')
 endif
