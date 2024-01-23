@@ -10,6 +10,7 @@
 const char argv0[] = "seccomp-bpf";
 
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -49,7 +50,7 @@ static const struct {
 };
 
 /* Simple helper to add all of the syscalls in an array. */
-static int gen_seccomp_rules_add(scmp_filter_ctx ctx, const int syscalls[], size_t num)
+static int gen_seccomp_rules_add(scmp_filter_ctx ctx, const int syscalls[], size_t num, uint32_t action)
 {
 	static uint8_t prio;
 	size_t i;
@@ -58,14 +59,14 @@ static int gen_seccomp_rules_add(scmp_filter_ctx ctx, const int syscalls[], size
 			warn("seccomp_syscall_priority failed");
 			return -1;
 		}
-		if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscalls[i], 0) < 0) {
+		if (seccomp_rule_add(ctx, action, syscalls[i], 0) < 0) {
 			warn("seccomp_rule_add failed");
 			return -1;
 		}
 	}
 	return 0;
 }
-#define gen_seccomp_rules_add(ctx, syscalls) gen_seccomp_rules_add(ctx, syscalls, ARRAY_SIZE(syscalls))
+#define gen_seccomp_rules_add(ctx, syscalls, action) gen_seccomp_rules_add(ctx, syscalls, ARRAY_SIZE(syscalls), action)
 
 static void gen_seccomp_dump(scmp_filter_ctx ctx, const char *name)
 {
@@ -209,6 +210,9 @@ int main(void)
 		SCMP_SYS(waitid),
 		SCMP_SYS(waitpid),
 	};
+	static const int soft_error_syscalls[] = {
+		SCMP_SYS(socket),
+	};
 
 	/* TODO: Handle debug and KILL vs TRAP. */
 
@@ -241,11 +245,13 @@ int main(void)
 		printf("/* %s */\n", gen_seccomp_arches[i].name);
 		printf("#define SECCOMP_BPF_AVAILABLE\n");
 
-		if (gen_seccomp_rules_add(ctx, base_syscalls) < 0)
+		if (gen_seccomp_rules_add(ctx, base_syscalls, SCMP_ACT_ALLOW) < 0)
+			err(1, "seccomp_rules_add failed");
+		if (gen_seccomp_rules_add(ctx, soft_error_syscalls, SCMP_ACT_ERRNO(ENOSYS)) < 0)
 			err(1, "seccomp_rules_add failed");
 		gen_seccomp_dump(ctx, "base");
 
-		if (gen_seccomp_rules_add(ctx, fork_syscalls) < 0)
+		if (gen_seccomp_rules_add(ctx, fork_syscalls, SCMP_ACT_ALLOW) < 0)
 			err(1, "seccomp_rules_add failed");
 		gen_seccomp_dump(ctx, "fork");
 
