@@ -96,7 +96,13 @@ static const char *get_proc_name_cmdline(int pfd)
 static const char *get_proc_name(int pfd)
 {
 	FILE *fp;
-	static char str[BUFSIZ];
+	/*
+	 * The stat file says process names are truncated to TASK_COMM_LEN (16) bytes.
+	 * That includes the trailing NUL (\0) byte.  This is true for userspace, but
+	 * kernel processes seem to be unlimited.  We don't care about those in this
+	 * program though, so truncating them all the time is fine.
+	 */
+	static char str[16];
 
 	if (wide_output)
 		return get_proc_name_cmdline(pfd);
@@ -105,18 +111,30 @@ static const char *get_proc_name(int pfd)
 	if (fp == NULL)
 		return NULL;
 
-	if (fscanf(fp, "%*d %s.16", str) != 1) {
+	/*
+	 * The format is:
+	 *   <pid> (<name>) ...more fields...
+	 * For example:
+	 *   1234 (bash) R ...
+	 *
+	 * Match the leading (, then read 15 bytes (since scanf writes, but doesn't count,
+	 * NUL bytes, so it will write up to 16 bytes to str).  Ignore the rest rather than
+	 * look for closing ) since kernel processes can be longer.
+	 */
+	if (fscanf(fp, "%*d (%15s", str) != 1) {
 		fclose(fp);
 		return NULL;
 	}
 
 	if (*str) {
-		str[strlen(str) - 1] = '\0';
-		str[16] = 0;
+		/* Discard trailing ) if it exists. */
+		size_t len = strlen(str);
+		if (str[len - 1] == ')')
+			str[len - 1] = '\0';
 	}
 	fclose(fp);
 
-	return (str+1);
+	return str;
 }
 
 static int get_proc_maps(int pfd)
