@@ -56,7 +56,7 @@ foreach x : [
 endforeach
 
 configure_file(
-  output : 'probes.h',
+  output : 'config.h',
   configuration : probe_results,
 )
 

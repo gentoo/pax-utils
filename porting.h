@@ -11,7 +11,7 @@
 #ifndef _PORTING_H
 #define _PORTING_H
 
-#include "probes.h"
+#include "config.h"
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(*arr))
 
