@@ -40,33 +40,12 @@ static pid_t show_pid = 0;
 static uid_t show_uid = (uid_t)-1;
 static gid_t show_gid = (gid_t)-1;
 
-static int proc_open(int pfd, const char *file)
-{
-	return openat(pfd, file, O_RDONLY|O_CLOEXEC);
-}
-
-static FILE *proc_fopen(int pfd, const char *file)
-{
-	int fd;
-	FILE *fp;
-
-	fd = proc_open(pfd, file);
-	if (fd == -1)
-		return NULL;
-
-	fp = fdopen(fd, "re");
-	if (fp == NULL)
-		close(fd);
-
-	return fp;
-}
-
 static elfobj *proc_readelf(int pfd)
 {
 	int fd;
 	elfobj *elf;
 
-	fd = proc_open(pfd, "exe");
+	fd = openat(pfd, "exe", O_RDONLY|O_CLOEXEC);
 	if (fd == -1)
 		return NULL;
 
@@ -80,7 +59,7 @@ static const char *get_proc_name_cmdline(int pfd)
 	FILE *fp;
 	static char str[1024];
 
-	fp = proc_fopen(pfd, "cmdline");
+	fp = fopenat_r(pfd, "cmdline");
 	if (fp == NULL)
 		return NULL;
 
@@ -107,7 +86,7 @@ static const char *get_proc_name(int pfd)
 	if (wide_output)
 		return get_proc_name_cmdline(pfd);
 
-	fp = proc_fopen(pfd, "stat");
+	fp = fopenat_r(pfd, "stat");
 	if (fp == NULL)
 		return NULL;
 
@@ -142,7 +121,7 @@ static int get_proc_maps(int pfd)
 	FILE *fp;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pfd, "maps")) == NULL)
+	if ((fp = fopenat_r(pfd, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -178,7 +157,7 @@ static int print_executable_mappings(int pfd)
 	FILE *fp;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pfd, "maps")) == NULL)
+	if ((fp = fopenat_r(pfd, "maps")) == NULL)
 		return -1;
 
 	while (fgets(str, sizeof(str), fp)) {
@@ -224,7 +203,7 @@ static const char *get_proc_status(int pfd, const char *name)
 	size_t len;
 	static char str[BUFSIZ];
 
-	if ((fp = proc_fopen(pfd, "status")) == NULL)
+	if ((fp = fopenat_r(pfd, "status")) == NULL)
 		return NULL;
 
 	len = strlen(name);
@@ -248,7 +227,7 @@ static const char *get_pid_attr(int pfd)
 	char *p;
 	static char buf[BUFSIZ];
 
-	if ((fp = proc_fopen(pfd, "attr/current")) == NULL)
+	if ((fp = fopenat_r(pfd, "attr/current")) == NULL)
 		return NULL;
 
 	if (fgets(buf, sizeof(buf), fp) != NULL)
@@ -265,7 +244,7 @@ static const char *get_pid_addr(int pfd)
 	char *p;
 	static char buf[BUFSIZ];
 
-	if ((fp = proc_fopen(pfd, "ipaddr")) == NULL)
+	if ((fp = fopenat_r(pfd, "ipaddr")) == NULL)
 		return NULL;
 
 	if (fgets(buf, sizeof(buf), fp) != NULL)
