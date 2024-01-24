@@ -40,36 +40,36 @@
 #include <time.h>
 #include <unistd.h>
 #include "elf.h"
-#if HAS_ALLOCA_H
+#ifdef HAVE_ALLOCA_H
 # include <alloca.h>
 #endif
-#if HAS_SYS_PRCTL_H
+#ifdef HAVE_SYS_PRCTL_H
 # include <sys/prctl.h>
-# if HAS_LINUX_SECCOMP_H
+# ifdef HAVE_LINUX_SECCOMP_H
 #  include <linux/seccomp.h>
 # endif
-# if HAS_LINUX_SECUREBITS_H
+# ifdef HAVE_LINUX_SECUREBITS_H
 #  include <linux/securebits.h>
 # endif
 #endif
-#if HAS_ENDIAN_H && HAS_BYTESWAP_H
+#if defined(HAVE_ENDIAN_H) && defined(HAVE_BYTESWAP_H)
 # include <byteswap.h>
 # include <endian.h>
-#elif HAS_SYS_ENDIAN_H
+#elif defined(HAVE_SYS_ENDIAN_H)
 # include <sys/endian.h>
-#elif HAS_ISA_DEFS_H
+#elif defined(HAVE_ISA_DEFS_H)
 # include <sys/isa_defs.h>
-#elif HAS_MACHINE_ENDIAN_H
+#elif defined(HAVE_MACHINE_ENDIAN_H)
 # include <machine/endian.h>
 #endif
 
-#ifdef HAS_GLOB_H
+#ifdef HAVE_GLOB_H
 # include <glob.h>
 #endif
 
 #if defined(__GLIBC__) || defined(__UCLIBC__) || defined(__NetBSD__)
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG "/etc/ld.so.conf"
-#elif HAS_ELF_HINTS_H
+#elif defined(HAVE_ELF_HINTS_H)
 # include <elf-hints.h>
 # define __PAX_UTILS_DEFAULT_LD_CACHE_CONFIG _PATH_ELF_HINTS
 #else

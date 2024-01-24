@@ -48,11 +48,9 @@ foreach x : [
   'elf-hints.h',
   'glob.h',
 ]
-  x_exists = 0
   if cc.has_header(x)
-    x_exists = 1
+    probe_results.set('HAVE_' + x.to_upper().underscorify(), 1)
   endif
-  probe_results.set('HAS_' + x.to_upper().underscorify(), x_exists)
 endforeach
 
 configure_file(
