@@ -9,7 +9,7 @@
 
 pax-utils is a small set of utilities for performing Q/A (mostly security)
 checks on systems (most notably, `scanelf`).  It is focused on the ELF
-format, but does include a Mach-O helper too for OS X systems.
+format, but does include a Mach-O helper too for macOS systems.
 
 While heavily integrated into Gentoo's build system, it can be used on any
 distro as it is a generic toolset.
