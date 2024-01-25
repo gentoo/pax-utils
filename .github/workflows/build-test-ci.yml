@@ -53,7 +53,7 @@ jobs:
                     -Db_sanitize="${SANITIZER}" \
                     build
         ninja -C build
-        ( cd build && "$BB" test; )
+        ( cd build && "$BB" test -v ; )
 
   build-macos:
     strategy:
