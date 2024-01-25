@@ -230,9 +230,14 @@ static const char *get_pid_attr(int pfd)
 	if ((fp = fopenat_r(pfd, "attr/current")) == NULL)
 		return NULL;
 
-	if (fgets(buf, sizeof(buf), fp) != NULL)
-		if ((p = strchr(buf, '\n')) != NULL)
-			*p = 0;
+	if (fgets(buf, sizeof(buf), fp) == NULL) {
+		fclose(fp);
+		return NULL;
+	}
+
+	if ((p = strchr(buf, '\n')) != NULL)
+		*p = 0;
+
 	fclose(fp);
 
 	return buf;
@@ -247,9 +252,14 @@ static const char *get_pid_addr(int pfd)
 	if ((fp = fopenat_r(pfd, "ipaddr")) == NULL)
 		return NULL;
 
-	if (fgets(buf, sizeof(buf), fp) != NULL)
-		if ((p = strchr(buf, '\n')) != NULL)
-			*p = 0;
+	if (fgets(buf, sizeof(buf), fp) == NULL) {
+		fclose(fp);
+		return NULL;
+	}
+
+	if ((p = strchr(buf, '\n')) != NULL)
+		*p = 0;
+
 	fclose(fp);
 
 	return buf;
