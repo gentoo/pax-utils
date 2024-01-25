@@ -63,7 +63,7 @@ static const char *get_proc_name_cmdline(int pfd)
 	if (fp == NULL)
 		return NULL;
 
-	if (fscanf(fp, "%s.1023", str) != 1) {
+	if (fscanf(fp, "%1023s", str) != 1) {
 		fclose(fp);
 		return NULL;
 	}
