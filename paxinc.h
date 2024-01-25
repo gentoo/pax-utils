@@ -48,6 +48,7 @@ typedef struct {
 	const char *filename;
 	size_t skip;
 	char *extfn;
+	off_t extfn_len;
 	bool verbose;
 } archive_handle;
 #else

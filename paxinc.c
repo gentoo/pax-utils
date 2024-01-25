@@ -126,7 +126,7 @@ close_and_ret:
 			warn("%s: Duplicate GNU extended filename section", ar->filename);
 			goto close_and_ret;
 		}
-		len = read_decimal_number_fixed(ret.buf.formatted.size);
+		len = ar->extfn_len = read_decimal_number_fixed(ret.buf.formatted.size);
 		ar->extfn = xmalloc(sizeof(char) * (len + 1));
 		if (read(ar->fd, ar->extfn, len) != len)
 			goto close_and_ret;
@@ -157,7 +157,13 @@ close_and_ret:
 			warn("%s: GNU extended filename without special data section", ar->filename);
 			goto close_and_ret;
 		}
-		s = ar->extfn + read_decimal_number(s + 1, sizeof(ret.buf.formatted.name) - 1);
+		/* NB: We NUL terminated extfn above when reading it. */
+		int64_t off = read_decimal_number(s + 1, sizeof(ret.buf.formatted.name) - 1);
+		if (off >= ar->extfn_len) {
+			warn("%s: GNU extended filename has invalid offset", ar->filename);
+			goto close_and_ret;
+		}
+		s = ar->extfn + off;
 	}
 
 	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);
