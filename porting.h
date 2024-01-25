@@ -74,6 +74,13 @@
 #endif
 
 #undef PAX_UTILS_CLEANUP
+#ifndef __SANITIZE_ADDRESS__
+# ifdef __has_feature
+#  if __has_feature (address_sanitizer)
+#   define __SANITIZE_ADDRESS__ 1
+#  endif
+# endif
+#endif
 /* LSAN (Leak Sanitizer) will complain about things we leak. */
 #ifdef __SANITIZE_ADDRESS__
 # define PAX_UTILS_CLEANUP 1
