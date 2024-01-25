@@ -50,6 +50,42 @@ archive_handle *ar_open(const char *filename, bool verbose)
 	return ret;
 }
 
+static uint64_t ar_read_ascii_number(const char *numstr, size_t ndigits, int base)
+{
+	/* Largest field ar headers have is 16 bytes. */
+	char buf[17];
+	char *endp;
+	long long ret;
+
+	memcpy(buf, numstr, ndigits);
+	buf[ndigits] = '\0';
+
+	ret = strtoll(buf, &endp, base);
+	/* Numbers are padded with whitespace. */
+	if (*endp != '\0' && *endp != ' ') {
+		warn("ar: invalid number: %s", buf);
+		ret = 0;
+	}
+
+	/*
+	 * Unsigned 64-bit numbers use up to 20 digits, and signed 64-bit numbers use
+	 * up to 19 digits, but ndigits is always less than that.  So we'd never handle
+	 * a number that requires all 64-bits.  If it's negative, it's because the input
+	 * was negative e.g. "-1", and none of these fields should ever be negative.
+	 */
+	if (ret < 0) {
+		warn("ar: invalid number: %s", buf);
+		ret = 0;
+	}
+
+	return ret;
+}
+#define read_octal_number(s, n) ar_read_ascii_number(s, n, 8)
+#define read_decimal_number(s, n) ar_read_ascii_number(s, n, 10)
+/* For char[] arrays rather than dynamic pointers. */
+#define read_octal_number_fixed(s) read_octal_number(s, sizeof(s))
+#define read_decimal_number_fixed(s) read_decimal_number(s, sizeof(s))
+
 archive_member *ar_next(archive_handle *ar)
 {
 	char *s;
@@ -84,12 +120,13 @@ close_and_ret:
 		goto close_and_ret;
 	}
 
+	/* System V extended filename section. */
 	if (ret.buf.formatted.name[0] == '/' && ret.buf.formatted.name[1] == '/') {
 		if (ar->extfn != NULL) {
 			warn("%s: Duplicate GNU extended filename section", ar->filename);
 			goto close_and_ret;
 		}
-		len = atoi(ret.buf.formatted.size);
+		len = read_decimal_number_fixed(ret.buf.formatted.size);
 		ar->extfn = xmalloc(sizeof(char) * (len + 1));
 		if (read(ar->fd, ar->extfn, len) != len)
 			goto close_and_ret;
@@ -104,7 +141,7 @@ close_and_ret:
 	s = ret.buf.formatted.name;
 	if (s[0] == '#' && s[1] == '1' && s[2] == '/') {
 		/* BSD extended filename, always in use on Darwin */
-		len = atoi(s + 3);
+		len = read_decimal_number(s + 3, sizeof(ret.buf.formatted.name) - 3);
 		if (len <= (ssize_t)sizeof(ret.buf.formatted.name)) {
 			if (read(ar->fd, ret.buf.formatted.name, len) != len)
 				goto close_and_ret;
@@ -120,18 +157,18 @@ close_and_ret:
 			warn("%s: GNU extended filename without special data section", ar->filename);
 			goto close_and_ret;
 		}
-		s = ar->extfn + atoi(s + 1);
+		s = ar->extfn + read_decimal_number(s + 1, sizeof(ret.buf.formatted.name) - 1);
 	}
 
 	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);
 	ret.name[sizeof(ret.name) - 1] = '\0';
 	if ((s=strchr(ret.name+strlen(ar->filename), '/')) != NULL)
 		*s = '\0';
-	ret.date = atoi(ret.buf.formatted.date);
-	ret.uid = atoi(ret.buf.formatted.uid);
-	ret.gid = atoi(ret.buf.formatted.gid);
-	ret.mode = strtol(ret.buf.formatted.mode, NULL, 8);
-	ret.size = atoi(ret.buf.formatted.size);
+	ret.date = read_decimal_number_fixed(ret.buf.formatted.date);
+	ret.uid = read_decimal_number_fixed(ret.buf.formatted.uid);
+	ret.gid = read_decimal_number_fixed(ret.buf.formatted.gid);
+	ret.mode = read_octal_number_fixed(ret.buf.formatted.mode);
+	ret.size = read_decimal_number_fixed(ret.buf.formatted.size);
 	ar->skip = ret.size - len;
 
 	return &ret;
