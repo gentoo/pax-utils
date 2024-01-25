@@ -89,11 +89,13 @@ static uint64_t ar_read_ascii_number(const char *numstr, size_t ndigits, int bas
 archive_member *ar_next(archive_handle *ar)
 {
 	char *s;
+	char *heap_s = NULL;
 	ssize_t len = 0;
 	static archive_member ret;
 
 	if (ar->skip && lseek(ar->fd, ar->skip, SEEK_CUR) == -1) {
 close_and_ret:
+		free(heap_s);
 		free(ar->extfn);
 		close(ar->fd);
 		ar->extfn = NULL;
@@ -146,7 +148,7 @@ close_and_ret:
 			if (read(ar->fd, ret.buf.formatted.name, len) != len)
 				goto close_and_ret;
 		} else {
-			s = alloca(sizeof(char) * len + 1);
+			s = heap_s = xmalloc(sizeof(char) * (len + 1));
 			if (read(ar->fd, s, len) != len)
 				goto close_and_ret;
 			s[len] = '\0';
@@ -167,6 +169,7 @@ close_and_ret:
 	}
 
 	snprintf(ret.name, sizeof(ret.name), "%s:%s", ar->filename, s);
+	free(heap_s);
 	ret.name[sizeof(ret.name) - 1] = '\0';
 	if ((s=strchr(ret.name+strlen(ar->filename), '/')) != NULL)
 		*s = '\0';

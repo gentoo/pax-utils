@@ -40,9 +40,6 @@
 #include <time.h>
 #include <unistd.h>
 #include "elf.h"
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#endif
 #ifdef HAVE_SYS_PRCTL_H
 # include <sys/prctl.h>
 # ifdef HAVE_LINUX_SECCOMP_H

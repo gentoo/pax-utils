@@ -44,7 +44,6 @@ foreach x : [
   'linux/seccomp.h',
   'linux/securebits.h',
   'sys/prctl.h',
-  'alloca.h',
   'elf-hints.h',
   'glob.h',
 ]
