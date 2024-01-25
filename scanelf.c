@@ -315,9 +315,9 @@ static void scanelf_file_get_symtabs(elfobj *elf, const void **sym, const void *
 			Elf32_Word sym_idx; \
 			Elf32_Word chained; \
 			\
-			if (!VALID_RANGE(elf, offset, nbuckets * 4)) \
+			if (!VALID_RANGE(elf, hash_offset, nbuckets * (uint64_t)4)) \
 				goto corrupt_hash; \
-			if (!VALID_RANGE(elf, offset, nchains * 4)) \
+			if (!VALID_RANGE(elf, hash_offset, nchains * (uint64_t)4)) \
 				goto corrupt_hash; \
 			\
 			for (b = 0; b < nbuckets; ++b) { \
