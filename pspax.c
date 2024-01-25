@@ -119,12 +119,13 @@ static const char *get_proc_name(int pfd)
 static int get_proc_maps(int pfd)
 {
 	FILE *fp;
-	static char str[BUFSIZ];
+	static char *str = NULL;
+	static size_t len = 0;
 
 	if ((fp = fopenat_r(pfd, "maps")) == NULL)
 		return -1;
 
-	while (fgets(str, sizeof(str), fp)) {
+	while (getline(&str, &len, fp) != -1) {
 		char *p;
 		if ((p = strchr(str, ' ')) != NULL) {
 			if (strlen(p) < 6)
@@ -155,12 +156,13 @@ static int get_proc_maps(int pfd)
 static int print_executable_mappings(int pfd)
 {
 	FILE *fp;
-	static char str[BUFSIZ];
+	static char *str = NULL;
+	static size_t len = 0;
 
 	if ((fp = fopenat_r(pfd, "maps")) == NULL)
 		return -1;
 
-	while (fgets(str, sizeof(str), fp)) {
+	while (getline(&str, &len, fp) != -1) {
 		char *p;
 		if ((p = strchr(str, ' ')) != NULL) {
 			if (strlen(p) < 6)
@@ -200,20 +202,21 @@ static const struct passwd *get_proc_passwd(int pfd)
 static const char *get_proc_status(int pfd, const char *name)
 {
 	FILE *fp;
-	size_t len;
-	static char str[BUFSIZ];
+	size_t name_len;
+	static char *str = NULL;
+	static size_t len = 0;
 
 	if ((fp = fopenat_r(pfd, "status")) == NULL)
 		return NULL;
 
-	len = strlen(name);
-	while (fgets(str, sizeof(str), fp)) {
-		if (strncasecmp(str, name, len) != 0)
+	name_len = strlen(name);
+	while (getline(&str, &len, fp) != -1) {
+		if (strncasecmp(str, name, name_len) != 0)
 			continue;
-		if (str[len] == ':') {
+		if (str[name_len] == ':') {
 			fclose(fp);
 			str[strlen(str) - 1] = 0;
-			return (str + len + 2);
+			return (str + name_len + 2);
 		}
 	}
 	fclose(fp);
@@ -225,12 +228,13 @@ static const char *get_pid_attr(int pfd)
 {
 	FILE *fp;
 	char *p;
-	static char buf[BUFSIZ];
+	static char *buf = NULL;
+	static size_t len = 0;
 
 	if ((fp = fopenat_r(pfd, "attr/current")) == NULL)
 		return NULL;
 
-	if (fgets(buf, sizeof(buf), fp) == NULL) {
+	if (getline(&buf, &len, fp) == -1) {
 		fclose(fp);
 		return NULL;
 	}
@@ -247,12 +251,13 @@ static const char *get_pid_addr(int pfd)
 {
 	FILE *fp;
 	char *p;
-	static char buf[BUFSIZ];
+	static char *buf = NULL;
+	static size_t len = 0;
 
 	if ((fp = fopenat_r(pfd, "ipaddr")) == NULL)
 		return NULL;
 
-	if (fgets(buf, sizeof(buf), fp) == NULL) {
+	if (getline(&buf, &len, fp) == -1) {
 		fclose(fp);
 		return NULL;
 	}
