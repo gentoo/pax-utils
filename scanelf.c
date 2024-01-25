@@ -1828,7 +1828,6 @@ static void scanelf_envpath(void)
 
 /* usage / invocation handling functions */ /* Free Flags: c d j u w G H J K P Q U W */
 #define PARSE_FLAGS "plRmyAXz:xetrnLibSs:k:gN:TaqvF:f:o:E:M:DIYO:ZCBhV"
-#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"ldpath",    no_argument, NULL, 'l'},
@@ -1924,43 +1923,13 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	const char a_arg[] = "<arg>";
-	size_t a_arg_len = strlen(a_arg) + 2;
-	size_t i;
-	int optlen;
-	printf("* Scan ELF binaries for stuff\n\n"
-	       "Usage: %s [options] <dir1/file1> [dir2 dirN file2 fileN ...]\n\n", argv0);
-	printf("Options: -[%s]\n", PARSE_FLAGS);
-
-	/* prescan the --long opt length to auto-align */
-	optlen = 0;
-	for (i = 0; long_opts[i].name; ++i) {
-		int l = strlen(long_opts[i].name);
-		if (long_opts[i].has_arg == a_argument)
-			l += a_arg_len;
-		optlen = max(l, optlen);
-	}
-
-	for (i = 0; long_opts[i].name; ++i) {
-		/* first output the short flag if it has one */
-		if (long_opts[i].val > '~')
-			printf("      ");
-		else
-			printf("  -%c, ", long_opts[i].val);
-
-		/* then the long flag */
-		if (long_opts[i].has_arg == no_argument)
-			printf("--%-*s", optlen, long_opts[i].name);
-		else
-			printf("--%s %s %*s", long_opts[i].name, a_arg,
-				(int)(optlen - strlen(long_opts[i].name) - a_arg_len), "");
-
-		/* finally the help text */
-		printf("* %s\n", opts_help[i]);
-	}
-
-	puts("\nFor more information, see the scanelf(1) manpage");
-	exit(status);
+	pax_usage(
+		"Scan ELF binaries for stuff",
+		"<dir1/file1> [dir2 dirN file2 fileN ...]",
+		PARSE_FLAGS,
+		long_opts,
+		opts_help,
+		status);
 }
 
 /* parse command line arguments and perform needed actions */

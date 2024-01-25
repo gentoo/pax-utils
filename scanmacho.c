@@ -573,7 +573,6 @@ static void scanmacho_envpath(void)
 
 /* usage / invocation handling functions */ /* Free Flags: c d e j k l s t u w x z G H I J K L P Q T W X Y */
 #define PARSE_FLAGS "pRmyArnibSUN:gE:M:DO:ZaqvF:f:o:CBhV"
-#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"path",      no_argument, NULL, 'p'},
 	{"recursive", no_argument, NULL, 'R'},
@@ -621,7 +620,7 @@ static const char * const opts_help[] = {
 	"Find a specified library",
 	"Use strncmp to match libraries. (use with -N)",
 	"Print only Mach-O files matching mach_header\n"
-		"                        MH_OBJECT,MH_EXECUTE ... (ELF: etype)",
+		"                       MH_OBJECT,MH_EXECUTE ... (ELF: etype)",
 	"Print only Mach-O files matching numeric bits",
 	"Print Endianness",
 	"Print only Mach-O files matching octal permissions",
@@ -642,20 +641,13 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	unsigned long i;
-	printf("* Scan Mach-O binaries for stuff\n\n"
-	       "Usage: %s [options] <dir1/file1> [dir2 dirN file2 fileN ...]\n\n", argv0);
-	printf("Options: -[%s]\n", PARSE_FLAGS);
-	for (i = 0; long_opts[i].name; ++i)
-		if (long_opts[i].has_arg == no_argument)
-			printf("  -%c, --%-14s* %s\n", long_opts[i].val,
-			       long_opts[i].name, opts_help[i]);
-		else
-			printf("  -%c, --%-7s <arg> * %s\n", long_opts[i].val,
-			       long_opts[i].name, opts_help[i]);
-
-	puts("\nFor more information, see the scanmacho(1) manpage");
-	exit(status);
+	pax_usage(
+		"Scan Mach-O binaries for stuff",
+		"<dir1/file1> [dir2 dirN file2 fileN ...]",
+		PARSE_FLAGS,
+		long_opts,
+		opts_help,
+		status);
 }
 
 /* parse command line arguments and perform needed actions */

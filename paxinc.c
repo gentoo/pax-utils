@@ -198,3 +198,53 @@ const char *root_rel_path(const char *path)
 
 	return path;
 }
+
+void pax_usage(
+	const char *header,
+	const char *args,
+	const char *parse_flags,
+	const struct option long_opts[],
+	const char * const opts_help[],
+	int status)
+{
+	const char a_arg[] = "<arg>";
+	size_t a_arg_len = strlen(a_arg) + 2;
+	size_t i;
+	int optlen;
+
+	printf("* %s\n\n"
+	       "Usage: %s [options] %s\n\n", header, argv0, args);
+	printf("Options: -[%s]\n", parse_flags);
+
+	/* Prescan the --long opt length to auto-align. */
+	optlen = 0;
+	for (i = 0; long_opts[i].name; ++i) {
+		int l = strlen(long_opts[i].name);
+		if (long_opts[i].has_arg == a_argument)
+			l += a_arg_len;
+		optlen = max(l, optlen);
+	}
+	/* Use some reasonable min width. */
+	optlen = max(20, optlen);
+
+	for (i = 0; long_opts[i].name; ++i) {
+		/* First output the short flag if it has one. */
+		if (long_opts[i].val > '~')
+			printf("      ");
+		else
+			printf("  -%c, ", long_opts[i].val);
+
+		/* Then the long flag. */
+		if (long_opts[i].has_arg == no_argument)
+			printf("--%-*s", optlen, long_opts[i].name);
+		else
+			printf("--%s %s %*s", long_opts[i].name, a_arg,
+				(int)(optlen - strlen(long_opts[i].name) - a_arg_len), "");
+
+		/* Finally the help text. */
+		printf("* %s\n", opts_help[i]);
+	}
+
+	printf("\nFor more information, see the %s(1) manpage.\n", argv0);
+	exit(status);
+}

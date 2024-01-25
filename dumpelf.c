@@ -507,7 +507,6 @@ static void dump_dyn(const elfobj *elf, const void *dyn_void, size_t dyn_cnt)
 
 /* usage / invocation handling functions */
 #define PARSE_FLAGS "vhV"
-#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"verbose",   no_argument, NULL, 'v'},
 	{"help",      no_argument, NULL, 'h'},
@@ -524,18 +523,13 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	size_t i;
-	printf("* Dump internal ELF structure\n\n"
-	       "Usage: %s <file1> [file2 fileN ...]\n\n", argv0);
-	printf("Options:\n");
-	for (i = 0; long_opts[i].name; ++i)
-		if (long_opts[i].has_arg == no_argument)
-			printf("  -%c, --%-13s* %s\n", long_opts[i].val,
-			       long_opts[i].name, opts_help[i]);
-		else
-			printf("  -%c, --%-6s <arg> * %s\n", long_opts[i].val,
-			       long_opts[i].name, opts_help[i]);
-	exit(status);
+	pax_usage(
+		"Dump internal ELF structure",
+		"<file1> [file2 fileN ...]",
+		PARSE_FLAGS,
+		long_opts,
+		opts_help,
+		status);
 }
 
 /* parse command line arguments and perform needed actions */

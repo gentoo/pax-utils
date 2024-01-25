@@ -448,7 +448,6 @@ static void pspax(const char *find_name)
 
 /* usage / invocation handling functions */
 #define PARSE_FLAGS "aeip:u:g:nwWvCBhV"
-#define a_argument required_argument
 static struct option const long_opts[] = {
 	{"all",       no_argument, NULL, 'a'},
 	{"header",    no_argument, NULL, 'e'},
@@ -488,19 +487,13 @@ static const char * const opts_help[] = {
 /* display usage and exit */
 static void usage(int status)
 {
-	int i;
-	printf("* List ELF/PaX information about running processes\n\n"
-	       "Usage: %s [options]\n\n", argv0);
-	fputs("Options:\n", stdout);
-	for (i = 0; long_opts[i].name; ++i)
-		printf("  -%c, --%-12s* %s\n", long_opts[i].val,
-		       long_opts[i].name, opts_help[i]);
-#ifdef MANLYPAGE
-	for (i = 0; long_opts[i].name; ++i)
-		printf(".TP\n\\fB\\-%c, \\-\\-%s\\fR\n%s\n", long_opts[i].val,
-		       long_opts[i].name, opts_help[i]);
-#endif
-	exit(status);
+	pax_usage(
+		"List ELF/PaX information about running processes",
+		"",
+		PARSE_FLAGS,
+		long_opts,
+		opts_help,
+		status);
 }
 
 /* parse command line arguments and perform needed actions */

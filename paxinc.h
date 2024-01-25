@@ -124,6 +124,17 @@ void color_init(bool disable);
 /* constant pointer to a constant buffer ... each program needs to set this */
 extern const char argv0[];
 
+/* Display usage and exit. */
+extern void pax_usage(
+	const char *header,
+	const char *args,
+	const char *parse_flags,
+	const struct option long_opts[],
+	const char * const opts_help[],
+	int status);
+
+#define a_argument required_argument
+
 /* we need the space before the last comma or we trigger a bug in gcc-2 :( */
 #define warn(fmt, args...) \
 	fprintf(stderr, "%s%s%s: " fmt "\n", RED, argv0, NORM , ## args)
