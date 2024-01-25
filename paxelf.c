@@ -620,6 +620,11 @@ free_elf_and_return:
 		char invalid; \
 		const Elf ## B ## _Ehdr *ehdr = EHDR ## B (elf->ehdr); \
 		Elf ## B ## _Off size; \
+		/* Need enough bytes for all of ehdr. */ \
+		if (elf->len < (off_t)sizeof(*ehdr)) { \
+			warn("%s: Incomplete ELF header", filename); \
+			goto free_elf_and_return; \
+		} \
 		/* verify program header */ \
 		invalid = 0; \
 		if (EGET(ehdr->e_phnum) <= 0) \
