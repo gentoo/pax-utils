@@ -587,6 +587,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 	if (elf == NULL)
 		return 0;
 	dumpelf(elf, 0);
+	unreadelf(elf);
 	return 0;
 }
 #else
