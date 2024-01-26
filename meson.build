@@ -168,7 +168,7 @@ if do_tests and get_option('use_fuzzing')
       args : [
         '-close_fd_mask=3',
         '-max_total_time=10',
-        '-print_final_stats',
+        '-print_final_stats=1',
       ]
     )
 
