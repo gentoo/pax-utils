@@ -253,7 +253,7 @@ static void dump_notes(const elfobj *elf, size_t B, const void *memory, const vo
 		printf("\t * Elf%zu_Nhdr note%zu = {\n", B, i);
 		printf("\t * \t.n_namesz = %u, (bytes)", namesz);
 		if (name)
-			printf(" [%s]", name);
+			printf(" [%.*s]", namesz, name);
 		printf("\n");
 		printf("\t * \t.n_descsz = %u, (bytes)", descsz);
 		if (desc) {
