@@ -232,7 +232,7 @@ static void dump_notes(const elfobj *elf, size_t B, const void *memory, const vo
 	}
 
 	printf("\n\t/%c note section dump:\n", '*');
-	for (i = 0; ndata < memory_end && !corrupt; ++i) {
+	for (i = 0; ndata < memory_end - sizeof(*note) && !corrupt; ++i) {
 		note = ndata;
 		namesz = EGET(note->n_namesz);
 		descsz = EGET(note->n_descsz);
