@@ -112,9 +112,14 @@ const char *strfileperms(const char *fname);
 #define PTR_ALIGN_DOWN(base, size) ((__typeof__(base))ALIGN_DOWN((uintptr_t)(base), (size)))
 #define PTR_ALIGN_UP(base, size)   ((__typeof__(base))ALIGN_UP  ((uintptr_t)(base), (size)))
 
-/* Support for libFuzzer: https://llvm.org/docs/LibFuzzer.html */
+/*
+ * Support for libFuzzer: https://llvm.org/docs/LibFuzzer.html
+ * No headers define this API, so we have to do it ourselves.
+ */
 #if PAX_UTILS_LIBFUZZ
-int LLVMFuzzerInitialize(__unused__ int *argc, __unused__ char ***argv);
+int LLVMFuzzerInitialize(int *argc, char ***argv);
+/* Attributes on the prototype are ignored, so hack the definition. */
+#define LLVMFuzzerInitialize(c, v) LLVMFuzzerInitialize(__unused__ c, __unused__ v)
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 #endif
 

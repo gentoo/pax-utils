@@ -579,8 +579,6 @@ static void parseargs(int argc, char *argv[])
 #if PAX_UTILS_LIBFUZZ
 int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
-	(void)argc;
-	(void)argv;
 	(void)parseargs;
 	security_init(false);
 	return 0;

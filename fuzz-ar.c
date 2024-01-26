@@ -15,9 +15,6 @@ static int fd;
 
 int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
-	(void)argc;
-	(void)argv;
-
 	fd = memfd_create("fuzz-input.a", MFD_CLOEXEC);
 	if (fd == -1)
 		errp("memfd_create() failed");
