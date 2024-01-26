@@ -125,13 +125,17 @@ static void dumpelf(const elfobj *elf, size_t file_cnt)
 		if (elf->elf_class == ELFCLASS ## B) { \
 		const Elf ## B ## _Phdr *phdr = phdr_dynamic_void; \
 		const Elf ## B ## _Dyn *dyn = elf->vdata + EGET(phdr->p_offset); \
+		if ((void *)dyn >= elf->data_end - sizeof(*dyn)) { \
+			printf(" /* invalid dynamic tags ! */ "); \
+			goto break_out_dyn; \
+		} \
 		i = 0; \
 		do { \
+			dump_dyn(elf, dyn++, i++); \
 			if ((void *)dyn >= elf->data_end - sizeof(*dyn)) { \
 				printf(" /* invalid dynamic tags ! */ "); \
 				break; \
 			} \
-			dump_dyn(elf, dyn++, i++); \
 		} while (EGET(dyn->d_tag) != DT_NULL); \
 		}
 		DUMP_DYNS(32)
@@ -139,6 +143,7 @@ static void dumpelf(const elfobj *elf, size_t file_cnt)
 	} else {
 		printf(" /* no dynamic tags ! */ ");
 	}
+ break_out_dyn:
 	printf("};\n");
 }
 
