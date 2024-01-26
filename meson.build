@@ -171,5 +171,22 @@ if do_tests and get_option('use_fuzzing')
         '-print_final_stats',
       ]
     )
+
+    fuzz_ar = executable('fuzz-ar',
+      common_src + ['fuzz-ar.c'],
+      override_options : [
+        'buildtype=debug',
+      ],
+      c_args : fuzz_flags,
+      link_args : fuzz_flags,
+      install : false
+    )
+    test('fuzz-ar', fuzz_ar,
+      args : [
+        '-close_fd_mask=3',
+        '-max_total_time=10',
+        '-print_final_stats=1',
+      ]
+    )
   endif
 endif
