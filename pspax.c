@@ -345,8 +345,6 @@ static void pspax(const char *find_name)
 	int pfd;
 	WRAP_SYSCAP(ssize_t length; cap_t cap_d;)
 
-	WRAP_SYSCAP(cap_d = cap_init());
-
 	dir = opendir(PROC_DIR);
 	if (dir == NULL || chdir(PROC_DIR))
 		errp(PROC_DIR);
@@ -438,7 +436,8 @@ static void pspax(const char *find_name)
 				print_executable_mappings(pfd);
 		}
 
-		WRAP_SYSCAP(if (caps) cap_free(caps));
+		WRAP_SYSCAP(cap_free(cap_d));
+		WRAP_SYSCAP(cap_free(caps));
 
  next_pid:
 		close(pfd);
