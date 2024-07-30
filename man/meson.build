@@ -19,7 +19,7 @@ fs = import('fs')
 out_pages = []
 generated_man_pages_exist = true
 foreach page : pages
-  man_page_name = page.replace('.docbook', '.1')
+  man_page_name = page.split('.')[0] + '.1'
   out_pages += man_page_name
   if not fs.exists(man_page_name)
       generated_man_pages_exist = false
