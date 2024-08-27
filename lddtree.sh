@@ -23,6 +23,9 @@ usage() {
 	  -l              Display output in a flat format
 	  -h              Show this help output
 	  -V              Show version information
+
+	When called as *ldd (e.g. via a symlink), the output resembles the regular
+	ldd command by default.
 	EOF
 	exit ${1:-0}
 }
@@ -124,45 +127,66 @@ find_elf() {
 }
 
 show_elf() {
-	local elf=$1 indent=$2 parent_elfs=$3
+	local elf=$1 indent=$2 parent_elfs=$3 inputs=$4
 	local rlib lib libs
 	local resolved
 	find_elf "${elf}"
 	resolved=${_find_elf}
 	elf=${elf##*/}
 
-	${LIST} || printf "%${indent}s%s => " "" "${elf}"
-	if [[ ,${parent_elfs}, == *,${elf},* ]] ; then
-		${LIST} || printf "!!! circular loop !!!\n" ""
-		return
-	fi
-	parent_elfs="${parent_elfs},${elf}"
-	if ${LIST} ; then
-		echo "${resolved:-$1}"
+	local loop=false
+	[[ ,${parent_elfs}, == *,${elf},* ]] && loop=true
+
+	if ${LDD_MODE} ; then
+		if [[ ${indent} -gt 0 ]] ; then
+			printf "\t%s => " "${elf}"
+		elif [[ ${inputs} -gt 1 ]] ; then
+			printf "%s:\n" "${resolved}"
+		fi
+	elif ${LIST} ; then
+		:
 	else
-		printf "${resolved:-not found}"
+		printf "%${indent}s%s => " "" "${elf}"
+		${loop} && printf "!!! circular loop !!!\n"
 	fi
+
+	${loop} && return
+	parent_elfs="${parent_elfs},${elf}"
+
+	if ${LDD_MODE} ; then
+		if [[ ${indent} -gt 0 ]] ; then
+			printf "%s" "${resolved:-not found} (0xdeadbeef)"
+		fi
+	elif ${LIST} ; then
+		printf "%s" "${resolved:-$1}"
+	else
+		printf "%s" "${resolved:-not found}"
+	fi
+
 	if [[ ${indent} -eq 0 ]] ; then
-		local elf_specs interp full_interp
+		local elf_specs full_interp root_interp base_interp
 
 		elf_specs=$(elf_specs "${resolved}")
-		interp=$(scanelf -qF '#F%i' "${resolved}")
-		[[ -n ${interp} ]] && interp="${ROOT}${interp#/}"
+		full_interp=$(scanelf -qF '#F%i' "${resolved}")
+		base_interp=${full_interp##*/}
+		[[ -n ${full_interp} ]] && root_interp="${ROOT}${full_interp#/}"
 
-		if ${LIST} ; then
-			[[ -n ${interp} ]] && echo "${interp}"
+		# If we are in the default mode, then we want to show the "duplicate"
+		# interp lines -- first the header (interp=>xxx), and then the DT_NEEDED
+		# line to show that the ELF is directly linked against the interp.
+		# Otherwise, we only want to show the interp once.
+		if ${LDD_MODE} ; then
+			[[ -n ${root_interp} ]] && printf "\t%s" "${root_interp} (0xdeadbeef)"
+			allhits+=",${base_interp}"
+		elif ${LIST} ; then
+			[[ -n ${root_interp} ]] && printf "\n%s" "${root_interp}"
+			allhits+=",${base_interp}"
 		else
-			printf " (interpreter => ${interp:-none})"
+			printf " (interpreter => %s)" "${root_interp:-none}"
 		fi
-		full_interp=${interp}
-		interp=${interp##*/}
-		# If we are in non-list mode, then we want to show the "duplicate" interp
-		# lines -- first the header (interp=>xxx), and then the DT_NEEDED line to
-		# show that the ELF is directly linked against the interp.
-		# If we're in list mode though, we only want to show the interp once.
-		${LIST} && allhits+=",${interp}"
 	fi
-	${LIST} || printf "\n"
+
+	printf "\n"
 
 	[[ -z ${resolved} ]] && return
 
@@ -186,13 +210,13 @@ show_elf() {
 		# the ldso won't load another copy of ldso into memory from the search
 		# path, it'll reuse the existing copy that was loaded from the full
 		# hardcoded path.
-		if [[ ${lib} == "${interp}" ]] ; then
+		if [[ ${lib} == "${base_interp}" ]] ; then
 			rlib=${full_interp}
 		else
 			find_elf "${lib}" "${resolved}"
 			rlib=${_find_elf}
 		fi
-		show_elf "${rlib:-${lib}}" $((indent + 4)) "${parent_elfs}"
+		show_elf "${rlib:-${lib}}" $((indent + 4)) "${parent_elfs}" "${inputs}"
 	done
 }
 
@@ -203,6 +227,9 @@ SHOW_ALL=false
 SET_X=false
 LIST=false
 AUTO_ROOT=true
+LDD_MODE=false
+
+[[ ${argv0} = *ldd ]] && LDD_MODE=true
 
 while getopts haxVR:l-:  OPT ; do
 	case ${OPT} in
@@ -211,7 +238,7 @@ while getopts haxVR:l-:  OPT ; do
 	h) usage;;
 	V) version;;
 	R) ROOT="${OPTARG%/}/";;
-	l) LIST=true;;
+	l) LIST=true LDD_MODE=false;;
 	-) # Long opts ftw.
 		case ${OPTARG} in
 		no-auto-root) AUTO_ROOT=false;;
@@ -241,7 +268,7 @@ for elf ; do
 	else
 		allhits=""
 		[[ ${elf} != */* ]] && elf="./${elf}"
-		show_elf "${elf}" 0 ""
+		show_elf "${elf}" 0 "" $#
 	fi
 done
 exit ${ret}
