@@ -19,7 +19,7 @@ usage() {
 	  -a              Show all duplicated dependencies
 	  -x              Run with debugging
 	  -R <root>       Use this ROOT filesystem tree
-	  --no-auto-root  Do not automatically prefix input ELFs with ROOT
+	  --auto-root     Automatically prefix input ELFs with ROOT
 	  -l              Display output in a flat format
 	  -h              Show this help output
 	  -V              Show version information
@@ -226,7 +226,7 @@ if [[ $1 != "/../..source.lddtree" ]] ; then
 SHOW_ALL=false
 SET_X=false
 LIST=false
-AUTO_ROOT=true
+AUTO_ROOT=false
 LDD_MODE=false
 
 [[ ${argv0} = *ldd ]] && LDD_MODE=true
@@ -241,6 +241,7 @@ while getopts haxVR:l-:  OPT ; do
 	l) LIST=true LDD_MODE=false;;
 	-) # Long opts ftw.
 		case ${OPTARG} in
+		auto-root) AUTO_ROOT=true;;
 		no-auto-root) AUTO_ROOT=false;;
 		*) usage 1;;
 		esac
