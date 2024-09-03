@@ -684,7 +684,7 @@ elfobj *_readelf_fd(const char *filename, int fd, size_t len, int read_only)
 
 	buffer = mmap(0, len, PROT_READ | (read_only ? 0 : PROT_WRITE), (read_only ? MAP_PRIVATE : MAP_SHARED), fd, 0);
 	if (buffer == MAP_FAILED) {
-		warn("mmap on '%s' of %li bytes failed :(", filename, (unsigned long)len);
+		warn("mmap on '%s' of %zu bytes failed :(", filename, len);
 		return NULL;
 	}
 
