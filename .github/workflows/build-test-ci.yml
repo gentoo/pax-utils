@@ -31,7 +31,7 @@ jobs:
             sudo pip3 install meson
             ;;
           muon)
-            wget https://muon.build/releases/edge/muon-edge-amd64-linux-static -O muon
+            wget https://muon.build/releases/v0.3.0/muon-v0.3.0-amd64-linux-static -O muon
             chmod +x muon
             sudo install -Dm755 muon /usr/local/bin/muon
             ;;
