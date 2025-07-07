@@ -18,7 +18,8 @@ typedef struct {
 	void *_data;
 	union {
 		const void *ehdr, *vdata;
-		const char *data;
+		const char *cdata;
+		const unsigned char *data;
 		uintptr_t udata;
 	};
 	const void *data_end;
