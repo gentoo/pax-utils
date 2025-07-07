@@ -366,7 +366,7 @@ static void dump_shdr(const elfobj *elf, const void *shdr_void, size_t shdr_cnt,
 	/* Make sure the string is valid. */
 	if ((const void *)section_name >= elf->data_end)
 		section_name = "<corrupt>";
-	else if (memchr(section_name, 0, elf->len - (section_name - elf->data)) == NULL)
+	else if (memchr(section_name, 0, elf->len - (section_name - elf->cdata)) == NULL)
 		section_name = "<corrupt>";
 
 #define DUMP_SHDR(B) \

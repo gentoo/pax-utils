@@ -812,7 +812,7 @@ const void *elf_findsecbyname(const elfobj *elf, const char *name)
 	for (i = 0; i < shnum; ++i) { \
 		offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 		if (offset >= (Elf ## B ## _Off)elf->len) continue; \
-		shdr_name = elf->data + offset; \
+		shdr_name = elf->cdata + offset; \
 		if (!strcmp(shdr_name, name)) { \
 			if (ret) warnf("Multiple '%s' sections !?", name); \
 			ret = &shdr[i]; \
