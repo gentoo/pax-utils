@@ -131,6 +131,7 @@ int main(void)
 		/* Then the memory mapping functions.  */
 		SCMP_SYS(mmap),
 		SCMP_SYS(mmap2),
+		SCMP_SYS(mremap),
 		SCMP_SYS(munmap),
 
 		/* Then the directory reading functions.  */
