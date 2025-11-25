@@ -1,5 +1,5 @@
 project('pax-utils', 'c',
-  version : '1.3.9',
+  version : '1.3.10',
   license : 'GPL-2.0-only',
   default_options : [
     'warning_level=2',
