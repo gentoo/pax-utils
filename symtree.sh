@@ -15,6 +15,12 @@ usage() {
 	exit ${1:-0}
 }
 
+error() {
+	echo "${argv0}: $*" 1>&2
+	ret=1
+	return 1
+}
+
 sym_list() {
 	# with large strings, bash is much slower than sed
 	local type=$1; shift
