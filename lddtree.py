@@ -852,12 +852,17 @@ def GetParser() -> argparse.ArgumentParser:
         help="Search for all files/dependencies in ROOT",
     )
     group.add_argument(
+        "--auto-root",
+        action="store_true",
+        help="Automatically prefix input ELFs with ROOT",
+    )
+    group.add_argument(
         "--no-auto-root",
         dest="auto_root",
         action="store_false",
-        default=True,
-        help="Do not automatically prefix input ELFs with ROOT",
+        help=argparse.SUPPRESS,
     )
+    group.set_defaults(auto_root=False)
     group.add_argument(
         "-C",
         "--cwd",
