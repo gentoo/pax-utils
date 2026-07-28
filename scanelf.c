@@ -482,7 +482,8 @@ static const char *scanelf_file_phdr(elfobj *elf, char *found_phdr, char *found_
 		 */ \
 		check_flags = /*SHF_WRITE|*/SHF_EXECINSTR; \
 		for (i = 0; i < shnum; ++i) { \
-			if (EGET(shdr[i].sh_type) != SHT_PROGBITS) continue; \
+			if (EGET(shdr[i].sh_type) != SHT_PROGBITS && EGET(shdr[i].sh_type) != SHT_NOTE) \
+				continue; \
 			offset = EGET(strtbl->sh_offset) + EGET(shdr[i].sh_name); \
 			if (!VALID_RANGE(elf, offset, sizeof(NOTE_GNU_STACK))) \
 				continue; \
