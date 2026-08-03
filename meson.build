@@ -116,18 +116,25 @@ executable('scanmacho',
   install : true
 )
 
+install_data('lddtree.sh',
+  install_dir : get_option('bindir')
+)
 lddtree_impl = get_option('lddtree_implementation')
 if lddtree_impl != 'none'
   if lddtree_impl == 'python'
+    install_data('lddtree.py',
+      install_dir : get_option('bindir')
+    )
     suffix = '.py'
   else
     suffix = '.sh'
   endif
-  install_data('lddtree' + suffix,
-    rename : 'lddtree',
+  install_symlink('lddtree',
+    pointing_to : 'lddtree' + suffix,
     install_dir : get_option('bindir')
   )
 endif
+
 install_data('symtree.sh',
   rename : 'symtree',
   install_dir : get_option('bindir')
