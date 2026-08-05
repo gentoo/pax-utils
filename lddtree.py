@@ -57,7 +57,7 @@ assert sys.version_info >= (3, 8), f"Python 3.8+ required, but found {sys.versio
 # Disable import errors for all 3rd party modules.
 # pylint: disable=import-error
 try:
-    import argcomplete  # type: ignore
+    import argcomplete
 except ImportError:
     argcomplete = cast(Any, None)
 

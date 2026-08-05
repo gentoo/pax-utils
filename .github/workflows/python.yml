@@ -5,24 +5,43 @@ name: Python
 
 on: [push, pull_request]
 
+env:
+  PYTHON_MIN: '3.7'
+  # Reusable list of files to check -- parsed by bash, so does not support
+  # whitespace.
+  CHECK_FILES: lddtree.py pylint
+
 jobs:
   python:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    # NB: v1.4.0 covers Python 3.8.
-    - uses: ricardochaves/python-lint@v1.4.0
+    - uses: actions/setup-python@v5
       with:
-        python-root-list: lddtree.py pylint
-        use-pylint: true
-        use-pycodestyle: false
-        use-flake8: false
-        use-black: true
-        use-mypy: true
-        use-isort: true
-        extra-pylint-options: ""
-        extra-pycodestyle-options: ""
-        extra-flake8-options: ""
-        extra-black-options: ""
-        extra-mypy-options: ""
-        extra-isort-options: ""
+        python-version: '3.x'
+    - uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: lint-pip-${{ github.run_number }}
+        restore-keys: lint-pip-
+    - name: install dependencies
+      run: |
+        pkgs=(
+          pylint mypy black 'isort[colors]'
+          # mypy dependencies for following imported types.
+          argcomplete
+        )
+        python -m pip install "${pkgs[@]}"
+    - run: pylint --py-version=$PYTHON_MIN --output-format colorized $CHECK_FILES
+    - run: |
+        mypy $CHECK_FILES
+        # Also check against the oldest supported python
+        mypy --python-version=$PYTHON_MIN $CHECK_FILES
+      if: success() || failure()
+      env:
+        TERM: xterm-color
+        MYPY_FORCE_COLOR: 1
+    - run: black --check --diff --color $CHECK_FILES
+      if: success() || failure()
+    - run: isort --check --diff --color $CHECK_FILES
+      if: success() || failure()
