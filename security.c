@@ -144,7 +144,7 @@ void security_init(bool allow_forking)
 	else
 		ret = prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &seccomp_bpf_program_base);
 
-	if (ret)
+	if (ret && errno != EINVAL)
 		warn("enabling seccomp failed");
 	}
 #endif
