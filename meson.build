@@ -23,7 +23,11 @@ if get_option('buildtype') in ['debug', 'debugoptimized']
 endif
 
 # generate VCSID
-version_h = vcs_tag(input : 'version.h.in', output : 'pax_utils_version.h')
+version_h = vcs_tag(
+  command : ['git', '--git-dir=.git', 'describe', '--dirty=+', '--always'],
+  input : 'version.h.in',
+  output : 'pax_utils_version.h',
+)
 # tell paxinc.h to use it
 add_project_arguments('-DINCLUDE_GENERATE_VERSION_H', language : 'c')
 add_project_arguments('-DVERSION="' + meson.project_version() + '"', language : 'c')
